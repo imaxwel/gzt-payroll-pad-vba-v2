@@ -13,6 +13,7 @@ Desktop.ini
 # 日志
 *.log
 logs/
+log/
 
 # 压缩包
 *.zip
