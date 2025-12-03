@@ -1,0 +1,251 @@
+Attribute VB_Name = "modEmployeeMappingService"
+'==============================================================================
+' Module: modEmployeeMappingService
+' Purpose: Employee ID mapping services
+' Description: Handles WEIN <-> Employee ID <-> Employee Code mappings
+'==============================================================================
+Option Explicit
+
+'------------------------------------------------------------------------------
+' Sub: BuildEmployeeMappings
+' Purpose: Build all employee mapping dictionaries from Workforce Detail
+'------------------------------------------------------------------------------
+Public Sub BuildEmployeeMappings()
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim lastRow As Long, i As Long
+    Dim empId As String, wein As String, empCode As String
+    Dim filePath As String
+    Dim empIdCol As Long, weinCol As Long, empCodeCol As Long
+    
+    On Error GoTo ErrHandler
+    
+    ' Initialize dictionaries
+    Set G.DictWeinToEmpId = CreateObject("Scripting.Dictionary")
+    Set G.DictEmpIdToWein = CreateObject("Scripting.Dictionary")
+    Set G.DictEmpCodeToWein = CreateObject("Scripting.Dictionary")
+    Set G.DictWeinToEmpCode = CreateObject("Scripting.Dictionary")
+    
+    ' Open Workforce Detail
+    filePath = GetInputFilePath("WorkforceDetail")
+    
+    If Dir(filePath) = "" Then
+        LogError "modEmployeeMappingService", "BuildEmployeeMappings", 0, _
+            "Workforce Detail file not found: " & filePath
+        Exit Sub
+    End If
+    
+    Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
+    Set ws = wb.Worksheets(1)
+    
+    ' Find columns by header
+    empIdCol = FindColumnByHeader(ws.Rows(1), "Employee ID")
+    weinCol = FindColumnByHeader(ws.Rows(1), "WEIN")
+    empCodeCol = FindColumnByHeader(ws.Rows(1), "Employee Code")
+    
+    ' Try alternative column names if not found
+    If empIdCol = 0 Then empIdCol = FindColumnByHeader(ws.Rows(1), "EmployeeID")
+    If weinCol = 0 Then weinCol = FindColumnByHeader(ws.Rows(1), "WIN")
+    If empCodeCol = 0 Then empCodeCol = FindColumnByHeader(ws.Rows(1), "EmployeeCode")
+    
+    If empIdCol = 0 And weinCol = 0 Then
+        LogError "modEmployeeMappingService", "BuildEmployeeMappings", 0, _
+            "Required columns not found in Workforce Detail"
+        wb.Close SaveChanges:=False
+        Exit Sub
+    End If
+    
+    lastRow = ws.Cells(ws.Rows.Count, IIf(empIdCol > 0, empIdCol, weinCol)).End(xlUp).Row
+    
+    For i = 2 To lastRow
+        If empIdCol > 0 Then empId = Trim(CStr(Nz(ws.Cells(i, empIdCol).Value, "")))
+        If weinCol > 0 Then wein = Trim(CStr(Nz(ws.Cells(i, weinCol).Value, "")))
+        If empCodeCol > 0 Then empCode = Trim(CStr(Nz(ws.Cells(i, empCodeCol).Value, "")))
+        
+        ' Build WEIN <-> Employee ID mappings
+        If wein <> "" And empId <> "" Then
+            If Not G.DictWeinToEmpId.Exists(wein) Then
+                G.DictWeinToEmpId.Add wein, empId
+            End If
+            If Not G.DictEmpIdToWein.Exists(empId) Then
+                G.DictEmpIdToWein.Add empId, wein
+            End If
+        End If
+        
+        ' Build Employee Code <-> WEIN mappings
+        If empCode <> "" And wein <> "" Then
+            If Not G.DictEmpCodeToWein.Exists(empCode) Then
+                G.DictEmpCodeToWein.Add empCode, wein
+            End If
+            If Not G.DictWeinToEmpCode.Exists(wein) Then
+                G.DictWeinToEmpCode.Add wein, empCode
+            End If
+        End If
+    Next i
+    
+    wb.Close SaveChanges:=False
+    
+    LogInfo "modEmployeeMappingService", "BuildEmployeeMappings", _
+        "Loaded " & G.DictWeinToEmpId.Count & " WEIN mappings"
+    
+    Exit Sub
+    
+ErrHandler:
+    LogError "modEmployeeMappingService", "BuildEmployeeMappings", Err.Number, Err.Description
+    On Error Resume Next
+    If Not wb Is Nothing Then wb.Close SaveChanges:=False
+End Sub
+
+'------------------------------------------------------------------------------
+' Function: WeinFromEmpId
+' Purpose: Get WEIN from Employee ID
+' Parameters:
+'   empId - Employee ID
+' Returns: WEIN or empty string if not found
+'------------------------------------------------------------------------------
+Public Function WeinFromEmpId(empId As String) As String
+    WeinFromEmpId = ""
+    
+    If G.DictEmpIdToWein Is Nothing Then Exit Function
+    
+    If G.DictEmpIdToWein.Exists(empId) Then
+        WeinFromEmpId = G.DictEmpIdToWein(empId)
+    End If
+End Function
+
+'------------------------------------------------------------------------------
+' Function: EmpIdFromWein
+' Purpose: Get Employee ID from WEIN
+' Parameters:
+'   wein - WEIN
+' Returns: Employee ID or empty string if not found
+'------------------------------------------------------------------------------
+Public Function EmpIdFromWein(wein As String) As String
+    EmpIdFromWein = ""
+    
+    If G.DictWeinToEmpId Is Nothing Then Exit Function
+    
+    If G.DictWeinToEmpId.Exists(wein) Then
+        EmpIdFromWein = G.DictWeinToEmpId(wein)
+    End If
+End Function
+
+'------------------------------------------------------------------------------
+' Function: WeinFromEmpCode
+' Purpose: Get WEIN from Employee Code
+' Parameters:
+'   empCode - Employee Code
+' Returns: WEIN or empty string if not found
+'------------------------------------------------------------------------------
+Public Function WeinFromEmpCode(empCode As String) As String
+    WeinFromEmpCode = ""
+    
+    If G.DictEmpCodeToWein Is Nothing Then Exit Function
+    
+    If G.DictEmpCodeToWein.Exists(empCode) Then
+        WeinFromEmpCode = G.DictEmpCodeToWein(empCode)
+    End If
+End Function
+
+'------------------------------------------------------------------------------
+' Function: EmpCodeFromWein
+' Purpose: Get Employee Code from WEIN
+' Parameters:
+'   wein - WEIN
+' Returns: Employee Code or empty string if not found
+'------------------------------------------------------------------------------
+Public Function EmpCodeFromWein(wein As String) As String
+    EmpCodeFromWein = ""
+    
+    If G.DictWeinToEmpCode Is Nothing Then Exit Function
+    
+    If G.DictWeinToEmpCode.Exists(wein) Then
+        EmpCodeFromWein = G.DictWeinToEmpCode(wein)
+    End If
+End Function
+
+'------------------------------------------------------------------------------
+' Function: MapOrAppendByWein
+' Purpose: Find row for WEIN in worksheet, or append new row if not found
+' Parameters:
+'   ws - Worksheet
+'   wein - WEIN to find/add
+'   weinColName - Name of WEIN column
+'   weinIndex - Dictionary of WEIN -> row (will be updated if new row added)
+' Returns: Row number for the WEIN
+'------------------------------------------------------------------------------
+Public Function MapOrAppendByWein( _
+    ws As Worksheet, _
+    wein As String, _
+    weinColName As String, _
+    ByRef weinIndex As Object _
+) As Long
+    
+    Dim weinCol As Long
+    Dim newRow As Long
+    
+    On Error GoTo ErrHandler
+    
+    ' Check if already in index
+    If weinIndex.Exists(wein) Then
+        MapOrAppendByWein = weinIndex(wein)
+        Exit Function
+    End If
+    
+    ' Find WEIN column
+    weinCol = FindColumnByHeader(ws.Rows(1), weinColName)
+    If weinCol = 0 Then
+        MapOrAppendByWein = 0
+        Exit Function
+    End If
+    
+    ' Append new row
+    newRow = ws.Cells(ws.Rows.Count, weinCol).End(xlUp).Row + 1
+    ws.Cells(newRow, weinCol).Value = wein
+    
+    ' Update index
+    weinIndex.Add wein, newRow
+    
+    MapOrAppendByWein = newRow
+    Exit Function
+    
+ErrHandler:
+    LogError "modEmployeeMappingService", "MapOrAppendByWein", Err.Number, Err.Description
+    MapOrAppendByWein = 0
+End Function
+
+'------------------------------------------------------------------------------
+' Function: GetAllWeins
+' Purpose: Get collection of all known WEINs
+' Returns: Collection of WEIN strings
+'------------------------------------------------------------------------------
+Public Function GetAllWeins() As Collection
+    Dim col As New Collection
+    Dim k As Variant
+    
+    If Not G.DictWeinToEmpId Is Nothing Then
+        For Each k In G.DictWeinToEmpId.Keys
+            col.Add CStr(k)
+        Next k
+    End If
+    
+    Set GetAllWeins = col
+End Function
+
+'------------------------------------------------------------------------------
+' Function: GetAllEmployeeIds
+' Purpose: Get collection of all known Employee IDs
+' Returns: Collection of Employee ID strings
+'------------------------------------------------------------------------------
+Public Function GetAllEmployeeIds() As Collection
+    Dim col As New Collection
+    Dim k As Variant
+    
+    If Not G.DictEmpIdToWein Is Nothing Then
+        For Each k In G.DictEmpIdToWein.Keys
+            col.Add CStr(k)
+        Next k
+    End If
+    
+    Set GetAllEmployeeIds = col
+End Function
