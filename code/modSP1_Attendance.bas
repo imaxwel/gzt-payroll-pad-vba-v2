@@ -171,42 +171,28 @@ End Function
 '------------------------------------------------------------------------------
 Private Sub ProcessAnnualLeave(ws As Worksheet, leaveRecords As Collection, empIndex As Object)
     Dim rec As Variant
-    Dim spans As Collection
-    Dim span As tDateSpan
     Dim v As Variant
     Dim row As Long
     Dim currentMonthDays As Double, prevMonthDays As Double, olderDays As Double
     Dim empDays As Object ' Dictionary to aggregate by employee
     Dim recWein As String, recUniqueKey As String
+    Dim prevYM As String
+    Dim arr As Variant
     
     On Error GoTo ErrHandler
     
     Set empDays = CreateObject("Scripting.Dictionary")
+    prevYM = Format(G.Payroll.PrevMonthStart, "YYYYMM")
     
     ' Process each annual leave record
     For Each v In leaveRecords
         rec = v
         
         If UCase(CStr(rec(LR_LEAVETYPE))) Like "*ANNUAL*" Then
-            ' Split by month with business days
-            SplitByCalendarMonthWithBusinessDays CDate(rec(LR_FROMDATE)), CDate(rec(LR_TODATE)), spans
-            
-            currentMonthDays = 0
-            prevMonthDays = 0
-            olderDays = 0
-            
-            ' Categorize days by month (use index loop for UDT)
-            Dim spanIdx As Long
-            For spanIdx = 1 To spans.count
-                span = spans(spanIdx)
-                If span.YearMonth = G.Payroll.payrollMonth Then
-                    currentMonthDays = currentMonthDays + span.days
-                ElseIf span.YearMonth = Format(G.Payroll.PrevMonthStart, "YYYYMM") Then
-                    prevMonthDays = prevMonthDays + span.days
-                Else
-                    olderDays = olderDays + span.days
-                End If
-            Next spanIdx
+            ' Calculate business days by month directly
+            CalcBusinessDaysByMonth CDate(rec(LR_FROMDATE)), CDate(rec(LR_TODATE)), _
+                                    G.Payroll.payrollMonth, prevYM, _
+                                    currentMonthDays, prevMonthDays, olderDays
             
             ' Aggregate by employee
             recWein = CStr(rec(LR_WEIN))
@@ -214,7 +200,6 @@ Private Sub ProcessAnnualLeave(ws As Worksheet, leaveRecords As Collection, empI
                 empDays.Add recWein, Array(0#, 0#, 0#)
             End If
             
-            Dim arr As Variant
             arr = empDays(recWein)
             arr(0) = arr(0) + currentMonthDays
             arr(1) = arr(1) + prevMonthDays
@@ -259,16 +244,18 @@ End Sub
 '------------------------------------------------------------------------------
 Private Sub ProcessSickLeave(ws As Worksheet, leaveRecords As Collection, empIndex As Object)
     Dim rec As Variant
-    Dim spans As Collection
-    Dim span As tDateSpan
     Dim v As Variant
     Dim row As Long
     Dim empDays As Object
     Dim recWein As String, recUniqueKey As String
+    Dim currentDays As Double, prevDays As Double, olderDays As Double
+    Dim prevYM As String
+    Dim arr As Variant
     
     On Error GoTo ErrHandler
     
     Set empDays = CreateObject("Scripting.Dictionary")
+    prevYM = Format(G.Payroll.PrevMonthStart, "YYYYMM")
     
     For Each v In leaveRecords
         rec = v
@@ -276,22 +263,10 @@ Private Sub ProcessSickLeave(ws As Worksheet, leaveRecords As Collection, empInd
         If UCase(CStr(rec(LR_LEAVETYPE))) Like "*SICK*" Then
             ' Check for 4 consecutive business days requirement
             If HasFourConsecutiveBusinessDays(CDate(rec(LR_FROMDATE)), CDate(rec(LR_TODATE))) Then
-                ' Split by calendar month
-                SplitByCalendarMonth CDate(rec(LR_FROMDATE)), CDate(rec(LR_TODATE)), spans
-                
-                Dim currentDays As Double, prevDays As Double
-                currentDays = 0
-                prevDays = 0
-                
-                Dim spanIdx As Long
-                For spanIdx = 1 To spans.count
-                    span = spans(spanIdx)
-                    If span.YearMonth = G.Payroll.payrollMonth Then
-                        currentDays = currentDays + span.days
-                    ElseIf span.YearMonth = Format(G.Payroll.PrevMonthStart, "YYYYMM") Then
-                        prevDays = prevDays + span.days
-                    End If
-                Next spanIdx
+                ' Calculate calendar days by month
+                CalcDaysByMonth CDate(rec(LR_FROMDATE)), CDate(rec(LR_TODATE)), _
+                                G.Payroll.payrollMonth, prevYM, _
+                                currentDays, prevDays, olderDays
                 
                 ' Aggregate
                 recWein = CStr(rec(LR_WEIN))
@@ -299,7 +274,6 @@ Private Sub ProcessSickLeave(ws As Worksheet, leaveRecords As Collection, empInd
                     empDays.Add recWein, Array(0#, 0#)
                 End If
                 
-                Dim arr As Variant
                 arr = empDays(recWein)
                 arr(0) = arr(0) + currentDays
                 arr(1) = arr(1) + prevDays
@@ -341,44 +315,34 @@ End Sub
 '------------------------------------------------------------------------------
 Private Sub ProcessUnpaidLeave(ws As Worksheet, leaveRecords As Collection, empIndex As Object)
     Dim rec As Variant
-    Dim spans As Collection
-    Dim span As tDateSpan
     Dim v As Variant
     Dim row As Long
     Dim empDays As Object
     Dim recWein As String, recUniqueKey As String, recLeaveType As String
+    Dim currentDays As Double, prevDays As Double, olderDays As Double
+    Dim prevYM As String
+    Dim arr As Variant
     
     On Error GoTo ErrHandler
     
     Set empDays = CreateObject("Scripting.Dictionary")
+    prevYM = Format(G.Payroll.PrevMonthStart, "YYYYMM")
     
     For Each v In leaveRecords
         rec = v
         recLeaveType = UCase(CStr(rec(LR_LEAVETYPE)))
         
         If recLeaveType Like "*UNPAID*" Or recLeaveType Like "*NO PAY*" Then
-            SplitByCalendarMonth CDate(rec(LR_FROMDATE)), CDate(rec(LR_TODATE)), spans
-            
-            Dim currentDays As Double, prevDays As Double
-            currentDays = 0
-            prevDays = 0
-            
-            Dim spanIdx As Long
-            For spanIdx = 1 To spans.count
-                span = spans(spanIdx)
-                If span.YearMonth = G.Payroll.payrollMonth Then
-                    currentDays = currentDays + span.days
-                ElseIf span.YearMonth = Format(G.Payroll.PrevMonthStart, "YYYYMM") Then
-                    prevDays = prevDays + span.days
-                End If
-            Next spanIdx
+            ' Calculate calendar days by month
+            CalcDaysByMonth CDate(rec(LR_FROMDATE)), CDate(rec(LR_TODATE)), _
+                            G.Payroll.payrollMonth, prevYM, _
+                            currentDays, prevDays, olderDays
             
             recWein = CStr(rec(LR_WEIN))
             If Not empDays.Exists(recWein) Then
                 empDays.Add recWein, Array(0#, 0#)
             End If
             
-            Dim arr As Variant
             arr = empDays(recWein)
             arr(0) = arr(0) + currentDays
             arr(1) = arr(1) + prevDays
@@ -419,44 +383,34 @@ End Sub
 '------------------------------------------------------------------------------
 Private Sub ProcessPPTO(ws As Worksheet, leaveRecords As Collection, empIndex As Object)
     Dim rec As Variant
-    Dim spans As Collection
-    Dim span As tDateSpan
     Dim v As Variant
     Dim row As Long
     Dim empDays As Object
     Dim recWein As String, recUniqueKey As String, recLeaveType As String
+    Dim currentDays As Double, prevDays As Double, olderDays As Double
+    Dim prevYM As String
+    Dim arr As Variant
     
     On Error GoTo ErrHandler
     
     Set empDays = CreateObject("Scripting.Dictionary")
+    prevYM = Format(G.Payroll.PrevMonthStart, "YYYYMM")
     
     For Each v In leaveRecords
         rec = v
         recLeaveType = UCase(CStr(rec(LR_LEAVETYPE)))
         
         If recLeaveType Like "*PPTO*" Or recLeaveType Like "*PARENTAL TIME OFF*" Then
-            SplitByCalendarMonth CDate(rec(LR_FROMDATE)), CDate(rec(LR_TODATE)), spans
-            
-            Dim currentDays As Double, prevDays As Double
-            currentDays = 0
-            prevDays = 0
-            
-            Dim spanIdx As Long
-            For spanIdx = 1 To spans.count
-                span = spans(spanIdx)
-                If span.YearMonth = G.Payroll.payrollMonth Then
-                    currentDays = currentDays + span.days
-                ElseIf span.YearMonth = Format(G.Payroll.PrevMonthStart, "YYYYMM") Then
-                    prevDays = prevDays + span.days
-                End If
-            Next spanIdx
+            ' Calculate calendar days by month
+            CalcDaysByMonth CDate(rec(LR_FROMDATE)), CDate(rec(LR_TODATE)), _
+                            G.Payroll.payrollMonth, prevYM, _
+                            currentDays, prevDays, olderDays
             
             recWein = CStr(rec(LR_WEIN))
             If Not empDays.Exists(recWein) Then
                 empDays.Add recWein, Array(0#, 0#)
             End If
             
-            Dim arr As Variant
             arr = empDays(recWein)
             arr(0) = arr(0) + currentDays
             arr(1) = arr(1) + prevDays

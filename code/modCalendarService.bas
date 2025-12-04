@@ -313,3 +313,97 @@ End Function
 Public Sub ClearHolidayCache()
     Set mHolidayCache = Nothing
 End Sub
+
+'------------------------------------------------------------------------------
+' Sub: CalcDaysByMonth
+' Purpose: Calculate days split by month for a date range (calendar days)
+' Parameters:
+'   startDate - Start date of the range
+'   endDate - End date of the range
+'   targetYM - Target year-month string "YYYYMM"
+'   prevYM - Previous year-month string "YYYYMM"
+'   currentDays - (ByRef) Days in target month
+'   prevDays - (ByRef) Days in previous month
+'   olderDays - (ByRef) Days in older months
+'------------------------------------------------------------------------------
+Public Sub CalcDaysByMonth(startDate As Date, endDate As Date, _
+                           targetYM As String, prevYM As String, _
+                           ByRef currentDays As Double, ByRef prevDays As Double, _
+                           ByRef olderDays As Double)
+    Dim currentStart As Date, currentEnd As Date
+    Dim spanYM As String
+    Dim spanDays As Double
+    
+    currentDays = 0
+    prevDays = 0
+    olderDays = 0
+    
+    If startDate > endDate Then Exit Sub
+    
+    currentStart = startDate
+    
+    Do While currentStart <= endDate
+        currentEnd = DateSerial(Year(currentStart), Month(currentStart) + 1, 0)
+        If currentEnd > endDate Then currentEnd = endDate
+        
+        spanYM = Format(currentStart, "YYYYMM")
+        spanDays = CountCalendarDays(currentStart, currentEnd)
+        
+        If spanYM = targetYM Then
+            currentDays = currentDays + spanDays
+        ElseIf spanYM = prevYM Then
+            prevDays = prevDays + spanDays
+        Else
+            olderDays = olderDays + spanDays
+        End If
+        
+        currentStart = DateSerial(Year(currentEnd), Month(currentEnd) + 1, 1)
+    Loop
+End Sub
+
+'------------------------------------------------------------------------------
+' Sub: CalcBusinessDaysByMonth
+' Purpose: Calculate business days split by month for a date range
+' Parameters:
+'   startDate - Start date of the range
+'   endDate - End date of the range
+'   targetYM - Target year-month string "YYYYMM"
+'   prevYM - Previous year-month string "YYYYMM"
+'   currentDays - (ByRef) Business days in target month
+'   prevDays - (ByRef) Business days in previous month
+'   olderDays - (ByRef) Business days in older months
+'------------------------------------------------------------------------------
+Public Sub CalcBusinessDaysByMonth(startDate As Date, endDate As Date, _
+                                   targetYM As String, prevYM As String, _
+                                   ByRef currentDays As Double, ByRef prevDays As Double, _
+                                   ByRef olderDays As Double)
+    Dim currentStart As Date, currentEnd As Date
+    Dim spanYM As String
+    Dim spanDays As Double
+    
+    currentDays = 0
+    prevDays = 0
+    olderDays = 0
+    
+    If startDate > endDate Then Exit Sub
+    
+    currentStart = startDate
+    
+    Do While currentStart <= endDate
+        currentEnd = DateSerial(Year(currentStart), Month(currentStart) + 1, 0)
+        If currentEnd > endDate Then currentEnd = endDate
+        
+        spanYM = Format(currentStart, "YYYYMM")
+        spanDays = CountBusinessDays(currentStart, currentEnd)
+        
+        If spanYM = targetYM Then
+            currentDays = currentDays + spanDays
+        ElseIf spanYM = prevYM Then
+            prevDays = prevDays + spanDays
+        Else
+            olderDays = olderDays + spanDays
+        End If
+        
+        currentStart = DateSerial(Year(currentEnd), Month(currentEnd) + 1, 1)
+    Loop
+End Sub
