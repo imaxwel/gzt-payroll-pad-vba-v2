@@ -195,10 +195,10 @@ Private Sub ProcessAnnualLeave(ws As Worksheet, leaveRecords As Collection, empI
             prevMonthDays = 0
             olderDays = 0
             
-            ' Categorize days by month
-            Dim s As Variant
-            For Each s In spans
-                span = s
+            ' Categorize days by month (use index loop for UDT)
+            Dim spanIdx As Long
+            For spanIdx = 1 To spans.count
+                span = spans(spanIdx)
                 If span.YearMonth = G.Payroll.payrollMonth Then
                     currentMonthDays = currentMonthDays + span.days
                 ElseIf span.YearMonth = Format(G.Payroll.PrevMonthStart, "YYYYMM") Then
@@ -206,7 +206,7 @@ Private Sub ProcessAnnualLeave(ws As Worksheet, leaveRecords As Collection, empI
                 Else
                     olderDays = olderDays + span.days
                 End If
-            Next s
+            Next spanIdx
             
             ' Aggregate by employee
             recWein = CStr(rec(LR_WEIN))
@@ -283,15 +283,15 @@ Private Sub ProcessSickLeave(ws As Worksheet, leaveRecords As Collection, empInd
                 currentDays = 0
                 prevDays = 0
                 
-                Dim s As Variant
-                For Each s In spans
-                    span = s
+                Dim spanIdx As Long
+                For spanIdx = 1 To spans.count
+                    span = spans(spanIdx)
                     If span.YearMonth = G.Payroll.payrollMonth Then
                         currentDays = currentDays + span.days
                     ElseIf span.YearMonth = Format(G.Payroll.PrevMonthStart, "YYYYMM") Then
                         prevDays = prevDays + span.days
                     End If
-                Next s
+                Next spanIdx
                 
                 ' Aggregate
                 recWein = CStr(rec(LR_WEIN))
@@ -363,15 +363,15 @@ Private Sub ProcessUnpaidLeave(ws As Worksheet, leaveRecords As Collection, empI
             currentDays = 0
             prevDays = 0
             
-            Dim s As Variant
-            For Each s In spans
-                span = s
+            Dim spanIdx As Long
+            For spanIdx = 1 To spans.count
+                span = spans(spanIdx)
                 If span.YearMonth = G.Payroll.payrollMonth Then
                     currentDays = currentDays + span.days
                 ElseIf span.YearMonth = Format(G.Payroll.PrevMonthStart, "YYYYMM") Then
                     prevDays = prevDays + span.days
                 End If
-            Next s
+            Next spanIdx
             
             recWein = CStr(rec(LR_WEIN))
             If Not empDays.Exists(recWein) Then
@@ -441,15 +441,15 @@ Private Sub ProcessPPTO(ws As Worksheet, leaveRecords As Collection, empIndex As
             currentDays = 0
             prevDays = 0
             
-            Dim s As Variant
-            For Each s In spans
-                span = s
+            Dim spanIdx As Long
+            For spanIdx = 1 To spans.count
+                span = spans(spanIdx)
                 If span.YearMonth = G.Payroll.payrollMonth Then
                     currentDays = currentDays + span.days
                 ElseIf span.YearMonth = Format(G.Payroll.PrevMonthStart, "YYYYMM") Then
                     prevDays = prevDays + span.days
                 End If
-            Next s
+            Next spanIdx
             
             recWein = CStr(rec(LR_WEIN))
             If Not empDays.Exists(recWein) Then
