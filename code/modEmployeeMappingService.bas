@@ -67,7 +67,7 @@ Public Sub BuildEmployeeMappings()
         Exit Sub
     End If
     
-    lastRow = ws.Cells(ws.Rows.Count, IIf(empIdCol > 0, empIdCol, weinCol)).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, IIf(empIdCol > 0, empIdCol, weinCol)).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
         If empIdCol > 0 Then empId = Trim(CStr(Nz(ws.Cells(i, empIdCol).Value, "")))
@@ -98,7 +98,7 @@ Public Sub BuildEmployeeMappings()
     wb.Close SaveChanges:=False
     
     LogInfo "modEmployeeMappingService", "BuildEmployeeMappings", _
-        "Loaded " & G.DictWeinToEmpId.Count & " WEIN mappings"
+        "Loaded " & G.DictWeinToEmpId.count & " WEIN mappings"
     
     Exit Sub
     
@@ -212,7 +212,7 @@ Public Function MapOrAppendByWein( _
     End If
     
     ' Append new row
-    newRow = ws.Cells(ws.Rows.Count, weinCol).End(xlUp).Row + 1
+    newRow = ws.Cells(ws.Rows.count, weinCol).End(xlUp).row + 1
     ws.Cells(newRow, weinCol).Value = wein
     
     ' Update index
@@ -399,3 +399,5 @@ Private Function FindHeaderRow(ws As Worksheet, keyColumnName As String) As Long
         Next j
     Next i
 End Function
+
+

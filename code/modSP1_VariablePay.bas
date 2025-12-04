@@ -65,8 +65,8 @@ Private Sub ProcessOneTimePayment(ws As Worksheet, empIndex As Object)
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)
     
-    lastRow = srcWs.Cells(srcWs.Rows.Count, 1).End(xlUp).Row
-    lastCol = srcWs.Cells(1, srcWs.Columns.Count).End(xlToLeft).Column
+    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    lastCol = srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
     Set dataRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
     
     ' Group by Employee ID and One-Time Payment Plan (try multiple field name variants)
@@ -157,8 +157,8 @@ Private Sub ProcessInspireAwards(ws As Worksheet, empIndex As Object)
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)
     
-    lastRow = srcWs.Cells(srcWs.Rows.Count, 1).End(xlUp).Row
-    lastCol = srcWs.Cells(1, srcWs.Columns.Count).End(xlToLeft).Column
+    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    lastCol = srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
     Set dataRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
     
     ' Try multiple field name variants for Employee ID
@@ -221,8 +221,8 @@ Private Sub ProcessSIPQIP(ws As Worksheet, empIndex As Object)
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)
     
-    lastRow = srcWs.Cells(srcWs.Rows.Count, 1).End(xlUp).Row
-    lastCol = srcWs.Cells(1, srcWs.Columns.Count).End(xlToLeft).Column
+    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    lastCol = srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
     Set dataRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
     
     ' Try multiple field name variants for Employee ID
@@ -324,7 +324,7 @@ Private Sub ProcessRSUGlobal(ws As Worksheet, empIndex As Object)
         Exit Sub
     End If
     
-    lastRow = srcWs.Cells(srcWs.Rows.Count, empRefCol).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, empRefCol).End(xlUp).row
     
     For i = 2 To lastRow
         empRef = Trim(CStr(Nz(srcWs.Cells(i, empRefCol).Value, "")))
@@ -385,7 +385,7 @@ Private Sub ProcessRSUEY(ws As Worksheet, empIndex As Object)
         Exit Sub
     End If
     
-    lastRow = srcWs.Cells(srcWs.Rows.Count, empNumCol).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, empNumCol).End(xlUp).row
     
     For i = 2 To lastRow
         empNum = Trim(CStr(Nz(srcWs.Cells(i, empNumCol).Value, "")))
@@ -455,7 +455,7 @@ Private Sub ProcessAIPPayouts(ws As Worksheet, empIndex As Object)
         Exit Sub
     End If
     
-    lastRow = srcWs.Cells(srcWs.Rows.Count, weinCol).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, weinCol).End(xlUp).row
     
     For i = 2 To lastRow
         wein = Trim(CStr(Nz(srcWs.Cells(i, weinCol).Value, "")))
@@ -523,7 +523,7 @@ Private Sub ProcessFlexClaim(ws As Worksheet, empIndex As Object)
         Exit Sub
     End If
     
-    lastRow = srcWs.Cells(srcWs.Rows.Count, empNumCol).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, empNumCol).End(xlUp).row
     
     For i = 2 To lastRow
         ' Filter by Approved status
@@ -599,7 +599,7 @@ Private Sub ProcessMerckPayrollSummary(ws As Worksheet, empIndex As Object)
     colMPFRI = FindColumnByHeader(ws.Rows(1), "MPF Relevant Income Rewrite")
     colMPFVCRI = FindColumnByHeader(ws.Rows(1), "MPF VC Relevant Income Rewrite")
     
-    lastRow = srcWs.Cells(srcWs.Rows.Count, empIdCol).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, empIdCol).End(xlUp).row
     
     For i = 2 To lastRow
         empId = Trim(CStr(Nz(srcWs.Cells(i, empIdCol).Value, "")))
@@ -678,7 +678,7 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
         colPPTORate = FindColumnByHeader(ws.Rows(1), "PPTO EAO Rate input")
         
         If weinCol > 0 And pptoCol > 0 And colPPTORate > 0 Then
-            lastRow = srcWs.Cells(srcWs.Rows.Count, weinCol).End(xlUp).Row
+            lastRow = srcWs.Cells(srcWs.Rows.count, weinCol).End(xlUp).row
             
             For i = 2 To lastRow
                 wein = Trim(CStr(Nz(srcWs.Cells(i, weinCol).Value, "")))
@@ -707,7 +707,7 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
         colFlexBenefit = FindColumnByHeader(ws.Rows(1), "Flexible benefits")
         
         If weinCol > 0 And flexCol > 0 And colFlexBenefit > 0 Then
-            lastRow = srcWs.Cells(srcWs.Rows.Count, weinCol).End(xlUp).Row
+            lastRow = srcWs.Cells(srcWs.Rows.count, weinCol).End(xlUp).row
             
             For i = 2 To lastRow
                 wein = Trim(CStr(Nz(srcWs.Cells(i, weinCol).Value, "")))
@@ -755,7 +755,7 @@ Private Function GetOrAddRow(ws As Worksheet, wein As String, empIndex As Object
     empCodeCol = FindColumnByHeader(ws.Rows(1), "Employee Code,EmployeeCode,Employee Reference,EmployeeNumber,Employee Number")
     If empCodeCol = 0 Then empCodeCol = 1
     
-    newRow = ws.Cells(ws.Rows.Count, empCodeCol).End(xlUp).Row + 1
+    newRow = ws.Cells(ws.Rows.count, empCodeCol).End(xlUp).row + 1
     
     If empCode <> "" Then
         ws.Cells(newRow, empCodeCol).Value = empCode

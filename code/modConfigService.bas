@@ -23,7 +23,7 @@ Public Function LoadRunParamsFromWorkbook() As tRunParams
         p.InputFolder = Trim(CStr(.Range("InputFolder").Value))
         p.OutputFolder = Trim(CStr(.Range("OutputFolder").Value))
         p.ConfigFolder = Trim(CStr(.Range("ConfigFolder").Value))
-        p.PayrollMonth = Trim(CStr(.Range("PayrollMonth").Value))
+        p.payrollMonth = Trim(CStr(.Range("PayrollMonth").Value))
         p.RunDate = CDate(.Range("RunDate").Value)
         p.LogFolder = Trim(CStr(.Range("LogFolder").Value))
     End With
@@ -59,14 +59,14 @@ Public Function GetPayrollContext(payrollMonth As String) As tPayrollContext
     yr = CInt(Left(payrollMonth, 4))
     mo = CInt(Right(payrollMonth, 2))
     
-    ctx.PayrollMonth = payrollMonth
-    ctx.MonthStart = DateSerial(yr, mo, 1)
-    ctx.MonthEnd = DateSerial(yr, mo + 1, 0)
+    ctx.payrollMonth = payrollMonth
+    ctx.monthStart = DateSerial(yr, mo, 1)
+    ctx.monthEnd = DateSerial(yr, mo + 1, 0)
     ctx.PrevMonthStart = DateSerial(yr, mo - 1, 1)
     ctx.PrevMonthEnd = DateSerial(yr, mo, 0)
     
     ' Calculate calendar days
-    ctx.CalendarDaysCurrentMonth = Day(ctx.MonthEnd)
+    ctx.CalendarDaysCurrentMonth = Day(ctx.monthEnd)
     ctx.CalendarDaysPrevMonth = Day(ctx.PrevMonthEnd)
     
     ' Try to load cutoff and pay dates from config
@@ -81,19 +81,19 @@ Public Function GetPayrollContext(payrollMonth As String) As tPayrollContext
         
         If Not ws Is Nothing Then
             Dim lastRow As Long, i As Long
-            lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+            lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
             
             For i = 2 To lastRow
                 If Trim(CStr(ws.Cells(i, 1).Value)) = payrollMonth Then
                     ctx.CurrentCutoff = CDate(ws.Cells(i, 2).Value)
-                    ctx.PayDate = CDate(ws.Cells(i, 3).Value)
+                    ctx.payDate = CDate(ws.Cells(i, 3).Value)
                     Exit For
                 End If
             Next i
             
             ' Get previous month cutoff
             Dim prevMonth As String
-            prevMonth = Format(DateAdd("m", -1, ctx.MonthStart), "YYYYMM")
+            prevMonth = Format(DateAdd("m", -1, ctx.monthStart), "YYYYMM")
             For i = 2 To lastRow
                 If Trim(CStr(ws.Cells(i, 1).Value)) = prevMonth Then
                     ctx.PreviousCutoff = CDate(ws.Cells(i, 2).Value)
@@ -104,8 +104,8 @@ Public Function GetPayrollContext(payrollMonth As String) As tPayrollContext
     End If
     
     ' Default values if not found in config
-    If ctx.PayDate = 0 Then ctx.PayDate = ctx.MonthEnd
-    If ctx.CurrentCutoff = 0 Then ctx.CurrentCutoff = ctx.MonthEnd
+    If ctx.payDate = 0 Then ctx.payDate = ctx.monthEnd
+    If ctx.CurrentCutoff = 0 Then ctx.CurrentCutoff = ctx.monthEnd
     If ctx.PreviousCutoff = 0 Then ctx.PreviousCutoff = ctx.PrevMonthEnd
     
     GetPayrollContext = ctx
@@ -114,8 +114,8 @@ Public Function GetPayrollContext(payrollMonth As String) As tPayrollContext
 ErrHandler:
     LogError "modConfigService", "GetPayrollContext", Err.Number, Err.Description
     ' Return partial context with defaults
-    ctx.PayDate = ctx.MonthEnd
-    ctx.CurrentCutoff = ctx.MonthEnd
+    ctx.payDate = ctx.monthEnd
+    ctx.CurrentCutoff = ctx.monthEnd
     ctx.PreviousCutoff = ctx.PrevMonthEnd
     GetPayrollContext = ctx
 End Function
@@ -130,16 +130,16 @@ Public Function OpenConfigWorkbook() As Workbook
     
     On Error GoTo ErrHandler
     
-    If Not G.ConfigWb Is Nothing Then
-        Set OpenConfigWorkbook = G.ConfigWb
+    If Not G.configWb Is Nothing Then
+        Set OpenConfigWorkbook = G.configWb
         Exit Function
     End If
     
     filePath = G.RunParams.ConfigFolder & CONFIG_FILE
     
     If Dir(filePath) <> "" Then
-        Set G.ConfigWb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
-        Set OpenConfigWorkbook = G.ConfigWb
+        Set G.configWb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
+        Set OpenConfigWorkbook = G.configWb
     End If
     
     Exit Function
@@ -203,7 +203,7 @@ Public Function GetExchangeRate(rateName As String) As Double
     
     If ws Is Nothing Then Exit Function
     
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     For i = 2 To lastRow
         If UCase(Trim(CStr(ws.Cells(i, 1).Value))) = UCase(rateName) Then
             GetExchangeRate = CDbl(ws.Cells(i, 2).Value)
@@ -247,7 +247,7 @@ Public Function IsSpecialMonth(flagName As String) As Boolean
     ' Find column by header name
     Set headerRow = ws.Rows(1)
     col = 0
-    For i = 1 To ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    For i = 1 To ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
         If UCase(Trim(CStr(ws.Cells(1, i).Value))) = UCase(flagName) Then
             col = i
             Exit For
@@ -257,9 +257,9 @@ Public Function IsSpecialMonth(flagName As String) As Boolean
     If col = 0 Then Exit Function
     
     ' Find row for current payroll month
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     For i = 2 To lastRow
-        If Trim(CStr(ws.Cells(i, 1).Value)) = G.Payroll.PayrollMonth Then
+        If Trim(CStr(ws.Cells(i, 1).Value)) = G.Payroll.payrollMonth Then
             IsSpecialMonth = CBool(ws.Cells(i, col).Value)
             Exit For
         End If

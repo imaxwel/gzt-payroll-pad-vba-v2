@@ -81,13 +81,13 @@ Private Function CreateValidationOutputWorkbook() As Workbook
     wb.Worksheets(1).Name = "Check Result"
     
     ' Add HC Check sheet
-    Set ws = wb.Worksheets.Add(After:=wb.Worksheets(wb.Worksheets.Count))
+    Set ws = wb.Worksheets.Add(After:=wb.Worksheets(wb.Worksheets.count))
     ws.Name = "HC Check"
     
     ' Delete any extra default sheets
     Application.DisplayAlerts = False
-    Do While wb.Worksheets.Count > 2
-        wb.Worksheets(wb.Worksheets.Count).Delete
+    Do While wb.Worksheets.count > 2
+        wb.Worksheets(wb.Worksheets.count).Delete
     Loop
     Application.DisplayAlerts = True
     
@@ -135,8 +135,8 @@ Private Sub BuildBenchmarkAndIndex(valWb As Workbook)
     Set srcWs = srcWb.Worksheets(1)
     
     ' Find data range
-    lastRow = srcWs.Cells(srcWs.Rows.Count, 1).End(xlUp).Row
-    lastCol = srcWs.Cells(1, srcWs.Columns.Count).End(xlToLeft).Column
+    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    lastCol = srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
     
     ' Copy to Check Result (starting at row 4 to leave room for summary)
     Set srcRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
@@ -162,14 +162,14 @@ Private Sub BuildBenchmarkAndIndex(valWb As Workbook)
     destWs.Cells(1, 1).Font.Bold = True
     destWs.Cells(1, 1).Font.Size = 14
     
-    destWs.Cells(2, 1).Value = "Payroll Month: " & G.Payroll.PayrollMonth
+    destWs.Cells(2, 1).Value = "Payroll Month: " & G.Payroll.payrollMonth
     destWs.Cells(2, 2).Value = "Run Date: " & Format(G.RunParams.RunDate, "yyyy-mm-dd")
     
     ' Row 3 will be used for FALSE counts
     destWs.Cells(3, 1).Value = "FALSE Count:"
     destWs.Cells(3, 1).Font.Bold = True
     
-    LogInfo "modSP2_Main", "BuildBenchmarkAndIndex", "Built index with " & mWeinIndex.Count & " WEINs"
+    LogInfo "modSP2_Main", "BuildBenchmarkAndIndex", "Built index with " & mWeinIndex.count & " WEINs"
     
     Exit Sub
     
@@ -348,7 +348,7 @@ Private Sub FinalizeValidationOutput(valWb As Workbook)
     ' Save workbook
     valWb.Save
     
-    LogInfo "modSP2_Main", "FinalizeValidationOutput", "Output saved: " & valWb.FullName
+    LogInfo "modSP2_Main", "FinalizeValidationOutput", "Output saved: " & valWb.fullName
     
     Exit Sub
     
@@ -369,8 +369,8 @@ Private Sub ApplyDiffFormatting(ws As Worksheet)
     
     On Error GoTo ErrHandler
     
-    lastCol = ws.Cells(4, ws.Columns.Count).End(xlToLeft).Column
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastCol = ws.Cells(4, ws.Columns.count).End(xlToLeft).Column
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     firstDiffCol = 0
     lastDiffCol = 0

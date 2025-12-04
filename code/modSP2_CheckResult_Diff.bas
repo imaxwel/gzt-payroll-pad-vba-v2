@@ -21,8 +21,8 @@ Public Sub SP2_ComputeDiff(valWb As Workbook, weinIndex As Object)
     
     Set ws = valWb.Worksheets("Check Result")
     
-    lastCol = ws.Cells(4, ws.Columns.Count).End(xlToLeft).Column
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastCol = ws.Cells(4, ws.Columns.count).End(xlToLeft).Column
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     ' Find and process each Diff column
     For col = 1 To lastCol
@@ -165,7 +165,7 @@ Public Sub AddDiffColumns(ws As Worksheet)
     
     On Error GoTo ErrHandler
     
-    lastCol = ws.Cells(4, ws.Columns.Count).End(xlToLeft).Column
+    lastCol = ws.Cells(4, ws.Columns.count).End(xlToLeft).Column
     
     ' Process from right to left to avoid column shift issues
     For col = lastCol To 1 Step -1

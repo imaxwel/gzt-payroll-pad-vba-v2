@@ -25,7 +25,7 @@ Public Sub Run_Subprocess1()
     p = LoadRunParamsFromWorkbook()
     
     LogInfo "modEntryPoints", "Run_Subprocess1", _
-        "Parameters: PayrollMonth=" & p.PayrollMonth & ", InputFolder=" & p.InputFolder
+        "Parameters: PayrollMonth=" & p.payrollMonth & ", InputFolder=" & p.InputFolder
     
     ' 2) Initialize global context
     InitAppContext p
@@ -66,7 +66,7 @@ Public Sub Run_Subprocess2()
     p = LoadRunParamsFromWorkbook()
     
     LogInfo "modEntryPoints", "Run_Subprocess2", _
-        "Parameters: PayrollMonth=" & p.PayrollMonth & ", InputFolder=" & p.InputFolder
+        "Parameters: PayrollMonth=" & p.payrollMonth & ", InputFolder=" & p.InputFolder
     
     ' 2) Initialize global context
     InitAppContext p
@@ -129,7 +129,7 @@ Public Sub TestConfiguration()
            "Input Folder: " & p.InputFolder & vbCrLf & _
            "Output Folder: " & p.OutputFolder & vbCrLf & _
            "Config Folder: " & p.ConfigFolder & vbCrLf & _
-           "Payroll Month: " & p.PayrollMonth & vbCrLf & _
+           "Payroll Month: " & p.payrollMonth & vbCrLf & _
            "Run Date: " & Format(p.RunDate, "yyyy-mm-dd"), _
            vbInformation, "Configuration Test"
     Exit Sub

@@ -8,7 +8,7 @@ Option Explicit
 
 ' EAO record structure
 Public Type tEAORecord
-    WEIN As String
+    wein As String
     AverageDayWage_12Month As Double
     DailySalary As Double
     DayWage_MaternityPaternity As Double
@@ -58,18 +58,18 @@ Public Sub LoadEAOData()
     ' Build header index
     Set headers = BuildHeaderIndex(ws.Rows(1))
     
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     For i = 2 To lastRow
         ' Try multiple field name variants for WEIN
-        rec.WEIN = GetCellValueByHeader(ws, i, headers, "WEIN")
-        If rec.WEIN = "" Then rec.WEIN = GetCellValueByHeader(ws, i, headers, "WIN")
-        If rec.WEIN = "" Then rec.WEIN = GetCellValueByHeader(ws, i, headers, "WEINEmployee ID")
-        If rec.WEIN = "" Then rec.WEIN = GetCellValueByHeader(ws, i, headers, "Employee CodeWIN")
-        If rec.WEIN = "" Then rec.WEIN = GetCellValueByHeader(ws, i, headers, "Employee ID")
-        If rec.WEIN = "" Then rec.WEIN = GetCellValueByHeader(ws, i, headers, "EmployeeID")
+        rec.wein = GetCellValueByHeader(ws, i, headers, "WEIN")
+        If rec.wein = "" Then rec.wein = GetCellValueByHeader(ws, i, headers, "WIN")
+        If rec.wein = "" Then rec.wein = GetCellValueByHeader(ws, i, headers, "WEINEmployee ID")
+        If rec.wein = "" Then rec.wein = GetCellValueByHeader(ws, i, headers, "Employee CodeWIN")
+        If rec.wein = "" Then rec.wein = GetCellValueByHeader(ws, i, headers, "Employee ID")
+        If rec.wein = "" Then rec.wein = GetCellValueByHeader(ws, i, headers, "EmployeeID")
         
-        If rec.WEIN <> "" Then
+        If rec.wein <> "" Then
             rec.AverageDayWage_12Month = ToDouble(GetCellValueByHeader(ws, i, headers, "AverageDayWage_12Month"))
             rec.DailySalary = ToDouble(GetCellValueByHeader(ws, i, headers, "DailySalary"))
             rec.DayWage_MaternityPaternity = ToDouble(GetCellValueByHeader(ws, i, headers, "DayWage_Maternity/Paternity/Sick Leave"))
@@ -86,15 +86,15 @@ Public Sub LoadEAOData()
             rec.TotalWage_12Month = ToDouble(GetCellValueByHeader(ws, i, headers, "TotalWage_12Month"))
             rec.UntakenAnnualLeaveDays = ToDouble(GetCellValueByHeader(ws, i, headers, "UntakenAnnualLeaveDays"))
             
-            If Not mEAOCache.Exists(rec.WEIN) Then
-                mEAOCache.Add rec.WEIN, rec
+            If Not mEAOCache.Exists(rec.wein) Then
+                mEAOCache.Add rec.wein, rec
             End If
         End If
     Next i
     
     wb.Close SaveChanges:=False
     
-    LogInfo "modEAOService", "LoadEAOData", "Loaded " & mEAOCache.Count & " EAO records"
+    LogInfo "modEAOService", "LoadEAOData", "Loaded " & mEAOCache.count & " EAO records"
     Exit Sub
     
 ErrHandler:
@@ -156,11 +156,11 @@ End Function
 ' Returns: EAO adjustment amount
 ' Formula: (AverageDayWage_12Month - DailySalary) * totalDays
 '------------------------------------------------------------------------------
-Public Function CalcAnnualLeaveEAOAdj(wein As String, totalDays As Double) As Double
+Public Function CalcAnnualLeaveEAOAdj(wein As String, TotalDays As Double) As Double
     Dim rec As tEAORecord
     
     rec = GetEAORecord(wein)
-    CalcAnnualLeaveEAOAdj = RoundAmount2((rec.AverageDayWage_12Month - rec.DailySalary) * totalDays)
+    CalcAnnualLeaveEAOAdj = RoundAmount2((rec.AverageDayWage_12Month - rec.DailySalary) * TotalDays)
 End Function
 
 '------------------------------------------------------------------------------
@@ -284,7 +284,7 @@ Private Function BuildHeaderIndex(headerRow As Range) As Object
     
     Set dict = CreateObject("Scripting.Dictionary")
     
-    For i = 1 To headerRow.Columns.Count
+    For i = 1 To headerRow.Columns.count
         headerName = Trim(CStr(Nz(headerRow.Cells(1, i).Value, "")))
         If headerName <> "" And Not dict.Exists(headerName) Then
             dict.Add headerName, i

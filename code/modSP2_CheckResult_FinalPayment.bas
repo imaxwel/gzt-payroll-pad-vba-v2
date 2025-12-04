@@ -72,11 +72,11 @@ Private Sub LoadFinalPayParams()
     
     Set headers = CreateObject("Scripting.Dictionary")
     Dim c As Long
-    For c = 1 To ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    For c = 1 To ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
         headers(UCase(Trim(CStr(ws.Cells(1, c).Value)))) = c
     Next c
     
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     For i = 2 To lastRow
         ' Try multiple field name variants for WEIN
@@ -103,7 +103,7 @@ Private Sub LoadFinalPayParams()
         End If
     Next i
     
-    LogInfo "modSP2_CheckResult_FinalPayment", "LoadFinalPayParams", "Loaded " & mFinalPayParams.Count & " final pay params"
+    LogInfo "modSP2_CheckResult_FinalPayment", "LoadFinalPayParams", "Loaded " & mFinalPayParams.count & " final pay params"
     Exit Sub
     
 ErrHandler:
@@ -245,7 +245,7 @@ Private Sub WriteYearEndBonusCheck(ws As Worksheet, row As Long, wein As String)
     ' Else: Monthly Salary
     
     ' Placeholder implementation
-    If Month(G.Payroll.MonthEnd) = 12 Then
+    If Month(G.Payroll.monthEnd) = 12 Then
         ws.Cells(row, col).Value = RoundAmount2(monthlySalary)
     End If
 End Sub

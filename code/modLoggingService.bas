@@ -80,7 +80,7 @@ End Sub
 '------------------------------------------------------------------------------
 Private Sub WriteToLogSheet(timestamp As String, logLevel As String, message As String)
     Dim ws As Worksheet
-    Dim nextRow As Long
+    Dim NextRow As Long
     
     On Error Resume Next
     
@@ -88,7 +88,7 @@ Private Sub WriteToLogSheet(timestamp As String, logLevel As String, message As 
     Set ws = ThisWorkbook.Worksheets(LOG_SHEET_NAME)
     
     If ws Is Nothing Then
-        Set ws = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.Count))
+        Set ws = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.count))
         ws.Name = LOG_SHEET_NAME
         
         ' Add headers
@@ -99,21 +99,21 @@ Private Sub WriteToLogSheet(timestamp As String, logLevel As String, message As 
     End If
     
     ' Find next row
-    nextRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row + 1
+    NextRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row + 1
     
     ' Write log entry
-    ws.Cells(nextRow, 1).Value = timestamp
-    ws.Cells(nextRow, 2).Value = logLevel
-    ws.Cells(nextRow, 3).Value = message
+    ws.Cells(NextRow, 1).Value = timestamp
+    ws.Cells(NextRow, 2).Value = logLevel
+    ws.Cells(NextRow, 3).Value = message
     
     ' Color code by level
     Select Case logLevel
         Case "ERROR"
-            ws.Cells(nextRow, 2).Interior.Color = RGB(255, 200, 200)
+            ws.Cells(NextRow, 2).Interior.Color = RGB(255, 200, 200)
         Case "WARNING"
-            ws.Cells(nextRow, 2).Interior.Color = RGB(255, 255, 200)
+            ws.Cells(NextRow, 2).Interior.Color = RGB(255, 255, 200)
         Case "INFO"
-            ws.Cells(nextRow, 2).Interior.Color = RGB(200, 255, 200)
+            ws.Cells(NextRow, 2).Interior.Color = RGB(200, 255, 200)
     End Select
     
     On Error GoTo 0
@@ -155,8 +155,8 @@ Public Sub ClearLogSheet()
     Set ws = ThisWorkbook.Worksheets(LOG_SHEET_NAME)
     
     If Not ws Is Nothing Then
-        If ws.Cells(ws.Rows.Count, 1).End(xlUp).Row > 1 Then
-            ws.Range(ws.Rows(2), ws.Rows(ws.Cells(ws.Rows.Count, 1).End(xlUp).Row)).Delete
+        If ws.Cells(ws.Rows.count, 1).End(xlUp).row > 1 Then
+            ws.Range(ws.Rows(2), ws.Rows(ws.Cells(ws.Rows.count, 1).End(xlUp).row)).Delete
         End If
     End If
     
@@ -181,7 +181,7 @@ Public Sub ExportLogToCSV(filePath As String)
     Set ws = ThisWorkbook.Worksheets(LOG_SHEET_NAME)
     If ws Is Nothing Then Exit Sub
     
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     lastCol = 3 ' Timestamp, Level, Message
     
     fileNum = FreeFile
@@ -220,14 +220,14 @@ End Function
 '   status - Status string (e.g., "OK", "ERROR")
 '   message - Optional message
 '------------------------------------------------------------------------------
-Public Sub SetStatus(status As String, Optional message As String = "")
+Public Sub SetStatus(Status As String, Optional message As String = "")
     On Error Resume Next
     
     Dim ws As Worksheet
     Set ws = ThisWorkbook.Worksheets("Runtime")
     
     If Not ws Is Nothing Then
-        ws.Range("SP_Status").Value = status
+        ws.Range("SP_Status").Value = Status
         If message <> "" Then
             ws.Range("SP_Message").Value = message
         End If

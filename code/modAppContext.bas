@@ -12,19 +12,19 @@ Public Type tRunParams
     InputFolder As String
     OutputFolder As String
     ConfigFolder As String
-    PayrollMonth As String      ' "YYYYMM" format
+    payrollMonth As String      ' "YYYYMM" format
     RunDate As Date
     LogFolder As String
 End Type
 
 ' Payroll calendar context derived from config
 Public Type tPayrollContext
-    PayrollMonth As String      ' "YYYYMM"
-    MonthStart As Date          ' First day of payroll month
-    MonthEnd As Date            ' Last day of payroll month
+    payrollMonth As String      ' "YYYYMM"
+    monthStart As Date          ' First day of payroll month
+    monthEnd As Date            ' Last day of payroll month
     PrevMonthStart As Date      ' First day of previous month
     PrevMonthEnd As Date        ' Last day of previous month
-    PayDate As Date             ' Pay date for this month
+    payDate As Date             ' Pay date for this month
     PreviousCutoff As Date      ' Previous month cutoff date
     CurrentCutoff As Date       ' Current month cutoff date
     CalendarDaysCurrentMonth As Long
@@ -33,10 +33,10 @@ End Type
 
 ' Date span for cross-month splitting
 Public Type tDateSpan
-    StartDate As Date
-    EndDate As Date
+    startDate As Date
+    endDate As Date
     YearMonth As String         ' "YYYYMM"
-    Days As Double              ' Number of days (semantics depend on leave type)
+    days As Double              ' Number of days (semantics depend on leave type)
 End Type
 
 ' Application-wide shared state
@@ -49,7 +49,7 @@ Public Type tAppContext
     DictEmpCodeToWein As Object
     DictWeinToEmpCode As Object
     ' Config workbook reference
-    ConfigWb As Workbook
+    configWb As Workbook
     ExtraTableWb As Workbook    ' 额外表
     ' Status flags
     IsInitialised As Boolean
@@ -74,14 +74,14 @@ Public Sub InitAppContext(p As tRunParams)
     G.RunParams = p
     
     ' Load payroll calendar from config
-    G.Payroll = GetPayrollContext(p.PayrollMonth)
+    G.Payroll = GetPayrollContext(p.payrollMonth)
     
     ' Build shared employee mappings
     BuildEmployeeMappings
     
     G.IsInitialised = True
     
-    LogInfo "modAppContext", "InitAppContext", "Application context initialized for payroll month: " & p.PayrollMonth
+    LogInfo "modAppContext", "InitAppContext", "Application context initialized for payroll month: " & p.payrollMonth
     Exit Sub
     
 ErrHandler:
@@ -102,9 +102,9 @@ Public Sub ResetAppContext()
     
     ' Close config workbooks if open
     On Error Resume Next
-    If Not G.ConfigWb Is Nothing Then
-        G.ConfigWb.Close SaveChanges:=False
-        Set G.ConfigWb = Nothing
+    If Not G.configWb Is Nothing Then
+        G.configWb.Close SaveChanges:=False
+        Set G.configWb = Nothing
     End If
     If Not G.ExtraTableWb Is Nothing Then
         G.ExtraTableWb.Close SaveChanges:=False

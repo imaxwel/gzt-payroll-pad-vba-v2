@@ -48,7 +48,7 @@ Private Sub BuildHCCheckHeader(ws As Worksheet)
     ws.Cells(1, 1).Font.Bold = True
     ws.Cells(1, 1).Font.Size = 14
     
-    ws.Cells(2, 1).Value = "Payroll Month: " & G.Payroll.PayrollMonth
+    ws.Cells(2, 1).Value = "Payroll Month: " & G.Payroll.payrollMonth
     
     ' Headers
     ws.Cells(4, 1).Value = "Category"
@@ -87,7 +87,7 @@ Private Sub CalculatePayrollHC(ws As Worksheet)
     
     Set checkWs = ws.Parent.Worksheets("Check Result")
     
-    lastRow = checkWs.Cells(checkWs.Rows.Count, 1).End(xlUp).Row
+    lastRow = checkWs.Cells(checkWs.Rows.count, 1).End(xlUp).row
     hireStatusCol = FindColumnByHeader(checkWs.Rows(4), "Hire Status")
     
     If hireStatusCol = 0 Then Exit Sub
@@ -133,12 +133,12 @@ Private Sub CalculateTerminatedHC(ws As Worksheet)
     
     Set headers = CreateObject("Scripting.Dictionary")
     Dim c As Long
-    For c = 1 To srcWs.Cells(1, srcWs.Columns.Count).End(xlToLeft).Column
+    For c = 1 To srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
         headers(UCase(Trim(CStr(srcWs.Cells(1, c).Value)))) = c
     Next c
     
-    lastRow = srcWs.Cells(srcWs.Rows.Count, 1).End(xlUp).Row
-    payDate = G.Payroll.PayDate
+    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    payDate = G.Payroll.payDate
     
     includedCount = 0
     ocCount = 0
@@ -194,7 +194,7 @@ Private Sub CalculateNewHireHC(ws As Worksheet)
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)
     
-    lastRow = srcWs.Cells(srcWs.Rows.Count, 1).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
     newHireCount = lastRow - 1 ' Exclude header
     
     wb.Close SaveChanges:=False

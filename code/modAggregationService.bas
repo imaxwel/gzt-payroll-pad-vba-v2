@@ -55,7 +55,7 @@ Public Function GroupByEmployeeAndType( _
     End If
     
     ' Process data rows
-    lastRow = dataRange.Rows.Count
+    lastRow = dataRange.Rows.count
     
     For i = 2 To lastRow
         empId = Trim(CStr(Nz(dataRange.Cells(i, empCol).Value, "")))
@@ -131,7 +131,7 @@ Public Function SumPerEmployee( _
     End If
     
     ' Process data rows
-    lastRow = dataRange.Rows.Count
+    lastRow = dataRange.Rows.count
     
     For i = 2 To lastRow
         empId = Trim(CStr(Nz(dataRange.Cells(i, empCol).Value, "")))
@@ -212,7 +212,7 @@ Public Function GroupByEmployeeAndTypeFiltered( _
     End If
     
     ' Process data rows
-    lastRow = dataRange.Rows.Count
+    lastRow = dataRange.Rows.count
     
     For i = 2 To lastRow
         filterVal = UCase(Trim(CStr(Nz(dataRange.Cells(i, filterCol).Value, ""))))
@@ -281,7 +281,7 @@ Public Function FindColumnByHeader(headerRow As Range, headerName As String) As 
     ' Support comma-separated variant names
     variants = Split(headerName, ",")
     
-    For i = 1 To headerRow.Columns.Count
+    For i = 1 To headerRow.Columns.count
         cellValue = UCase(Trim(CStr(Nz(headerRow.Cells(1, i).Value, ""))))
         
         For v = LBound(variants) To UBound(variants)
@@ -368,7 +368,7 @@ Public Function BuildEmployeeIndex( _
         Exit Function
     End If
     
-    lastRow = ws.Cells(ws.Rows.Count, empCol).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, empCol).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
         empId = Trim(CStr(Nz(ws.Cells(i, empCol).Value, "")))

@@ -60,7 +60,7 @@ Private Function CreateFlexiOutputWorkbook() As Workbook
     On Error GoTo ErrHandler
     
     ' Build filename with date
-    fileName = "Flexi form out put " & Format(G.Payroll.PayDate, "YYYYMMDD") & ".xlsx"
+    fileName = "Flexi form out put " & Format(G.Payroll.payDate, "YYYYMMDD") & ".xlsx"
     filePath = G.RunParams.OutputFolder & fileName
     
     LogInfo "modSP1_Main", "CreateFlexiOutputWorkbook", "Creating: " & filePath
@@ -75,14 +75,14 @@ Private Function CreateFlexiOutputWorkbook() As Workbook
     wb.Worksheets(1).Name = sheetNames(0)
     
     For i = 1 To UBound(sheetNames)
-        Set ws = wb.Worksheets.Add(After:=wb.Worksheets(wb.Worksheets.Count))
+        Set ws = wb.Worksheets.Add(After:=wb.Worksheets(wb.Worksheets.count))
         ws.Name = sheetNames(i)
     Next i
     
     ' Delete any extra default sheets
     Application.DisplayAlerts = False
-    Do While wb.Worksheets.Count > UBound(sheetNames) + 1
-        wb.Worksheets(wb.Worksheets.Count).Delete
+    Do While wb.Worksheets.count > UBound(sheetNames) + 1
+        wb.Worksheets(wb.Worksheets.count).Delete
     Loop
     Application.DisplayAlerts = True
     
@@ -159,8 +159,8 @@ Private Sub CopyFlexiformSheet(logicalName As String, destWs As Worksheet)
     Set srcWs = srcWb.Worksheets(1)
     
     ' Find data range
-    lastRow = srcWs.Cells(srcWs.Rows.Count, 1).End(xlUp).Row
-    lastCol = srcWs.Cells(1, srcWs.Columns.Count).End(xlToLeft).Column
+    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    lastCol = srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
     
     If lastRow >= 1 And lastCol >= 1 Then
         Set srcRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
@@ -192,7 +192,7 @@ Private Sub AddVariablePayColumns(ws As Worksheet)
     On Error GoTo ErrHandler
     
     ' Find the column after "Adjustment of Parental Paid Time Off (PPTO) payment"
-    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    lastCol = ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
     
     ' Find insertion point (after PPTO column or at end)
     insertCol = FindColumnByHeader(ws.Rows(1), "Adjustment of Parental Paid Time Off (PPTO) payment")
@@ -247,7 +247,7 @@ Public Sub SP1_FinalizeFlexOutput(flexWb As Workbook)
     ' Save workbook
     flexWb.Save
     
-    LogInfo "modSP1_Main", "SP1_FinalizeFlexOutput", "Output saved: " & flexWb.FullName
+    LogInfo "modSP1_Main", "SP1_FinalizeFlexOutput", "Output saved: " & flexWb.fullName
     
     Exit Sub
     
@@ -277,7 +277,7 @@ Private Sub AddRunSummary(wb As Workbook)
     
     r = r + 2
     ws.Cells(r, 1).Value = "Payroll Month:"
-    ws.Cells(r, 2).Value = G.Payroll.PayrollMonth
+    ws.Cells(r, 2).Value = G.Payroll.payrollMonth
     
     r = r + 1
     ws.Cells(r, 1).Value = "Run Date:"
@@ -285,7 +285,7 @@ Private Sub AddRunSummary(wb As Workbook)
     
     r = r + 1
     ws.Cells(r, 1).Value = "Pay Date:"
-    ws.Cells(r, 2).Value = Format(G.Payroll.PayDate, "yyyy-mm-dd")
+    ws.Cells(r, 2).Value = Format(G.Payroll.payDate, "yyyy-mm-dd")
     
     r = r + 1
     ws.Cells(r, 1).Value = "Cutoff Date:"
@@ -301,7 +301,7 @@ Private Sub AddRunSummary(wb As Workbook)
         If sheetWs.Name <> "RunSummary" Then
             r = r + 1
             ws.Cells(r, 1).Value = sheetWs.Name
-            ws.Cells(r, 2).Value = sheetWs.Cells(sheetWs.Rows.Count, 1).End(xlUp).Row - 1
+            ws.Cells(r, 2).Value = sheetWs.Cells(sheetWs.Rows.count, 1).End(xlUp).row - 1
         End If
     Next sheetWs
     

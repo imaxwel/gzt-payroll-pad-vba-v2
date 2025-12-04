@@ -8,7 +8,7 @@ Option Explicit
 
 ' Leave record structure
 Private Type tLeaveRecord
-    WEIN As String
+    wein As String
     EmployeeCode As String
     LeaveType As String
     FromDate As Date
@@ -44,7 +44,7 @@ Public Sub SP1_PopulateAttendance(flexWb As Workbook)
     ' Load leave transactions
     Set leaveRecords = LoadLeaveTransactions()
     
-    If leaveRecords.Count = 0 Then
+    If leaveRecords.count = 0 Then
         LogWarning "modSP1_Attendance", "SP1_PopulateAttendance", "No leave records found"
         Exit Sub
     End If
@@ -95,11 +95,11 @@ Private Function LoadLeaveTransactions() As Collection
     ' Build header index
     Set headers = CreateObject("Scripting.Dictionary")
     Dim c As Long
-    For c = 1 To ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    For c = 1 To ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
         headers(UCase(Trim(CStr(ws.Cells(1, c).Value)))) = c
     Next c
     
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     ' Initialize leave history
     If mLeaveHistory Is Nothing Then
@@ -111,10 +111,10 @@ Private Function LoadLeaveTransactions() As Collection
         rec.Status = GetCellValue(ws, i, headers, "STATUS")
         If UCase(rec.Status) = "APPROVED" Then
             ' Try multiple WEIN field name variants
-            rec.WEIN = GetCellValue(ws, i, headers, "WIN")
-            If rec.WEIN = "" Then rec.WEIN = GetCellValue(ws, i, headers, "WEIN")
-            If rec.WEIN = "" Then rec.WEIN = GetCellValue(ws, i, headers, "WEINEMPLOYEE ID")
-            If rec.WEIN = "" Then rec.WEIN = GetCellValue(ws, i, headers, "EMPLOYEE CODEWIN")
+            rec.wein = GetCellValue(ws, i, headers, "WIN")
+            If rec.wein = "" Then rec.wein = GetCellValue(ws, i, headers, "WEIN")
+            If rec.wein = "" Then rec.wein = GetCellValue(ws, i, headers, "WEINEMPLOYEE ID")
+            If rec.wein = "" Then rec.wein = GetCellValue(ws, i, headers, "EMPLOYEE CODEWIN")
             
             ' Try multiple Employee Code field name variants
             rec.EmployeeCode = GetCellValue(ws, i, headers, "EMPLOYEE CODE")
@@ -136,7 +136,7 @@ Private Function LoadLeaveTransactions() As Collection
             rec.TotalDays = ToDouble(GetCellValue(ws, i, headers, "TOTAL_DAYS"))
             
             ' Build unique key
-            rec.UniqueKey = rec.WEIN & "|" & Format(rec.FromDate, "YYYYMMDD") & "|" & _
+            rec.UniqueKey = rec.wein & "|" & Format(rec.FromDate, "YYYYMMDD") & "|" & _
                            Format(rec.ToDate, "YYYYMMDD") & "|" & Format(rec.ApplyDate, "YYYYMMDD") & "|" & _
                            Format(rec.ApprovalDate, "YYYYMMDD")
             
@@ -149,7 +149,7 @@ Private Function LoadLeaveTransactions() As Collection
     
     wb.Close SaveChanges:=False
     
-    LogInfo "modSP1_Attendance", "LoadLeaveTransactions", "Loaded " & col.Count & " new leave records"
+    LogInfo "modSP1_Attendance", "LoadLeaveTransactions", "Loaded " & col.count & " new leave records"
     
     Set LoadLeaveTransactions = col
     Exit Function
@@ -194,26 +194,26 @@ Private Sub ProcessAnnualLeave(ws As Worksheet, leaveRecords As Collection, empI
             Dim s As Variant
             For Each s In spans
                 span = s
-                If span.YearMonth = G.Payroll.PayrollMonth Then
-                    currentMonthDays = currentMonthDays + span.Days
+                If span.YearMonth = G.Payroll.payrollMonth Then
+                    currentMonthDays = currentMonthDays + span.days
                 ElseIf span.YearMonth = Format(G.Payroll.PrevMonthStart, "YYYYMM") Then
-                    prevMonthDays = prevMonthDays + span.Days
+                    prevMonthDays = prevMonthDays + span.days
                 Else
-                    olderDays = olderDays + span.Days
+                    olderDays = olderDays + span.days
                 End If
             Next s
             
             ' Aggregate by employee
-            If Not empDays.Exists(rec.WEIN) Then
-                empDays.Add rec.WEIN, Array(0#, 0#, 0#)
+            If Not empDays.Exists(rec.wein) Then
+                empDays.Add rec.wein, Array(0#, 0#, 0#)
             End If
             
             Dim arr As Variant
-            arr = empDays(rec.WEIN)
+            arr = empDays(rec.wein)
             arr(0) = arr(0) + currentMonthDays
             arr(1) = arr(1) + prevMonthDays
             arr(2) = arr(2) + olderDays
-            empDays(rec.WEIN) = arr
+            empDays(rec.wein) = arr
             
             ' Mark as processed
             mLeaveHistory.Add rec.UniqueKey, True
@@ -238,7 +238,7 @@ Private Sub ProcessAnnualLeave(ws As Worksheet, leaveRecords As Collection, empI
         End If
     Next wein
     
-    LogInfo "modSP1_Attendance", "ProcessAnnualLeave", "Processed " & empDays.Count & " employees"
+    LogInfo "modSP1_Attendance", "ProcessAnnualLeave", "Processed " & empDays.count & " employees"
     
     Exit Sub
     
@@ -278,23 +278,23 @@ Private Sub ProcessSickLeave(ws As Worksheet, leaveRecords As Collection, empInd
                 Dim s As Variant
                 For Each s In spans
                     span = s
-                    If span.YearMonth = G.Payroll.PayrollMonth Then
-                        currentDays = currentDays + span.Days
+                    If span.YearMonth = G.Payroll.payrollMonth Then
+                        currentDays = currentDays + span.days
                     ElseIf span.YearMonth = Format(G.Payroll.PrevMonthStart, "YYYYMM") Then
-                        prevDays = prevDays + span.Days
+                        prevDays = prevDays + span.days
                     End If
                 Next s
                 
                 ' Aggregate
-                If Not empDays.Exists(rec.WEIN) Then
-                    empDays.Add rec.WEIN, Array(0#, 0#)
+                If Not empDays.Exists(rec.wein) Then
+                    empDays.Add rec.wein, Array(0#, 0#)
                 End If
                 
                 Dim arr As Variant
-                arr = empDays(rec.WEIN)
+                arr = empDays(rec.wein)
                 arr(0) = arr(0) + currentDays
                 arr(1) = arr(1) + prevDays
-                empDays(rec.WEIN) = arr
+                empDays(rec.wein) = arr
             End If
             
             mLeaveHistory.Add rec.UniqueKey, True
@@ -317,7 +317,7 @@ Private Sub ProcessSickLeave(ws As Worksheet, leaveRecords As Collection, empInd
         End If
     Next wein
     
-    LogInfo "modSP1_Attendance", "ProcessSickLeave", "Processed " & empDays.Count & " employees"
+    LogInfo "modSP1_Attendance", "ProcessSickLeave", "Processed " & empDays.count & " employees"
     
     Exit Sub
     
@@ -354,22 +354,22 @@ Private Sub ProcessUnpaidLeave(ws As Worksheet, leaveRecords As Collection, empI
             Dim s As Variant
             For Each s In spans
                 span = s
-                If span.YearMonth = G.Payroll.PayrollMonth Then
-                    currentDays = currentDays + span.Days
+                If span.YearMonth = G.Payroll.payrollMonth Then
+                    currentDays = currentDays + span.days
                 ElseIf span.YearMonth = Format(G.Payroll.PrevMonthStart, "YYYYMM") Then
-                    prevDays = prevDays + span.Days
+                    prevDays = prevDays + span.days
                 End If
             Next s
             
-            If Not empDays.Exists(rec.WEIN) Then
-                empDays.Add rec.WEIN, Array(0#, 0#)
+            If Not empDays.Exists(rec.wein) Then
+                empDays.Add rec.wein, Array(0#, 0#)
             End If
             
             Dim arr As Variant
-            arr = empDays(rec.WEIN)
+            arr = empDays(rec.wein)
             arr(0) = arr(0) + currentDays
             arr(1) = arr(1) + prevDays
-            empDays(rec.WEIN) = arr
+            empDays(rec.wein) = arr
             
             mLeaveHistory.Add rec.UniqueKey, True
         End If
@@ -391,7 +391,7 @@ Private Sub ProcessUnpaidLeave(ws As Worksheet, leaveRecords As Collection, empI
         End If
     Next wein
     
-    LogInfo "modSP1_Attendance", "ProcessUnpaidLeave", "Processed " & empDays.Count & " employees"
+    LogInfo "modSP1_Attendance", "ProcessUnpaidLeave", "Processed " & empDays.count & " employees"
     
     Exit Sub
     
@@ -428,22 +428,22 @@ Private Sub ProcessPPTO(ws As Worksheet, leaveRecords As Collection, empIndex As
             Dim s As Variant
             For Each s In spans
                 span = s
-                If span.YearMonth = G.Payroll.PayrollMonth Then
-                    currentDays = currentDays + span.Days
+                If span.YearMonth = G.Payroll.payrollMonth Then
+                    currentDays = currentDays + span.days
                 ElseIf span.YearMonth = Format(G.Payroll.PrevMonthStart, "YYYYMM") Then
-                    prevDays = prevDays + span.Days
+                    prevDays = prevDays + span.days
                 End If
             Next s
             
-            If Not empDays.Exists(rec.WEIN) Then
-                empDays.Add rec.WEIN, Array(0#, 0#)
+            If Not empDays.Exists(rec.wein) Then
+                empDays.Add rec.wein, Array(0#, 0#)
             End If
             
             Dim arr As Variant
-            arr = empDays(rec.WEIN)
+            arr = empDays(rec.wein)
             arr(0) = arr(0) + currentDays
             arr(1) = arr(1) + prevDays
-            empDays(rec.WEIN) = arr
+            empDays(rec.wein) = arr
             
             mLeaveHistory.Add rec.UniqueKey, True
         End If
@@ -465,7 +465,7 @@ Private Sub ProcessPPTO(ws As Worksheet, leaveRecords As Collection, empIndex As
         End If
     Next wein
     
-    LogInfo "modSP1_Attendance", "ProcessPPTO", "Processed " & empDays.Count & " employees"
+    LogInfo "modSP1_Attendance", "ProcessPPTO", "Processed " & empDays.count & " employees"
     
     Exit Sub
     
@@ -493,10 +493,10 @@ Private Sub ProcessMaternityLeave(ws As Worksheet, leaveRecords As Collection, e
         If UCase(rec.LeaveType) Like "*MATERNITY*" Then
             ' TODO: Check 40 weeks service requirement
             
-            If Not empDays.Exists(rec.WEIN) Then
-                empDays.Add rec.WEIN, 0#
+            If Not empDays.Exists(rec.wein) Then
+                empDays.Add rec.wein, 0#
             End If
-            empDays(rec.WEIN) = empDays(rec.WEIN) + rec.TotalDays
+            empDays(rec.wein) = empDays(rec.wein) + rec.TotalDays
             
             mLeaveHistory.Add rec.UniqueKey, True
         End If
@@ -515,7 +515,7 @@ Private Sub ProcessMaternityLeave(ws As Worksheet, leaveRecords As Collection, e
         End If
     Next wein
     
-    LogInfo "modSP1_Attendance", "ProcessMaternityLeave", "Processed " & empDays.Count & " employees"
+    LogInfo "modSP1_Attendance", "ProcessMaternityLeave", "Processed " & empDays.count & " employees"
     
     Exit Sub
     
@@ -541,10 +541,10 @@ Private Sub ProcessPaternityLeave(ws As Worksheet, leaveRecords As Collection, e
         rec = v
         
         If UCase(rec.LeaveType) Like "*PATERNITY*" Then
-            If Not empDays.Exists(rec.WEIN) Then
-                empDays.Add rec.WEIN, 0#
+            If Not empDays.Exists(rec.wein) Then
+                empDays.Add rec.wein, 0#
             End If
-            empDays(rec.WEIN) = empDays(rec.WEIN) + rec.TotalDays
+            empDays(rec.wein) = empDays(rec.wein) + rec.TotalDays
             
             mLeaveHistory.Add rec.UniqueKey, True
         End If
@@ -563,7 +563,7 @@ Private Sub ProcessPaternityLeave(ws As Worksheet, leaveRecords As Collection, e
         End If
     Next wein
     
-    LogInfo "modSP1_Attendance", "ProcessPaternityLeave", "Processed " & empDays.Count & " employees"
+    LogInfo "modSP1_Attendance", "ProcessPaternityLeave", "Processed " & empDays.count & " employees"
     
     Exit Sub
     
@@ -607,7 +607,7 @@ Private Function GetOrAddEmployeeRow(ws As Worksheet, wein As String, empIndex A
     empCodeCol = FindColumnByHeader(ws.Rows(1), "Employee Code,EmployeeCode,Employee Reference,EmployeeNumber,Employee Number")
     If empCodeCol = 0 Then empCodeCol = 1
     
-    newRow = ws.Cells(ws.Rows.Count, empCodeCol).End(xlUp).Row + 1
+    newRow = ws.Cells(ws.Rows.count, empCodeCol).End(xlUp).row + 1
     
     If empCode <> "" Then
         ws.Cells(newRow, empCodeCol).Value = empCode

@@ -49,8 +49,8 @@ Private Sub ProcessInspireGrossUp(ws As Worksheet, weinIndex As Object)
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)
     
-    lastRow = srcWs.Cells(srcWs.Rows.Count, 1).End(xlUp).Row
-    lastCol = srcWs.Cells(1, srcWs.Columns.Count).End(xlToLeft).Column
+    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    lastCol = srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
     Set dataRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
     
     ' Filter for Inspire Points Value only (try multiple field name variants for Employee ID)

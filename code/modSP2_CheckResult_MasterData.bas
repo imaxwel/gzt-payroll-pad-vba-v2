@@ -82,11 +82,11 @@ Private Sub LoadWorkforceData()
     ' Build header index
     Set headers = CreateObject("Scripting.Dictionary")
     Dim c As Long
-    For c = 1 To ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    For c = 1 To ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
         headers(UCase(Trim(CStr(ws.Cells(1, c).Value)))) = c
     Next c
     
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     For i = 2 To lastRow
         ' Try multiple field name variants for Employee ID
@@ -118,7 +118,7 @@ Private Sub LoadWorkforceData()
     
     wb.Close SaveChanges:=False
     
-    LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", "Loaded " & mWorkforceData.Count & " records"
+    LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", "Loaded " & mWorkforceData.count & " records"
     Exit Sub
     
 ErrHandler:
@@ -156,11 +156,11 @@ Private Function LoadAllowanceData() As Object
     
     Set headers = CreateObject("Scripting.Dictionary")
     Dim c As Long
-    For c = 1 To ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    For c = 1 To ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
         headers(UCase(Trim(CStr(ws.Cells(1, c).Value)))) = c
     Next c
     
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     For i = 2 To lastRow
         compPlan = UCase(GetCellVal(ws, i, headers, "COMPENSATION PLAN"))
@@ -223,11 +223,11 @@ Private Function LoadTerminationData() As Object
     
     Set headers = CreateObject("Scripting.Dictionary")
     Dim c As Long
-    For c = 1 To ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    For c = 1 To ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
         headers(UCase(Trim(CStr(ws.Cells(1, c).Value)))) = c
     Next c
     
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     For i = 2 To lastRow
         ' Try multiple field name variants for Employee Code

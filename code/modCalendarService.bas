@@ -70,7 +70,7 @@ Private Sub LoadHolidayCache()
     
     If ws Is Nothing Then Exit Sub
     
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     For i = 2 To lastRow
         If IsDate(ws.Cells(i, 1).Value) Then
@@ -162,10 +162,10 @@ Public Sub SplitByCalendarMonth(startDate As Date, endDate As Date, ByRef spans 
         If currentEnd > endDate Then currentEnd = endDate
         
         ' Create span
-        span.StartDate = currentStart
-        span.EndDate = currentEnd
+        span.startDate = currentStart
+        span.endDate = currentEnd
         span.YearMonth = Format(currentStart, "YYYYMM")
-        span.Days = CountCalendarDays(currentStart, currentEnd)
+        span.days = CountCalendarDays(currentStart, currentEnd)
         
         spans.Add span
         
@@ -202,10 +202,10 @@ Public Sub SplitByCalendarMonthWithBusinessDays(startDate As Date, endDate As Da
         If currentEnd > endDate Then currentEnd = endDate
         
         ' Create span with business days
-        span.StartDate = currentStart
-        span.EndDate = currentEnd
+        span.startDate = currentStart
+        span.endDate = currentEnd
         span.YearMonth = Format(currentStart, "YYYYMM")
-        span.Days = CountBusinessDays(currentStart, currentEnd)
+        span.days = CountBusinessDays(currentStart, currentEnd)
         
         spans.Add span
         

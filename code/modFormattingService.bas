@@ -68,8 +68,8 @@ Public Sub ApplyStandardFormatting(ws As Worksheet, Optional headerRow As Long =
     
     On Error GoTo ErrHandler
     
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
-    lastCol = ws.Cells(headerRow, ws.Columns.Count).End(xlToLeft).Column
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
+    lastCol = ws.Cells(headerRow, ws.Columns.count).End(xlToLeft).Column
     
     If lastRow < headerRow Or lastCol < 1 Then Exit Sub
     

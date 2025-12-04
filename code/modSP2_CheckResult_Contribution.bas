@@ -70,11 +70,11 @@ Private Sub LoadMPFParams()
     
     Set headers = CreateObject("Scripting.Dictionary")
     Dim c As Long
-    For c = 1 To ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    For c = 1 To ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
         headers(UCase(Trim(CStr(ws.Cells(1, c).Value)))) = c
     Next c
     
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     For i = 2 To lastRow
         ' Try multiple field name variants for WEIN
@@ -100,7 +100,7 @@ Private Sub LoadMPFParams()
         End If
     Next i
     
-    LogInfo "modSP2_CheckResult_Contribution", "LoadMPFParams", "Loaded " & mMPFParams.Count & " MPF params"
+    LogInfo "modSP2_CheckResult_Contribution", "LoadMPFParams", "Loaded " & mMPFParams.count & " MPF params"
     Exit Sub
     
 ErrHandler:
