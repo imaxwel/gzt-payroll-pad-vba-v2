@@ -65,6 +65,9 @@ Private Function CreateFlexiOutputWorkbook() As Workbook
     
     LogInfo "modSP1_Main", "CreateFlexiOutputWorkbook", "Creating: " & filePath
     
+    ' Ensure output folder exists
+    EnsureFolderExists G.RunParams.OutputFolder
+    
     ' Create new workbook
     Set wb = Workbooks.Add
     

@@ -333,3 +333,43 @@ Public Function GetInputFilePath(logicalName As String) As String
     
     GetInputFilePath = G.RunParams.InputFolder & fileName
 End Function
+
+
+'------------------------------------------------------------------------------
+' Sub: EnsureFolderExists
+' Purpose: Create folder if it doesn't exist (supports nested paths)
+' Parameters:
+'   folderPath - Full path to the folder
+'------------------------------------------------------------------------------
+Public Sub EnsureFolderExists(folderPath As String)
+    Dim fso As Object
+    
+    On Error GoTo ErrHandler
+    
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    If Not fso.FolderExists(folderPath) Then
+        ' CreateFolder can handle nested paths
+        fso.CreateFolder folderPath
+        LogInfo "modConfigService", "EnsureFolderExists", "Created folder: " & folderPath
+    End If
+    
+    Set fso = Nothing
+    Exit Sub
+    
+ErrHandler:
+    ' If CreateFolder fails for nested path, try building path recursively
+    On Error Resume Next
+    Dim parentPath As String
+    parentPath = fso.GetParentFolderName(folderPath)
+    
+    If Len(parentPath) > 0 And Not fso.FolderExists(parentPath) Then
+        EnsureFolderExists parentPath
+    End If
+    
+    If Not fso.FolderExists(folderPath) Then
+        fso.CreateFolder folderPath
+    End If
+    
+    Set fso = Nothing
+End Sub
