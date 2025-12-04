@@ -1,6 +1,6 @@
 Attribute VB_Name = "modEmployeeMappingService"
 '==============================================================================
-' Module: modEmployeeMappingService
+' Modulex: modEmployeeMappingService
 ' Purpose: Employee ID mapping services
 ' Description: Handles WEIN <-> Employee ID <-> Employee Code mappings
 ' Note: Different systems use different field names for the same employee ID:

@@ -1,4 +1,26 @@
 {
 	"Module Paths": {
+		"modAppContext": "modAppContext.bas",
+		"modLoggingService": "modLoggingService.bas",
+		"modRoundingService": "modRoundingService.bas",
+		"modConfigService": "modConfigService.bas",
+		"modCalendarService": "modCalendarService.bas",
+		"modAggregationService": "modAggregationService.bas",
+		"modEmployeeMappingService": "modEmployeeMappingService.bas",
+		"modEAOService": "modEAOService.bas",
+		"modFormattingService": "modFormattingService.bas",
+		"modEntryPoints": "modEntryPoints.bas",
+		"modSP1_Main": "modSP1_Main.bas",
+		"modSP1_Attendance": "modSP1_Attendance.bas",
+		"modSP1_VariablePay": "modSP1_VariablePay.bas",
+		"modSP2_Main": "modSP2_Main.bas",
+		"modSP2_CheckResult_BenefitsTax": "modSP2_CheckResult_BenefitsTax.bas",
+		"modSP2_CheckResult_Contribution": "modSP2_CheckResult_Contribution.bas",
+		"modSP2_CheckResult_Diff": "modSP2_CheckResult_Diff.bas",
+		"modSP2_CheckResult_FinalPayment": "modSP2_CheckResult_FinalPayment.bas",
+		"modSP2_CheckResult_Incentives": "modSP2_CheckResult_Incentives.bas",
+		"modSP2_CheckResult_MasterData": "modSP2_CheckResult_MasterData.bas",
+		"modSP2_CheckResult_PayItems": "modSP2_CheckResult_PayItems.bas",
+		"modSP2_HCCheck": "modSP2_HCCheck.bas"
 	}
 }
