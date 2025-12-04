@@ -69,7 +69,7 @@ Private Function CreateValidationOutputWorkbook() As Workbook
     On Error GoTo ErrHandler
     
     ' Build filename with date
-    fileName = "HK Payroll Validation Output " & Format(G.RunParams.RunDate, "YYYYMMDD") & ".xlsx"
+    fileName = "HK Payroll Validation Output " & Format(G.RunParams.RunDate, "yyyymmdd") & ".xlsx"
     filePath = G.RunParams.OutputFolder & fileName
     
     LogInfo "modSP2_Main", "CreateValidationOutputWorkbook", "Creating: " & filePath

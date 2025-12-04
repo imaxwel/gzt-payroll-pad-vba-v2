@@ -164,7 +164,7 @@ Public Sub SplitByCalendarMonth(startDate As Date, endDate As Date, ByRef spans 
         ' Create span
         span.startDate = currentStart
         span.endDate = currentEnd
-        span.YearMonth = Format(currentStart, "YYYYMM")
+        span.YearMonth = Format(currentStart, "yyyymm")
         span.days = CountCalendarDays(currentStart, currentEnd)
         
         spans.Add span
@@ -204,7 +204,7 @@ Public Sub SplitByCalendarMonthWithBusinessDays(startDate As Date, endDate As Da
         ' Create span with business days
         span.startDate = currentStart
         span.endDate = currentEnd
-        span.YearMonth = Format(currentStart, "YYYYMM")
+        span.YearMonth = Format(currentStart, "yyyymm")
         span.days = CountBusinessDays(currentStart, currentEnd)
         
         spans.Add span
@@ -252,7 +252,7 @@ End Function
 ' Returns: String in "YYYYMM" format
 '------------------------------------------------------------------------------
 Public Function GetMonthYearString(d As Date) As String
-    GetMonthYearString = Format(d, "YYYYMM")
+    GetMonthYearString = Format(d, "yyyymm")
 End Function
 
 '------------------------------------------------------------------------------

@@ -60,7 +60,7 @@ Private Function CreateFlexiOutputWorkbook() As Workbook
     On Error GoTo ErrHandler
     
     ' Build filename with date
-    fileName = "Flexi form out put " & Format(G.Payroll.payDate, "YYYYMMDD") & ".xlsx"
+    fileName = "Flexi form out put " & Format(G.Payroll.payDate, "yyyymmdd") & ".xlsx"
     filePath = G.RunParams.OutputFolder & fileName
     
     LogInfo "modSP1_Main", "CreateFlexiOutputWorkbook", "Creating: " & filePath
