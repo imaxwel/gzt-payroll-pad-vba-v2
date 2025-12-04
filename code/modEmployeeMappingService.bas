@@ -1,7 +1,7 @@
 Attribute VB_Name = "modEmployeeMappingService"
 '==============================================================================
 ' Modulex: modEmployeeMappingService
-' Purpose: Employee ID mapping services
+' Purpose: Employeer ID mapping services
 ' Description: Handles WEIN <-> Employee ID <-> Employee Code mappings
 ' Note: Different systems use different field names for the same employee ID:
 '       WEIN, WIN, Employee ID, Employee Code, Employee Number ID,
@@ -96,7 +96,7 @@ Public Sub BuildEmployeeMappings()
     Next i
     
     wb.Close SaveChanges:=False
-    
+    Debug.Print TypeName(G.Payroll.payDate), G.Payroll.payDate
     LogInfo "modEmployeeMappingService", "BuildEmployeeMappings", _
         "Loaded " & G.DictWeinToEmpId.count & " WEIN mappings"
     
