@@ -6,19 +6,19 @@ Attribute VB_Name = "modSP1_Attendance"
 '==============================================================================
 Option Explicit
 
-' Leave record structure
-Private Type tLeaveRecord
-    wein As String
-    EmployeeCode As String
-    LeaveType As String
-    FromDate As Date
-    ToDate As Date
-    ApplyDate As Date
-    ApprovalDate As Date
-    Status As String
-    TotalDays As Double
-    UniqueKey As String
-End Type
+' Leave record structure - stored as array indices for Collection compatibility
+' Index: 0=WEIN, 1=EmployeeCode, 2=LeaveType, 3=FromDate, 4=ToDate,
+'        5=ApplyDate, 6=ApprovalDate, 7=Status, 8=TotalDays, 9=UniqueKey
+Private Const LR_WEIN As Long = 0
+Private Const LR_EMPCODE As Long = 1
+Private Const LR_LEAVETYPE As Long = 2
+Private Const LR_FROMDATE As Long = 3
+Private Const LR_TODATE As Long = 4
+Private Const LR_APPLYDATE As Long = 5
+Private Const LR_APPROVALDATE As Long = 6
+Private Const LR_STATUS As Long = 7
+Private Const LR_TOTALDAYS As Long = 8
+Private Const LR_UNIQUEKEY As Long = 9
 
 ' Leave history for tracking processed records
 Private mLeaveHistory As Object ' Dictionary of processed leave keys
@@ -76,8 +76,10 @@ Private Function LoadLeaveTransactions() As Collection
     Dim ws As Worksheet
     Dim filePath As String
     Dim lastRow As Long, i As Long
-    Dim rec As tLeaveRecord
+    Dim rec(0 To 9) As Variant  ' Array to store leave record
     Dim headers As Object
+    Dim uniqueKey As String
+    Dim recStatus As String
     
     On Error GoTo ErrHandler
     
@@ -108,40 +110,42 @@ Private Function LoadLeaveTransactions() As Collection
     
     For i = 2 To lastRow
         ' Only process approved records
-        rec.Status = GetCellValue(ws, i, headers, "STATUS")
-        If UCase(rec.Status) = "APPROVED" Then
+        recStatus = GetCellValue(ws, i, headers, "STATUS")
+        If UCase(recStatus) = "APPROVED" Then
             ' Try multiple WEIN field name variants
-            rec.wein = GetCellValue(ws, i, headers, "WIN")
-            If rec.wein = "" Then rec.wein = GetCellValue(ws, i, headers, "WEIN")
-            If rec.wein = "" Then rec.wein = GetCellValue(ws, i, headers, "WEINEMPLOYEE ID")
-            If rec.wein = "" Then rec.wein = GetCellValue(ws, i, headers, "EMPLOYEE CODEWIN")
+            rec(LR_WEIN) = GetCellValue(ws, i, headers, "WIN")
+            If rec(LR_WEIN) = "" Then rec(LR_WEIN) = GetCellValue(ws, i, headers, "WEIN")
+            If rec(LR_WEIN) = "" Then rec(LR_WEIN) = GetCellValue(ws, i, headers, "WEINEMPLOYEE ID")
+            If rec(LR_WEIN) = "" Then rec(LR_WEIN) = GetCellValue(ws, i, headers, "EMPLOYEE CODEWIN")
             
             ' Try multiple Employee Code field name variants
-            rec.EmployeeCode = GetCellValue(ws, i, headers, "EMPLOYEE CODE")
-            If rec.EmployeeCode = "" Then rec.EmployeeCode = GetCellValue(ws, i, headers, "EMPLOYEECODE")
-            If rec.EmployeeCode = "" Then rec.EmployeeCode = GetCellValue(ws, i, headers, "EMPLOYEE REFERENCE")
-            If rec.EmployeeCode = "" Then rec.EmployeeCode = GetCellValue(ws, i, headers, "EMPLOYEENUMBER")
-            If rec.EmployeeCode = "" Then rec.EmployeeCode = GetCellValue(ws, i, headers, "EMPLOYEE NUMBER")
-            If rec.EmployeeCode = "" Then rec.EmployeeCode = GetCellValue(ws, i, headers, "EMPLOYEE NUMBER ID")
-            rec.LeaveType = GetCellValue(ws, i, headers, "LEAVE TYPE")
+            rec(LR_EMPCODE) = GetCellValue(ws, i, headers, "EMPLOYEE CODE")
+            If rec(LR_EMPCODE) = "" Then rec(LR_EMPCODE) = GetCellValue(ws, i, headers, "EMPLOYEECODE")
+            If rec(LR_EMPCODE) = "" Then rec(LR_EMPCODE) = GetCellValue(ws, i, headers, "EMPLOYEE REFERENCE")
+            If rec(LR_EMPCODE) = "" Then rec(LR_EMPCODE) = GetCellValue(ws, i, headers, "EMPLOYEENUMBER")
+            If rec(LR_EMPCODE) = "" Then rec(LR_EMPCODE) = GetCellValue(ws, i, headers, "EMPLOYEE NUMBER")
+            If rec(LR_EMPCODE) = "" Then rec(LR_EMPCODE) = GetCellValue(ws, i, headers, "EMPLOYEE NUMBER ID")
+            rec(LR_LEAVETYPE) = GetCellValue(ws, i, headers, "LEAVE TYPE")
+            rec(LR_STATUS) = recStatus
             
             ' Parse dates
             On Error Resume Next
-            rec.FromDate = CDate(GetCellValue(ws, i, headers, "FROM_DATE"))
-            rec.ToDate = CDate(GetCellValue(ws, i, headers, "TO_DATE"))
-            rec.ApplyDate = CDate(GetCellValue(ws, i, headers, "APPLY_DATE"))
-            rec.ApprovalDate = CDate(GetCellValue(ws, i, headers, "APPROVAL_DATE"))
+            rec(LR_FROMDATE) = CDate(GetCellValue(ws, i, headers, "FROM_DATE"))
+            rec(LR_TODATE) = CDate(GetCellValue(ws, i, headers, "TO_DATE"))
+            rec(LR_APPLYDATE) = CDate(GetCellValue(ws, i, headers, "APPLY_DATE"))
+            rec(LR_APPROVALDATE) = CDate(GetCellValue(ws, i, headers, "APPROVAL_DATE"))
             On Error GoTo ErrHandler
             
-            rec.TotalDays = ToDouble(GetCellValue(ws, i, headers, "TOTAL_DAYS"))
+            rec(LR_TOTALDAYS) = ToDouble(GetCellValue(ws, i, headers, "TOTAL_DAYS"))
             
             ' Build unique key
-            rec.UniqueKey = rec.wein & "|" & Format(rec.FromDate, "YYYYMMDD") & "|" & _
-                           Format(rec.ToDate, "YYYYMMDD") & "|" & Format(rec.ApplyDate, "YYYYMMDD") & "|" & _
-                           Format(rec.ApprovalDate, "YYYYMMDD")
+            uniqueKey = rec(LR_WEIN) & "|" & Format(rec(LR_FROMDATE), "YYYYMMDD") & "|" & _
+                       Format(rec(LR_TODATE), "YYYYMMDD") & "|" & Format(rec(LR_APPLYDATE), "YYYYMMDD") & "|" & _
+                       Format(rec(LR_APPROVALDATE), "YYYYMMDD")
+            rec(LR_UNIQUEKEY) = uniqueKey
             
             ' Only add if not already processed
-            If Not mLeaveHistory.Exists(rec.UniqueKey) Then
+            If Not mLeaveHistory.Exists(uniqueKey) Then
                 col.Add rec
             End If
         End If
@@ -166,13 +170,14 @@ End Function
 ' Purpose: Process Annual Leave records
 '------------------------------------------------------------------------------
 Private Sub ProcessAnnualLeave(ws As Worksheet, leaveRecords As Collection, empIndex As Object)
-    Dim rec As tLeaveRecord
+    Dim rec As Variant
     Dim spans As Collection
     Dim span As tDateSpan
     Dim v As Variant
     Dim row As Long
     Dim currentMonthDays As Double, prevMonthDays As Double, olderDays As Double
     Dim empDays As Object ' Dictionary to aggregate by employee
+    Dim recWein As String, recUniqueKey As String
     
     On Error GoTo ErrHandler
     
@@ -182,9 +187,9 @@ Private Sub ProcessAnnualLeave(ws As Worksheet, leaveRecords As Collection, empI
     For Each v In leaveRecords
         rec = v
         
-        If UCase(rec.LeaveType) Like "*ANNUAL*" Then
+        If UCase(CStr(rec(LR_LEAVETYPE))) Like "*ANNUAL*" Then
             ' Split by month with business days
-            SplitByCalendarMonthWithBusinessDays rec.FromDate, rec.ToDate, spans
+            SplitByCalendarMonthWithBusinessDays CDate(rec(LR_FROMDATE)), CDate(rec(LR_TODATE)), spans
             
             currentMonthDays = 0
             prevMonthDays = 0
@@ -204,19 +209,21 @@ Private Sub ProcessAnnualLeave(ws As Worksheet, leaveRecords As Collection, empI
             Next s
             
             ' Aggregate by employee
-            If Not empDays.Exists(rec.wein) Then
-                empDays.Add rec.wein, Array(0#, 0#, 0#)
+            recWein = CStr(rec(LR_WEIN))
+            If Not empDays.Exists(recWein) Then
+                empDays.Add recWein, Array(0#, 0#, 0#)
             End If
             
             Dim arr As Variant
-            arr = empDays(rec.wein)
+            arr = empDays(recWein)
             arr(0) = arr(0) + currentMonthDays
             arr(1) = arr(1) + prevMonthDays
             arr(2) = arr(2) + olderDays
-            empDays(rec.wein) = arr
+            empDays(recWein) = arr
             
             ' Mark as processed
-            mLeaveHistory.Add rec.UniqueKey, True
+            recUniqueKey = CStr(rec(LR_UNIQUEKEY))
+            mLeaveHistory.Add recUniqueKey, True
         End If
     Next v
     
@@ -251,12 +258,13 @@ End Sub
 ' Purpose: Process Sick Leave records (requires 4+ consecutive business days)
 '------------------------------------------------------------------------------
 Private Sub ProcessSickLeave(ws As Worksheet, leaveRecords As Collection, empIndex As Object)
-    Dim rec As tLeaveRecord
+    Dim rec As Variant
     Dim spans As Collection
     Dim span As tDateSpan
     Dim v As Variant
     Dim row As Long
     Dim empDays As Object
+    Dim recWein As String, recUniqueKey As String
     
     On Error GoTo ErrHandler
     
@@ -265,11 +273,11 @@ Private Sub ProcessSickLeave(ws As Worksheet, leaveRecords As Collection, empInd
     For Each v In leaveRecords
         rec = v
         
-        If UCase(rec.LeaveType) Like "*SICK*" Then
+        If UCase(CStr(rec(LR_LEAVETYPE))) Like "*SICK*" Then
             ' Check for 4 consecutive business days requirement
-            If HasFourConsecutiveBusinessDays(rec.FromDate, rec.ToDate) Then
+            If HasFourConsecutiveBusinessDays(CDate(rec(LR_FROMDATE)), CDate(rec(LR_TODATE))) Then
                 ' Split by calendar month
-                SplitByCalendarMonth rec.FromDate, rec.ToDate, spans
+                SplitByCalendarMonth CDate(rec(LR_FROMDATE)), CDate(rec(LR_TODATE)), spans
                 
                 Dim currentDays As Double, prevDays As Double
                 currentDays = 0
@@ -286,18 +294,20 @@ Private Sub ProcessSickLeave(ws As Worksheet, leaveRecords As Collection, empInd
                 Next s
                 
                 ' Aggregate
-                If Not empDays.Exists(rec.wein) Then
-                    empDays.Add rec.wein, Array(0#, 0#)
+                recWein = CStr(rec(LR_WEIN))
+                If Not empDays.Exists(recWein) Then
+                    empDays.Add recWein, Array(0#, 0#)
                 End If
                 
                 Dim arr As Variant
-                arr = empDays(rec.wein)
+                arr = empDays(recWein)
                 arr(0) = arr(0) + currentDays
                 arr(1) = arr(1) + prevDays
-                empDays(rec.wein) = arr
+                empDays(recWein) = arr
             End If
             
-            mLeaveHistory.Add rec.UniqueKey, True
+            recUniqueKey = CStr(rec(LR_UNIQUEKEY))
+            mLeaveHistory.Add recUniqueKey, True
         End If
     Next v
     
@@ -330,12 +340,13 @@ End Sub
 ' Purpose: Process Unpaid/No Pay Leave records
 '------------------------------------------------------------------------------
 Private Sub ProcessUnpaidLeave(ws As Worksheet, leaveRecords As Collection, empIndex As Object)
-    Dim rec As tLeaveRecord
+    Dim rec As Variant
     Dim spans As Collection
     Dim span As tDateSpan
     Dim v As Variant
     Dim row As Long
     Dim empDays As Object
+    Dim recWein As String, recUniqueKey As String, recLeaveType As String
     
     On Error GoTo ErrHandler
     
@@ -343,9 +354,10 @@ Private Sub ProcessUnpaidLeave(ws As Worksheet, leaveRecords As Collection, empI
     
     For Each v In leaveRecords
         rec = v
+        recLeaveType = UCase(CStr(rec(LR_LEAVETYPE)))
         
-        If UCase(rec.LeaveType) Like "*UNPAID*" Or UCase(rec.LeaveType) Like "*NO PAY*" Then
-            SplitByCalendarMonth rec.FromDate, rec.ToDate, spans
+        If recLeaveType Like "*UNPAID*" Or recLeaveType Like "*NO PAY*" Then
+            SplitByCalendarMonth CDate(rec(LR_FROMDATE)), CDate(rec(LR_TODATE)), spans
             
             Dim currentDays As Double, prevDays As Double
             currentDays = 0
@@ -361,17 +373,19 @@ Private Sub ProcessUnpaidLeave(ws As Worksheet, leaveRecords As Collection, empI
                 End If
             Next s
             
-            If Not empDays.Exists(rec.wein) Then
-                empDays.Add rec.wein, Array(0#, 0#)
+            recWein = CStr(rec(LR_WEIN))
+            If Not empDays.Exists(recWein) Then
+                empDays.Add recWein, Array(0#, 0#)
             End If
             
             Dim arr As Variant
-            arr = empDays(rec.wein)
+            arr = empDays(recWein)
             arr(0) = arr(0) + currentDays
             arr(1) = arr(1) + prevDays
-            empDays(rec.wein) = arr
+            empDays(recWein) = arr
             
-            mLeaveHistory.Add rec.UniqueKey, True
+            recUniqueKey = CStr(rec(LR_UNIQUEKEY))
+            mLeaveHistory.Add recUniqueKey, True
         End If
     Next v
     
@@ -404,12 +418,13 @@ End Sub
 ' Purpose: Process Paid Parental Time Off records
 '------------------------------------------------------------------------------
 Private Sub ProcessPPTO(ws As Worksheet, leaveRecords As Collection, empIndex As Object)
-    Dim rec As tLeaveRecord
+    Dim rec As Variant
     Dim spans As Collection
     Dim span As tDateSpan
     Dim v As Variant
     Dim row As Long
     Dim empDays As Object
+    Dim recWein As String, recUniqueKey As String, recLeaveType As String
     
     On Error GoTo ErrHandler
     
@@ -417,9 +432,10 @@ Private Sub ProcessPPTO(ws As Worksheet, leaveRecords As Collection, empIndex As
     
     For Each v In leaveRecords
         rec = v
+        recLeaveType = UCase(CStr(rec(LR_LEAVETYPE)))
         
-        If UCase(rec.LeaveType) Like "*PPTO*" Or UCase(rec.LeaveType) Like "*PARENTAL TIME OFF*" Then
-            SplitByCalendarMonth rec.FromDate, rec.ToDate, spans
+        If recLeaveType Like "*PPTO*" Or recLeaveType Like "*PARENTAL TIME OFF*" Then
+            SplitByCalendarMonth CDate(rec(LR_FROMDATE)), CDate(rec(LR_TODATE)), spans
             
             Dim currentDays As Double, prevDays As Double
             currentDays = 0
@@ -435,17 +451,19 @@ Private Sub ProcessPPTO(ws As Worksheet, leaveRecords As Collection, empIndex As
                 End If
             Next s
             
-            If Not empDays.Exists(rec.wein) Then
-                empDays.Add rec.wein, Array(0#, 0#)
+            recWein = CStr(rec(LR_WEIN))
+            If Not empDays.Exists(recWein) Then
+                empDays.Add recWein, Array(0#, 0#)
             End If
             
             Dim arr As Variant
-            arr = empDays(rec.wein)
+            arr = empDays(recWein)
             arr(0) = arr(0) + currentDays
             arr(1) = arr(1) + prevDays
-            empDays(rec.wein) = arr
+            empDays(recWein) = arr
             
-            mLeaveHistory.Add rec.UniqueKey, True
+            recUniqueKey = CStr(rec(LR_UNIQUEKEY))
+            mLeaveHistory.Add recUniqueKey, True
         End If
     Next v
     
@@ -478,10 +496,11 @@ End Sub
 ' Purpose: Process Maternity Leave records
 '------------------------------------------------------------------------------
 Private Sub ProcessMaternityLeave(ws As Worksheet, leaveRecords As Collection, empIndex As Object)
-    Dim rec As tLeaveRecord
+    Dim rec As Variant
     Dim v As Variant
     Dim row As Long
     Dim empDays As Object
+    Dim recWein As String, recUniqueKey As String
     
     On Error GoTo ErrHandler
     
@@ -490,15 +509,17 @@ Private Sub ProcessMaternityLeave(ws As Worksheet, leaveRecords As Collection, e
     For Each v In leaveRecords
         rec = v
         
-        If UCase(rec.LeaveType) Like "*MATERNITY*" Then
+        If UCase(CStr(rec(LR_LEAVETYPE))) Like "*MATERNITY*" Then
             ' TODO: Check 40 weeks service requirement
             
-            If Not empDays.Exists(rec.wein) Then
-                empDays.Add rec.wein, 0#
+            recWein = CStr(rec(LR_WEIN))
+            If Not empDays.Exists(recWein) Then
+                empDays.Add recWein, 0#
             End If
-            empDays(rec.wein) = empDays(rec.wein) + rec.TotalDays
+            empDays(recWein) = empDays(recWein) + CDbl(rec(LR_TOTALDAYS))
             
-            mLeaveHistory.Add rec.UniqueKey, True
+            recUniqueKey = CStr(rec(LR_UNIQUEKEY))
+            mLeaveHistory.Add recUniqueKey, True
         End If
     Next v
     
@@ -528,10 +549,11 @@ End Sub
 ' Purpose: Process Paternity Leave records
 '------------------------------------------------------------------------------
 Private Sub ProcessPaternityLeave(ws As Worksheet, leaveRecords As Collection, empIndex As Object)
-    Dim rec As tLeaveRecord
+    Dim rec As Variant
     Dim v As Variant
     Dim row As Long
     Dim empDays As Object
+    Dim recWein As String, recUniqueKey As String
     
     On Error GoTo ErrHandler
     
@@ -540,13 +562,15 @@ Private Sub ProcessPaternityLeave(ws As Worksheet, leaveRecords As Collection, e
     For Each v In leaveRecords
         rec = v
         
-        If UCase(rec.LeaveType) Like "*PATERNITY*" Then
-            If Not empDays.Exists(rec.wein) Then
-                empDays.Add rec.wein, 0#
+        If UCase(CStr(rec(LR_LEAVETYPE))) Like "*PATERNITY*" Then
+            recWein = CStr(rec(LR_WEIN))
+            If Not empDays.Exists(recWein) Then
+                empDays.Add recWein, 0#
             End If
-            empDays(rec.wein) = empDays(rec.wein) + rec.TotalDays
+            empDays(recWein) = empDays(recWein) + CDbl(rec(LR_TOTALDAYS))
             
-            mLeaveHistory.Add rec.UniqueKey, True
+            recUniqueKey = CStr(rec(LR_UNIQUEKEY))
+            mLeaveHistory.Add recUniqueKey, True
         End If
     Next v
     
