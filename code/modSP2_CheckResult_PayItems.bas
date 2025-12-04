@@ -47,11 +47,8 @@ End Sub
 '------------------------------------------------------------------------------
 Private Sub WriteBasePayCheck(ws As Worksheet, row As Long, wein As String)
     Dim col As Long
-    Dim rec As tEAORecord
     
     On Error Resume Next
-    
-    rec = GetEAORecord(wein)
     
     ' Base Pay 60001000 Check
     col = FindColumnByHeader(ws.Rows(4), "Base Pay 60001000 Check")
