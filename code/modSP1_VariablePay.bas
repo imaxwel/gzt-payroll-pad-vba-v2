@@ -1,4 +1,5 @@
 Attribute VB_Name = "modSP1_VariablePay"
+Attribute VB_Name = "modSP1_VariablePay"
 '==============================================================================
 ' Module: modSP1_VariablePay
 ' Purpose: Subprocess 1 - VariablePay sheet population
@@ -648,7 +649,7 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Sub: ProcessExtraTable
-' Purpose: Process é¢å¤–è¡¨ for PPTO EAO Rate and special bonuses
+' Purpose: Process ¶îÍâ±í for PPTO EAO Rate and special bonuses
 '------------------------------------------------------------------------------
 Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     Dim wb As Workbook
@@ -665,9 +666,9 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     Set wb = OpenExtraTableWorkbook()
     If wb Is Nothing Then Exit Sub
     
-    ' Process [éœ€è¦æ¯æœˆç»´æŠ¤] sheet for PPTO EAO Rate
+    ' Process [ĞèÒªÃ¿ÔÂÎ¬»¤] sheet for PPTO EAO Rate
     On Error Resume Next
-    Set srcWs = wb.Worksheets("éœ€è¦æ¯æœˆç»´æŠ¤")
+    Set srcWs = wb.Worksheets("ĞèÒªÃ¿ÔÂÎ¬»¤")
     On Error GoTo ErrHandler
     
     If Not srcWs Is Nothing Then
@@ -694,9 +695,9 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
         End If
     End If
     
-    ' Process [ç‰¹æ®Šå¥–é‡‘] sheet for Flexible benefits
+    ' Process [ÌØÊâ½±½ğ] sheet for Flexible benefits
     On Error Resume Next
-    Set srcWs = wb.Worksheets("ç‰¹æ®Šå¥–é‡‘")
+    Set srcWs = wb.Worksheets("ÌØÊâ½±½ğ")
     On Error GoTo ErrHandler
     
     If Not srcWs Is Nothing Then
@@ -767,3 +768,4 @@ Private Function GetOrAddRow(ws As Worksheet, wein As String, empIndex As Object
     
     GetOrAddRow = newRow
 End Function
+
