@@ -50,21 +50,26 @@ Public Sub BuildEmployeeMappings()
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set ws = wb.Worksheets(1)
     
+    ' Find the header row (look for "Employee ID" in first 20 rows)
+    Dim headerRow As Long
+    headerRow = FindHeaderRow(ws, "Employee ID")
+    If headerRow = 0 Then headerRow = 1 ' Default to row 1 if not found
+    
     ' Find columns using variant names
-    empIdCol = FindEmployeeIdColumn(ws.Rows(1), EMP_ID_VARIANTS)
-    weinCol = FindEmployeeIdColumn(ws.Rows(1), WEIN_VARIANTS)
-    empCodeCol = FindEmployeeIdColumn(ws.Rows(1), EMP_CODE_VARIANTS)
+    empIdCol = FindEmployeeIdColumn(ws.Rows(headerRow), EMP_ID_VARIANTS)
+    weinCol = FindEmployeeIdColumn(ws.Rows(headerRow), WEIN_VARIANTS)
+    empCodeCol = FindEmployeeIdColumn(ws.Rows(headerRow), EMP_CODE_VARIANTS)
     
     If empIdCol = 0 And weinCol = 0 Then
         LogError "modEmployeeMappingService", "BuildEmployeeMappings", 0, _
-            "Required columns not found in Workforce Detail"
+            "Required columns not found in Workforce Detail (searched in row " & headerRow & ")"
         wb.Close SaveChanges:=False
         Exit Sub
     End If
     
     lastRow = ws.Cells(ws.Rows.Count, IIf(empIdCol > 0, empIdCol, weinCol)).End(xlUp).Row
     
-    For i = 2 To lastRow
+    For i = headerRow + 1 To lastRow
         If empIdCol > 0 Then empId = Trim(CStr(Nz(ws.Cells(i, empIdCol).Value, "")))
         If weinCol > 0 Then wein = Trim(CStr(Nz(ws.Cells(i, weinCol).Value, "")))
         If empCodeCol > 0 Then empCode = Trim(CStr(Nz(ws.Cells(i, empCodeCol).Value, "")))
@@ -363,4 +368,34 @@ End Function
 '------------------------------------------------------------------------------
 Public Function GetEmpCodeVariants() As Variant
     GetEmpCodeVariants = Split(EMP_CODE_VARIANTS, ",")
+End Function
+
+'------------------------------------------------------------------------------
+' Function: FindHeaderRow
+' Purpose: Find the row containing the header by searching for a key column name
+' Parameters:
+'   ws - Worksheet to search
+'   keyColumnName - Column name to search for (e.g., "Employee ID")
+' Returns: Row number (1-based) or 0 if not found
+'------------------------------------------------------------------------------
+Private Function FindHeaderRow(ws As Worksheet, keyColumnName As String) As Long
+    Dim i As Long, j As Long
+    Dim cellValue As String
+    
+    FindHeaderRow = 0
+    
+    ' Search first 20 rows
+    For i = 1 To 20
+        ' Search across columns
+        For j = 1 To 100
+            On Error Resume Next
+            cellValue = Trim(CStr(ws.Cells(i, j).Value))
+            On Error GoTo 0
+            
+            If UCase(cellValue) = UCase(keyColumnName) Then
+                FindHeaderRow = i
+                Exit Function
+            End If
+        Next j
+    Next i
 End Function
