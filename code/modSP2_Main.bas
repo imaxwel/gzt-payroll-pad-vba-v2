@@ -142,9 +142,8 @@ Private Sub BuildBenchmarkAndIndex(valWb As Workbook)
     Set srcRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
     srcRange.Copy destWs.Cells(4, 1)
     
-    ' Build WEIN index
-    weinCol = FindColumnByHeader(destWs.Rows(4), "WEIN")
-    If weinCol = 0 Then weinCol = FindColumnByHeader(destWs.Rows(4), "WIN")
+    ' Build WEIN index (try multiple field name variants)
+    weinCol = FindColumnByHeader(destWs.Rows(4), "WEIN,WIN,WEINEmployee ID,Employee CodeWIN,Employee ID,EmployeeID")
     
     If weinCol > 0 Then
         For i = 5 To 4 + lastRow - 1

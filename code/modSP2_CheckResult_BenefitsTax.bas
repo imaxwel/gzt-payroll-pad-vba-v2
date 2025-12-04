@@ -53,8 +53,8 @@ Private Sub ProcessInspireGrossUp(ws As Worksheet, weinIndex As Object)
     lastCol = srcWs.Cells(1, srcWs.Columns.Count).End(xlToLeft).Column
     Set dataRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
     
-    ' Filter for Inspire Points Value only
-    Set grouped = GroupByEmployeeAndTypeFiltered(dataRange, "Employee ID", "One-Time Payment Plan", _
+    ' Filter for Inspire Points Value only (try multiple field name variants for Employee ID)
+    Set grouped = GroupByEmployeeAndTypeFiltered(dataRange, "Employee ID,EmployeeID,WEIN,WIN,Employee Number ID", "One-Time Payment Plan", _
         "Actual Payment - Amount", "One-Time Payment Plan", Array("Inspire Points Value"))
     
     Dim key As Variant
@@ -74,8 +74,7 @@ Private Sub ProcessInspireGrossUp(ws As Worksheet, weinIndex As Object)
         If UBound(parts) >= 0 Then
             empId = parts(0)
             
-            wein = WeinFromEmpId(empId)
-            If wein = "" Then wein = empId
+            wein = NormalizeEmployeeId(empId)
             
             If weinIndex.Exists(wein) Then
                 row = weinIndex(wein)

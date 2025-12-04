@@ -3,8 +3,20 @@ Attribute VB_Name = "modEmployeeMappingService"
 ' Module: modEmployeeMappingService
 ' Purpose: Employee ID mapping services
 ' Description: Handles WEIN <-> Employee ID <-> Employee Code mappings
+' Note: Different systems use different field names for the same employee ID:
+'       WEIN, WIN, Employee ID, Employee Code, Employee Number ID,
+'       Employee Reference, EmployeeNumber, etc.
 '==============================================================================
 Option Explicit
+
+'------------------------------------------------------------------------------
+' Employee ID Field Name Variants
+' These are all equivalent employee identifier fields across different systems
+'------------------------------------------------------------------------------
+Public Const EMP_ID_VARIANTS As String = "Employee ID,EmployeeID,Employee Number ID,EMPLOYEE ID"
+Public Const WEIN_VARIANTS As String = "WEIN,WIN,WEINEmployee ID,Employee CodeWIN"
+Public Const EMP_CODE_VARIANTS As String = "Employee Code,EmployeeCode,Employee Reference,EmployeeNumber,Employee Number"
+Public Const ALL_EMP_ID_VARIANTS As String = "WEIN,WIN,Employee ID,EmployeeID,Employee Code,EmployeeCode,Employee Number ID,Employee Reference,EmployeeNumber,Employee Number,WEINEmployee ID,Employee CodeWIN"
 
 '------------------------------------------------------------------------------
 ' Sub: BuildEmployeeMappings
@@ -38,15 +50,10 @@ Public Sub BuildEmployeeMappings()
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set ws = wb.Worksheets(1)
     
-    ' Find columns by header
-    empIdCol = FindColumnByHeader(ws.Rows(1), "Employee ID")
-    weinCol = FindColumnByHeader(ws.Rows(1), "WEIN")
-    empCodeCol = FindColumnByHeader(ws.Rows(1), "Employee Code")
-    
-    ' Try alternative column names if not found
-    If empIdCol = 0 Then empIdCol = FindColumnByHeader(ws.Rows(1), "EmployeeID")
-    If weinCol = 0 Then weinCol = FindColumnByHeader(ws.Rows(1), "WIN")
-    If empCodeCol = 0 Then empCodeCol = FindColumnByHeader(ws.Rows(1), "EmployeeCode")
+    ' Find columns using variant names
+    empIdCol = FindEmployeeIdColumn(ws.Rows(1), EMP_ID_VARIANTS)
+    weinCol = FindEmployeeIdColumn(ws.Rows(1), WEIN_VARIANTS)
+    empCodeCol = FindEmployeeIdColumn(ws.Rows(1), EMP_CODE_VARIANTS)
     
     If empIdCol = 0 And weinCol = 0 Then
         LogError "modEmployeeMappingService", "BuildEmployeeMappings", 0, _
@@ -248,4 +255,112 @@ Public Function GetAllEmployeeIds() As Collection
     End If
     
     Set GetAllEmployeeIds = col
+End Function
+
+'------------------------------------------------------------------------------
+' Function: FindEmployeeIdColumn
+' Purpose: Find employee ID column by trying multiple variant names
+' Parameters:
+'   headerRow - Range containing header row
+'   variants - Comma-separated list of possible column names
+' Returns: Column index (1-based) or 0 if not found
+'------------------------------------------------------------------------------
+Public Function FindEmployeeIdColumn(headerRow As Range, variants As String) As Long
+    Dim variantArr() As String
+    Dim i As Long
+    Dim col As Long
+    
+    FindEmployeeIdColumn = 0
+    variantArr = Split(variants, ",")
+    
+    For i = LBound(variantArr) To UBound(variantArr)
+        col = FindColumnByHeader(headerRow, Trim(variantArr(i)))
+        If col > 0 Then
+            FindEmployeeIdColumn = col
+            Exit Function
+        End If
+    Next i
+End Function
+
+'------------------------------------------------------------------------------
+' Function: FindAnyEmployeeIdColumn
+' Purpose: Find any employee ID column by trying all known variants
+' Parameters:
+'   headerRow - Range containing header row
+' Returns: Column index (1-based) or 0 if not found
+'------------------------------------------------------------------------------
+Public Function FindAnyEmployeeIdColumn(headerRow As Range) As Long
+    FindAnyEmployeeIdColumn = FindEmployeeIdColumn(headerRow, ALL_EMP_ID_VARIANTS)
+End Function
+
+'------------------------------------------------------------------------------
+' Function: NormalizeEmployeeId
+' Purpose: Convert any employee ID to WEIN (the canonical form)
+' Parameters:
+'   empIdValue - Employee ID value from any system
+' Returns: WEIN or original value if no mapping found
+'------------------------------------------------------------------------------
+Public Function NormalizeEmployeeId(empIdValue As String) As String
+    Dim result As String
+    
+    result = Trim(empIdValue)
+    If result = "" Then
+        NormalizeEmployeeId = ""
+        Exit Function
+    End If
+    
+    ' Try to convert to WEIN using all available mappings
+    ' First check if it's already a WEIN
+    If Not G.DictWeinToEmpId Is Nothing Then
+        If G.DictWeinToEmpId.Exists(result) Then
+            NormalizeEmployeeId = result
+            Exit Function
+        End If
+    End If
+    
+    ' Try Employee ID -> WEIN
+    If Not G.DictEmpIdToWein Is Nothing Then
+        If G.DictEmpIdToWein.Exists(result) Then
+            NormalizeEmployeeId = G.DictEmpIdToWein(result)
+            Exit Function
+        End If
+    End If
+    
+    ' Try Employee Code -> WEIN
+    If Not G.DictEmpCodeToWein Is Nothing Then
+        If G.DictEmpCodeToWein.Exists(result) Then
+            NormalizeEmployeeId = G.DictEmpCodeToWein(result)
+            Exit Function
+        End If
+    End If
+    
+    ' Return original value if no mapping found
+    NormalizeEmployeeId = result
+End Function
+
+'------------------------------------------------------------------------------
+' Function: GetEmployeeIdVariants
+' Purpose: Get array of all employee ID field name variants
+' Returns: Array of variant names
+'------------------------------------------------------------------------------
+Public Function GetEmployeeIdVariants() As Variant
+    GetEmployeeIdVariants = Split(ALL_EMP_ID_VARIANTS, ",")
+End Function
+
+'------------------------------------------------------------------------------
+' Function: GetWeinVariants
+' Purpose: Get array of WEIN field name variants
+' Returns: Array of variant names
+'------------------------------------------------------------------------------
+Public Function GetWeinVariants() As Variant
+    GetWeinVariants = Split(WEIN_VARIANTS, ",")
+End Function
+
+'------------------------------------------------------------------------------
+' Function: GetEmpCodeVariants
+' Purpose: Get array of Employee Code field name variants
+' Returns: Array of variant names
+'------------------------------------------------------------------------------
+Public Function GetEmpCodeVariants() As Variant
+    GetEmpCodeVariants = Split(EMP_CODE_VARIANTS, ",")
 End Function

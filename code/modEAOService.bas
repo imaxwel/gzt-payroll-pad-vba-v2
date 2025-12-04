@@ -61,8 +61,13 @@ Public Sub LoadEAOData()
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     
     For i = 2 To lastRow
+        ' Try multiple field name variants for WEIN
         rec.WEIN = GetCellValueByHeader(ws, i, headers, "WEIN")
         If rec.WEIN = "" Then rec.WEIN = GetCellValueByHeader(ws, i, headers, "WIN")
+        If rec.WEIN = "" Then rec.WEIN = GetCellValueByHeader(ws, i, headers, "WEINEmployee ID")
+        If rec.WEIN = "" Then rec.WEIN = GetCellValueByHeader(ws, i, headers, "Employee CodeWIN")
+        If rec.WEIN = "" Then rec.WEIN = GetCellValueByHeader(ws, i, headers, "Employee ID")
+        If rec.WEIN = "" Then rec.WEIN = GetCellValueByHeader(ws, i, headers, "EmployeeID")
         
         If rec.WEIN <> "" Then
             rec.AverageDayWage_12Month = ToDouble(GetCellValueByHeader(ws, i, headers, "AverageDayWage_12Month"))

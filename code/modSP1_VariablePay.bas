@@ -20,8 +20,8 @@ Public Sub SP1_PopulateVariablePay(flexWb As Workbook)
     
     Set ws = flexWb.Worksheets("VariablePay")
     
-    ' Build employee index
-    Set empIndex = BuildEmployeeIndex(ws, "Employee Code")
+    ' Build employee index (try multiple field name variants)
+    Set empIndex = BuildEmployeeIndex(ws, "Employee Code,EmployeeCode,Employee Reference,EmployeeNumber,Employee Number")
     
     ' Load EAO data
     LoadEAOData
@@ -69,8 +69,8 @@ Private Sub ProcessOneTimePayment(ws As Worksheet, empIndex As Object)
     lastCol = srcWs.Cells(1, srcWs.Columns.Count).End(xlToLeft).Column
     Set dataRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
     
-    ' Group by Employee ID and One-Time Payment Plan
-    Set grouped = GroupByEmployeeAndType(dataRange, "Employee ID", "One-Time Payment Plan", "Actual Payment - Amount")
+    ' Group by Employee ID and One-Time Payment Plan (try multiple field name variants)
+    Set grouped = GroupByEmployeeAndType(dataRange, "Employee ID,EmployeeID,WEIN,WIN,Employee Number ID", "One-Time Payment Plan", "Actual Payment - Amount")
     
     ' Map to VariablePay columns
     Dim planMapping As Object
@@ -102,8 +102,7 @@ Private Sub ProcessOneTimePayment(ws As Worksheet, empIndex As Object)
             ' Skip Inspire (handled separately)
             If InStr(planType, "INSPIRE") > 0 Then GoTo NextKey
             
-            wein = WeinFromEmpId(empId)
-            If wein = "" Then wein = empId
+            wein = NormalizeEmployeeId(empId)
             
             ' Find target column
             targetCol = ""
@@ -162,7 +161,8 @@ Private Sub ProcessInspireAwards(ws As Worksheet, empIndex As Object)
     lastCol = srcWs.Cells(1, srcWs.Columns.Count).End(xlToLeft).Column
     Set dataRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
     
-    Set grouped = GroupByEmployeeAndType(dataRange, "Employee ID", "One-Time Payment Plan", "Actual Payment - Amount")
+    ' Try multiple field name variants for Employee ID
+    Set grouped = GroupByEmployeeAndType(dataRange, "Employee ID,EmployeeID,WEIN,WIN,Employee Number ID", "One-Time Payment Plan", "Actual Payment - Amount")
     
     Dim key As Variant
     Dim parts() As String
@@ -175,8 +175,7 @@ Private Sub ProcessInspireAwards(ws As Worksheet, empIndex As Object)
             empId = parts(0)
             planType = UCase(parts(1))
             
-            wein = WeinFromEmpId(empId)
-            If wein = "" Then wein = empId
+            wein = NormalizeEmployeeId(empId)
             
             row = GetOrAddRow(ws, wein, empIndex)
             If row > 0 Then
@@ -226,7 +225,8 @@ Private Sub ProcessSIPQIP(ws As Worksheet, empIndex As Object)
     lastCol = srcWs.Cells(1, srcWs.Columns.Count).End(xlToLeft).Column
     Set dataRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
     
-    Set grouped = GroupByEmployeeAndType(dataRange, "EMPLOYEE ID", "Pay Item", "TOTAL PAYOUT")
+    ' Try multiple field name variants for Employee ID
+    Set grouped = GroupByEmployeeAndType(dataRange, "EMPLOYEE ID,Employee ID,EmployeeID,WEIN,WIN", "Pay Item", "TOTAL PAYOUT")
     
     Dim key As Variant
     Dim parts() As String
@@ -239,8 +239,7 @@ Private Sub ProcessSIPQIP(ws As Worksheet, empIndex As Object)
             empId = parts(0)
             payItem = UCase(parts(1))
             
-            wein = WeinFromEmpId(empId)
-            If wein = "" Then wein = empId
+            wein = NormalizeEmployeeId(empId)
             
             row = GetOrAddRow(ws, wein, empIndex)
             If row > 0 Then
@@ -310,7 +309,8 @@ Private Sub ProcessRSUGlobal(ws As Worksheet, empIndex As Object)
     
     fxRate = GetExchangeRate("RSU_Global")
     
-    empRefCol = FindColumnByHeader(srcWs.Rows(1), "Employee Reference")
+    ' Try multiple field name variants for Employee Reference
+    empRefCol = FindColumnByHeader(srcWs.Rows(1), "Employee Reference,EmployeeNumber,Employee Number,Employee ID,EmployeeID")
     amtCol = FindColumnByHeader(srcWs.Rows(1), "Gross Award Amount to be Paid")
     
     If empRefCol = 0 Or amtCol = 0 Then
@@ -331,8 +331,7 @@ Private Sub ProcessRSUGlobal(ws As Worksheet, empIndex As Object)
         grossAmt = ToDouble(srcWs.Cells(i, amtCol).Value)
         
         If empRef <> "" And grossAmt <> 0 Then
-            wein = WeinFromEmpId(empRef)
-            If wein = "" Then wein = empRef
+            wein = NormalizeEmployeeId(empRef)
             
             row = GetOrAddRow(ws, wein, empIndex)
             If row > 0 Then
@@ -371,8 +370,8 @@ Private Sub ProcessRSUEY(ws As Worksheet, empIndex As Object)
     
     fxRate = GetExchangeRate("RSU_EY")
     
-    empNumCol = FindColumnByHeader(srcWs.Rows(1), "EmployeeNumber")
-    If empNumCol = 0 Then empNumCol = FindColumnByHeader(srcWs.Rows(1), "Employee Number")
+    ' Try multiple field name variants for EmployeeNumber
+    empNumCol = FindColumnByHeader(srcWs.Rows(1), "EmployeeNumber,Employee Number,Employee ID,EmployeeID,Employee Reference")
     amtCol = FindColumnByHeader(srcWs.Rows(1), "Dividend To Pay")
     
     If empNumCol = 0 Or amtCol = 0 Then
@@ -393,8 +392,7 @@ Private Sub ProcessRSUEY(ws As Worksheet, empIndex As Object)
         divAmt = ToDouble(srcWs.Cells(i, amtCol).Value)
         
         If empNum <> "" And divAmt <> 0 Then
-            wein = WeinFromEmpId(empNum)
-            If wein = "" Then wein = empNum
+            wein = NormalizeEmployeeId(empNum)
             
             row = GetOrAddRow(ws, wein, empIndex)
             If row > 0 Then
@@ -442,8 +440,8 @@ Private Sub ProcessAIPPayouts(ws As Worksheet, empIndex As Object)
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)
     
-    weinCol = FindColumnByHeader(srcWs.Rows(1), "WIN")
-    If weinCol = 0 Then weinCol = FindColumnByHeader(srcWs.Rows(1), "WEIN")
+    ' Try multiple field name variants for WEIN
+    weinCol = FindColumnByHeader(srcWs.Rows(1), "WIN,WEIN,WEINEmployee ID,Employee CodeWIN,Employee ID,EmployeeID")
     amtCol = FindColumnByHeader(srcWs.Rows(1), "Bonus Amount")
     
     If weinCol = 0 Or amtCol = 0 Then
@@ -509,7 +507,8 @@ Private Sub ProcessFlexClaim(ws As Worksheet, empIndex As Object)
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)
     
-    empNumCol = FindColumnByHeader(srcWs.Rows(1), "Employee Number ID")
+    ' Try multiple field name variants for Employee Number ID
+    empNumCol = FindColumnByHeader(srcWs.Rows(1), "Employee Number ID,EmployeeNumber,Employee Number,Employee ID,EmployeeID")
     amtCol = FindColumnByHeader(srcWs.Rows(1), "Transacted Amount")
     statusCol = FindColumnByHeader(srcWs.Rows(1), "Claim Status")
     
@@ -537,8 +536,7 @@ Private Sub ProcessFlexClaim(ws As Worksheet, empIndex As Object)
         transAmt = ToDouble(srcWs.Cells(i, amtCol).Value)
         
         If empNumId <> "" And transAmt <> 0 Then
-            wein = WeinFromEmpId(empNumId)
-            If wein = "" Then wein = empNumId
+            wein = NormalizeEmployeeId(empNumId)
             
             row = GetOrAddRow(ws, wein, empIndex)
             If row > 0 Then
@@ -583,8 +581,8 @@ Private Sub ProcessMerckPayrollSummary(ws As Worksheet, empIndex As Object)
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)
     
-    ' Find columns
-    empIdCol = FindColumnByHeader(srcWs.Rows(1), "Employee ID")
+    ' Find columns (try multiple field name variants)
+    empIdCol = FindColumnByHeader(srcWs.Rows(1), "Employee ID,EmployeeID,WEIN,WIN,Employee Number ID")
     netPayCol = FindColumnByHeader(srcWs.Rows(1), "Net Pay (include EAO & leave payment)")
     mpfRICol = FindColumnByHeader(srcWs.Rows(1), "MPF Relevant Income")
     mpfVCRICol = FindColumnByHeader(srcWs.Rows(1), "MPF VC Relevant Income")
@@ -607,8 +605,7 @@ Private Sub ProcessMerckPayrollSummary(ws As Worksheet, empIndex As Object)
         empId = Trim(CStr(Nz(srcWs.Cells(i, empIdCol).Value, "")))
         
         If empId <> "" Then
-            wein = WeinFromEmpId(empId)
-            If wein = "" Then wein = empId
+            wein = NormalizeEmployeeId(empId)
             
             row = GetOrAddRow(ws, wein, empIndex)
             If row > 0 Then
@@ -674,8 +671,8 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     On Error GoTo ErrHandler
     
     If Not srcWs Is Nothing Then
-        weinCol = FindColumnByHeader(srcWs.Rows(1), "WEIN")
-        If weinCol = 0 Then weinCol = FindColumnByHeader(srcWs.Rows(1), "WIN")
+        ' Try multiple field name variants for WEIN
+        weinCol = FindColumnByHeader(srcWs.Rows(1), "WEIN,WIN,WEINEmployee ID,Employee CodeWIN,Employee ID,EmployeeID")
         pptoCol = FindColumnByHeader(srcWs.Rows(1), "PPTO EAO Rate input")
         
         colPPTORate = FindColumnByHeader(ws.Rows(1), "PPTO EAO Rate input")
@@ -703,8 +700,8 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     On Error GoTo ErrHandler
     
     If Not srcWs Is Nothing Then
-        weinCol = FindColumnByHeader(srcWs.Rows(1), "WEIN")
-        If weinCol = 0 Then weinCol = FindColumnByHeader(srcWs.Rows(1), "WIN")
+        ' Try multiple field name variants for WEIN
+        weinCol = FindColumnByHeader(srcWs.Rows(1), "WEIN,WIN,WEINEmployee ID,Employee CodeWIN,Employee ID,EmployeeID")
         flexCol = FindColumnByHeader(srcWs.Rows(1), "Flexible benefits")
         
         colFlexBenefit = FindColumnByHeader(ws.Rows(1), "Flexible benefits")
@@ -754,8 +751,8 @@ Private Function GetOrAddRow(ws As Worksheet, wein As String, empIndex As Object
         Exit Function
     End If
     
-    ' Add new row
-    empCodeCol = FindColumnByHeader(ws.Rows(1), "Employee Code")
+    ' Add new row - try multiple field name variants
+    empCodeCol = FindColumnByHeader(ws.Rows(1), "Employee Code,EmployeeCode,Employee Reference,EmployeeNumber,Employee Number")
     If empCodeCol = 0 Then empCodeCol = 1
     
     newRow = ws.Cells(ws.Rows.Count, empCodeCol).End(xlUp).Row + 1

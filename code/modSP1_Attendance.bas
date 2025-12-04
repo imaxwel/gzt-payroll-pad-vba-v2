@@ -38,8 +38,8 @@ Public Sub SP1_PopulateAttendance(flexWb As Workbook)
     
     Set ws = flexWb.Worksheets("Attendance")
     
-    ' Build employee index for the Attendance sheet
-    Set empIndex = BuildEmployeeIndex(ws, "Employee Code")
+    ' Build employee index for the Attendance sheet (try multiple field name variants)
+    Set empIndex = BuildEmployeeIndex(ws, "Employee Code,EmployeeCode,Employee Reference,EmployeeNumber,Employee Number")
     
     ' Load leave transactions
     Set leaveRecords = LoadLeaveTransactions()
@@ -110,10 +110,19 @@ Private Function LoadLeaveTransactions() As Collection
         ' Only process approved records
         rec.Status = GetCellValue(ws, i, headers, "STATUS")
         If UCase(rec.Status) = "APPROVED" Then
+            ' Try multiple WEIN field name variants
             rec.WEIN = GetCellValue(ws, i, headers, "WIN")
             If rec.WEIN = "" Then rec.WEIN = GetCellValue(ws, i, headers, "WEIN")
+            If rec.WEIN = "" Then rec.WEIN = GetCellValue(ws, i, headers, "WEINEMPLOYEE ID")
+            If rec.WEIN = "" Then rec.WEIN = GetCellValue(ws, i, headers, "EMPLOYEE CODEWIN")
             
+            ' Try multiple Employee Code field name variants
             rec.EmployeeCode = GetCellValue(ws, i, headers, "EMPLOYEE CODE")
+            If rec.EmployeeCode = "" Then rec.EmployeeCode = GetCellValue(ws, i, headers, "EMPLOYEECODE")
+            If rec.EmployeeCode = "" Then rec.EmployeeCode = GetCellValue(ws, i, headers, "EMPLOYEE REFERENCE")
+            If rec.EmployeeCode = "" Then rec.EmployeeCode = GetCellValue(ws, i, headers, "EMPLOYEENUMBER")
+            If rec.EmployeeCode = "" Then rec.EmployeeCode = GetCellValue(ws, i, headers, "EMPLOYEE NUMBER")
+            If rec.EmployeeCode = "" Then rec.EmployeeCode = GetCellValue(ws, i, headers, "EMPLOYEE NUMBER ID")
             rec.LeaveType = GetCellValue(ws, i, headers, "LEAVE TYPE")
             
             ' Parse dates
@@ -594,8 +603,8 @@ Private Function GetOrAddEmployeeRow(ws As Worksheet, wein As String, empIndex A
         Exit Function
     End If
     
-    ' Add new row
-    empCodeCol = FindColumnByHeader(ws.Rows(1), "Employee Code")
+    ' Add new row - try multiple field name variants
+    empCodeCol = FindColumnByHeader(ws.Rows(1), "Employee Code,EmployeeCode,Employee Reference,EmployeeNumber,Employee Number")
     If empCodeCol = 0 Then empCodeCol = 1
     
     newRow = ws.Cells(ws.Rows.Count, empCodeCol).End(xlUp).Row + 1

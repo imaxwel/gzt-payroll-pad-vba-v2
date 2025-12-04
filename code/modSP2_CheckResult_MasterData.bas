@@ -89,12 +89,18 @@ Private Sub LoadWorkforceData()
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     
     For i = 2 To lastRow
+        ' Try multiple field name variants for Employee ID
         empId = GetCellVal(ws, i, headers, "EMPLOYEE ID")
+        If empId = "" Then empId = GetCellVal(ws, i, headers, "EMPLOYEEID")
+        If empId = "" Then empId = GetCellVal(ws, i, headers, "EMPLOYEE NUMBER ID")
         
         If empId <> "" Then
             Set rec = CreateObject("Scripting.Dictionary")
             rec("EmployeeID") = empId
+            ' Try multiple field name variants for WEIN
             rec("WEIN") = GetCellVal(ws, i, headers, "WEIN")
+            If rec("WEIN") = "" Then rec("WEIN") = GetCellVal(ws, i, headers, "WIN")
+            If rec("WEIN") = "" Then rec("WEIN") = GetCellVal(ws, i, headers, "WEINEMPLOYEE ID")
             rec("LegalFirstName") = GetCellVal(ws, i, headers, "LEGAL FIRST NAME")
             rec("LegalLastName") = GetCellVal(ws, i, headers, "LEGAL LAST NAME")
             rec("LastHireDate") = GetCellVal(ws, i, headers, "LAST HIRE DATE")
@@ -160,7 +166,10 @@ Private Function LoadAllowanceData() As Object
         compPlan = UCase(GetCellVal(ws, i, headers, "COMPENSATION PLAN"))
         
         If InStr(compPlan, "TRANSPORTATION") > 0 Then
+            ' Try multiple field name variants for Employee ID
             empId = GetCellVal(ws, i, headers, "EMPLOYEE ID")
+            If empId = "" Then empId = GetCellVal(ws, i, headers, "EMPLOYEEID")
+            If empId = "" Then empId = GetCellVal(ws, i, headers, "EMPLOYEE NUMBER ID")
             amt = ToDouble(GetCellVal(ws, i, headers, "AMOUNT"))
             
             If empId <> "" Then
@@ -221,12 +230,15 @@ Private Function LoadTerminationData() As Object
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     
     For i = 2 To lastRow
+        ' Try multiple field name variants for Employee Code
         empCode = GetCellVal(ws, i, headers, "EMPLOYEE CODE")
+        If empCode = "" Then empCode = GetCellVal(ws, i, headers, "EMPLOYEECODE")
+        If empCode = "" Then empCode = GetCellVal(ws, i, headers, "EMPLOYEE REFERENCE")
+        If empCode = "" Then empCode = GetCellVal(ws, i, headers, "EMPLOYEENUMBER")
         termDate = GetCellVal(ws, i, headers, "TERMINATION DATE")
         
         If empCode <> "" Then
-            wein = WeinFromEmpCode(empCode)
-            If wein = "" Then wein = empCode
+            wein = NormalizeEmployeeId(empCode)
             
             If Not dict.Exists(wein) Then
                 dict.Add wein, termDate
@@ -286,7 +298,7 @@ Private Sub WriteDateChecks(ws As Worksheet, row As Long, empId As String, termD
     ' Last Employment Date Check (Termination Date)
     col = FindColumnByHeader(ws.Rows(4), "Last Employment Date Check")
     If col > 0 Then
-        wein = WeinFromEmpId(empId)
+        wein = NormalizeEmployeeId(empId)
         If wein <> "" And termData.Exists(wein) Then
             ws.Cells(row, col).Value = termData(wein)
         End If

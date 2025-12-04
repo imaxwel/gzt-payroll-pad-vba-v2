@@ -61,7 +61,8 @@ Private Sub ProcessOneTimePaymentCheck(ws As Worksheet, weinIndex As Object)
     lastCol = srcWs.Cells(1, srcWs.Columns.Count).End(xlToLeft).Column
     Set dataRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
     
-    Set grouped = GroupByEmployeeAndType(dataRange, "Employee ID", "One-Time Payment Plan", "Actual Payment - Amount")
+    ' Try multiple field name variants for Employee ID
+    Set grouped = GroupByEmployeeAndType(dataRange, "Employee ID,EmployeeID,WEIN,WIN,Employee Number ID", "One-Time Payment Plan", "Actual Payment - Amount")
     
     ' Map to Check columns
     Dim key As Variant
@@ -75,8 +76,7 @@ Private Sub ProcessOneTimePaymentCheck(ws As Worksheet, weinIndex As Object)
             empId = parts(0)
             planType = UCase(parts(1))
             
-            wein = WeinFromEmpId(empId)
-            If wein = "" Then wein = empId
+            wein = NormalizeEmployeeId(empId)
             
             If weinIndex.Exists(wein) Then
                 row = weinIndex(wein)
@@ -136,7 +136,8 @@ Private Sub ProcessInspireCheck(ws As Worksheet, weinIndex As Object)
     lastCol = srcWs.Cells(1, srcWs.Columns.Count).End(xlToLeft).Column
     Set dataRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
     
-    Set grouped = GroupByEmployeeAndType(dataRange, "Employee ID", "One-Time Payment Plan", "Actual Payment - Amount")
+    ' Try multiple field name variants for Employee ID
+    Set grouped = GroupByEmployeeAndType(dataRange, "Employee ID,EmployeeID,WEIN,WIN,Employee Number ID", "One-Time Payment Plan", "Actual Payment - Amount")
     
     Dim key As Variant
     Dim parts() As String
@@ -149,8 +150,7 @@ Private Sub ProcessInspireCheck(ws As Worksheet, weinIndex As Object)
             empId = parts(0)
             planType = UCase(parts(1))
             
-            wein = WeinFromEmpId(empId)
-            If wein = "" Then wein = empId
+            wein = NormalizeEmployeeId(empId)
             
             If weinIndex.Exists(wein) Then
                 row = weinIndex(wein)
@@ -203,7 +203,8 @@ Private Sub ProcessSIPCheck(ws As Worksheet, weinIndex As Object)
     lastCol = srcWs.Cells(1, srcWs.Columns.Count).End(xlToLeft).Column
     Set dataRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
     
-    Set grouped = GroupByEmployeeAndType(dataRange, "EMPLOYEE ID", "Pay Item", "TOTAL PAYOUT")
+    ' Try multiple field name variants for Employee ID
+    Set grouped = GroupByEmployeeAndType(dataRange, "EMPLOYEE ID,Employee ID,EmployeeID,WEIN,WIN", "Pay Item", "TOTAL PAYOUT")
     
     Dim key As Variant
     Dim parts() As String
@@ -216,8 +217,7 @@ Private Sub ProcessSIPCheck(ws As Worksheet, weinIndex As Object)
             empId = parts(0)
             payItem = UCase(parts(1))
             
-            wein = WeinFromEmpId(empId)
-            If wein = "" Then wein = empId
+            wein = NormalizeEmployeeId(empId)
             
             If weinIndex.Exists(wein) Then
                 row = weinIndex(wein)

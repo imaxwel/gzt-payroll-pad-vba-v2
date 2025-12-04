@@ -266,24 +266,46 @@ End Function
 ' Purpose: Find column index by header name (case-insensitive)
 ' Parameters:
 '   headerRow - Range containing header row
-'   headerName - Name to search for
+'   headerName - Name to search for (can be comma-separated list of variants)
 ' Returns: Column index (1-based) or 0 if not found
 '------------------------------------------------------------------------------
 Public Function FindColumnByHeader(headerRow As Range, headerName As String) As Long
     Dim i As Long
     Dim cellValue As String
     Dim searchName As String
+    Dim variants() As String
+    Dim v As Long
     
     FindColumnByHeader = 0
-    searchName = UCase(Trim(headerName))
+    
+    ' Support comma-separated variant names
+    variants = Split(headerName, ",")
     
     For i = 1 To headerRow.Columns.Count
         cellValue = UCase(Trim(CStr(Nz(headerRow.Cells(1, i).Value, ""))))
-        If cellValue = searchName Then
-            FindColumnByHeader = i
-            Exit Function
-        End If
+        
+        For v = LBound(variants) To UBound(variants)
+            searchName = UCase(Trim(variants(v)))
+            If cellValue = searchName Then
+                FindColumnByHeader = i
+                Exit Function
+            End If
+        Next v
     Next i
+End Function
+
+'------------------------------------------------------------------------------
+' Function: FindEmployeeColumn
+' Purpose: Find any employee ID column using all known variants
+' Parameters:
+'   headerRow - Range containing header row
+' Returns: Column index (1-based) or 0 if not found
+'------------------------------------------------------------------------------
+Public Function FindEmployeeColumn(headerRow As Range) As Long
+    FindEmployeeColumn = FindColumnByHeader(headerRow, _
+        "WEIN,WIN,Employee ID,EmployeeID,Employee Code,EmployeeCode," & _
+        "Employee Number ID,Employee Reference,EmployeeNumber,Employee Number," & _
+        "WEINEmployee ID,Employee CodeWIN")
 End Function
 
 '------------------------------------------------------------------------------

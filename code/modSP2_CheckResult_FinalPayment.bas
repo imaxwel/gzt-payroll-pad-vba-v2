@@ -79,8 +79,13 @@ Private Sub LoadFinalPayParams()
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     
     For i = 2 To lastRow
+        ' Try multiple field name variants for WEIN
         wein = GetCellVal(ws, i, headers, "WEIN")
         If wein = "" Then wein = GetCellVal(ws, i, headers, "WIN")
+        If wein = "" Then wein = GetCellVal(ws, i, headers, "WEINEMPLOYEE ID")
+        If wein = "" Then wein = GetCellVal(ws, i, headers, "EMPLOYEE CODEWIN")
+        If wein = "" Then wein = GetCellVal(ws, i, headers, "EMPLOYEE ID")
+        If wein = "" Then wein = GetCellVal(ws, i, headers, "EMPLOYEEID")
         
         If wein <> "" Then
             Set rec = CreateObject("Scripting.Dictionary")
