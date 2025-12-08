@@ -78,7 +78,7 @@ Private Sub ProcessOneTimePaymentCheck(ws As Worksheet, weinIndex As Object)
             
             wein = NormalizeEmployeeId(empId)
             
-            If weinIndex.exists(wein) Then
+            If weinIndex.Exists(wein) Then
                 row = weinIndex(wein)
                 
                 ' Map plan types to Check columns
@@ -152,7 +152,7 @@ Private Sub ProcessInspireCheck(ws As Worksheet, weinIndex As Object)
             
             wein = NormalizeEmployeeId(empId)
             
-            If weinIndex.exists(wein) Then
+            If weinIndex.Exists(wein) Then
                 row = weinIndex(wein)
                 
                 If InStr(planType, "INSPIRE POINTS") > 0 Then
@@ -219,7 +219,7 @@ Private Sub ProcessSIPCheck(ws As Worksheet, weinIndex As Object)
             
             wein = NormalizeEmployeeId(empId)
             
-            If weinIndex.exists(wein) Then
+            If weinIndex.Exists(wein) Then
                 row = weinIndex(wein)
                 
                 If InStr(payItem, "QUALITATIVE") > 0 Then

@@ -40,7 +40,7 @@ Public Function IsHKPublicHoliday(d As Date) As Boolean
         Exit Function
     End If
     
-    IsHKPublicHoliday = mHolidayCache.exists(CLng(d))
+    IsHKPublicHoliday = mHolidayCache.Exists(CLng(d))
     Exit Function
     
 ErrHandler:
@@ -77,7 +77,7 @@ Private Sub LoadHolidayCache()
             ' Check if IsHKHoliday column (column 2) is True
             If CBool(Nz(ws.Cells(i, 2).Value, False)) Then
                 holidayDate = CDate(ws.Cells(i, 1).Value)
-                If Not mHolidayCache.exists(CLng(holidayDate)) Then
+                If Not mHolidayCache.Exists(CLng(holidayDate)) Then
                     mHolidayCache.Add CLng(holidayDate), True
                 End If
             End If

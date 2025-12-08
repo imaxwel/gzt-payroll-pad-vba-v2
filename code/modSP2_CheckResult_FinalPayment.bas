@@ -97,7 +97,7 @@ Private Sub LoadFinalPayParams()
             rec("Gratuities") = ToDouble(GetCellVal(ws, i, headers, "Gratuities"))
             rec("BackPay") = ToDouble(GetCellVal(ws, i, headers, "BackPay"))
             
-            If Not mFinalPayParams.exists(wein) Then
+            If Not mFinalPayParams.Exists(wein) Then
                 mFinalPayParams.Add wein, rec
             End If
         End If
@@ -124,7 +124,7 @@ Private Sub WriteSeveranceLongServiceCheck(ws As Worksheet, row As Long, wein As
     
     On Error Resume Next
     
-    If Not mFinalPayParams.exists(wein) Then Exit Sub
+    If Not mFinalPayParams.Exists(wein) Then Exit Sub
     
     Dim params As Object
     Set params = mFinalPayParams(wein)
@@ -174,7 +174,7 @@ Private Sub WritePILCheck(ws As Worksheet, row As Long, wein As String)
     
     On Error Resume Next
     
-    If Not mFinalPayParams.exists(wein) Then Exit Sub
+    If Not mFinalPayParams.Exists(wein) Then Exit Sub
     
     Dim params As Object
     Set params = mFinalPayParams(wein)
@@ -201,7 +201,7 @@ Private Sub WriteGratuitiesBackPayCheck(ws As Worksheet, row As Long, wein As St
     
     On Error Resume Next
     
-    If Not mFinalPayParams.exists(wein) Then Exit Sub
+    If Not mFinalPayParams.Exists(wein) Then Exit Sub
     
     Dim params As Object
     Set params = mFinalPayParams(wein)
@@ -257,7 +257,7 @@ Private Function GetCellVal(ws As Worksheet, row As Long, headers As Object, hea
     Dim col As Long
     GetCellVal = ""
     
-    If headers.exists(UCase(headerName)) Then
+    If headers.Exists(UCase(headerName)) Then
         col = headers(UCase(headerName))
         GetCellVal = Trim(CStr(Nz(ws.Cells(row, col).Value, "")))
     End If

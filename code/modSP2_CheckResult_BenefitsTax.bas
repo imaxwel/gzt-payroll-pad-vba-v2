@@ -76,7 +76,7 @@ Private Sub ProcessInspireGrossUp(ws As Worksheet, weinIndex As Object)
             
             wein = NormalizeEmployeeId(empId)
             
-            If weinIndex.exists(wein) Then
+            If weinIndex.Exists(wein) Then
                 row = weinIndex(wein)
                 
                 inspireAmt = grouped(key)

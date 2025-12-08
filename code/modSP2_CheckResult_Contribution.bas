@@ -94,7 +94,7 @@ Private Sub LoadMPFParams()
             rec("ORSO_ER_Pct") = ToDouble(GetCellVal(ws, i, headers, "Percent Of ORSO ER"))
             rec("ORSO_EE_Pct") = ToDouble(GetCellVal(ws, i, headers, "Percent Of ORSO EE"))
             
-            If Not mMPFParams.exists(wein) Then
+            If Not mMPFParams.Exists(wein) Then
                 mMPFParams.Add wein, rec
             End If
         End If
@@ -135,7 +135,7 @@ Private Sub WriteMPFChecks(ws As Worksheet, row As Long, wein As String)
     End If
     
     ' Get percentages from params
-    If mMPFParams.exists(wein) Then
+    If mMPFParams.Exists(wein) Then
         mpfEEVCPct = mMPFParams(wein)("MPF_EE_VC_Pct")
         mpfERVCPct = mMPFParams(wein)("MPF_ER_VC_Pct")
     End If
@@ -190,7 +190,7 @@ Private Sub WriteORSOChecks(ws As Worksheet, row As Long, wein As String)
     End If
     
     ' Get parameters
-    If mMPFParams.exists(wein) Then
+    If mMPFParams.Exists(wein) Then
         orsoERAdj = mMPFParams(wein)("ORSO_ER_Adj")
         orsoERPct = mMPFParams(wein)("ORSO_ER_Pct")
     End If
@@ -223,7 +223,7 @@ Private Function GetCellVal(ws As Worksheet, row As Long, headers As Object, hea
     Dim col As Long
     GetCellVal = ""
     
-    If headers.exists(UCase(headerName)) Then
+    If headers.Exists(UCase(headerName)) Then
         col = headers(UCase(headerName))
         GetCellVal = Trim(CStr(Nz(ws.Cells(row, col).Value, "")))
     End If
