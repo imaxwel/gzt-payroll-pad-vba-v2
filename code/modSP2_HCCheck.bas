@@ -110,7 +110,7 @@ Private Sub CalculatePayrollHC(ws As Worksheet, offset As ePeriodOffset)
         "Reading Payroll Report (" & GetPeriodDescription(offset) & "): " & filePath
     
     If Dir(filePath) = "" Then
-        LogInfo "modSP2_HCCheck", "CalculatePayrollHC", _
+        LogError "modSP2_HCCheck", "CalculatePayrollHC", 0, _
             "File not found: " & filePath
         Exit Sub
     End If
@@ -177,7 +177,7 @@ Private Sub CalculateTerminatedHC(ws As Worksheet, offset As ePeriodOffset)
         "Reading Termination (" & GetPeriodDescription(offset) & "): " & filePath
     
     If Dir(filePath) = "" Then
-        LogInfo "modSP2_HCCheck", "CalculateTerminatedHC", _
+        LogError "modSP2_HCCheck", "CalculateTerminatedHC", 0, _
             "File not found: " & filePath
         Exit Sub
     End If
@@ -256,7 +256,7 @@ Private Sub CalculateNewHireHC(ws As Worksheet, offset As ePeriodOffset)
         "Reading NewHire (" & GetPeriodDescription(offset) & "): " & filePath
     
     If Dir(filePath) = "" Then
-        LogInfo "modSP2_HCCheck", "CalculateNewHireHC", _
+        LogError "modSP2_HCCheck", "CalculateNewHireHC", 0, _
             "File not found: " & filePath
         Exit Sub
     End If
@@ -307,7 +307,7 @@ Private Sub CalculateExtraTableHC(ws As Worksheet, offset As ePeriodOffset)
         "Reading ExtraTable (" & GetPeriodDescription(offset) & "): " & filePath
     
     If Dir(filePath) = "" Then
-        LogInfo "modSP2_HCCheck", "CalculateExtraTableHC", _
+        LogError "modSP2_HCCheck", "CalculateExtraTableHC", 0, _
             "File not found: " & filePath
         Exit Sub
     End If
