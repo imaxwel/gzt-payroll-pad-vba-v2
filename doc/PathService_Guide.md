@@ -12,20 +12,20 @@
 │   └── 2025\
 │       ├── Month\
 │       │   ├── 202501\
-│       │   │   ├── Payroll_Report.xlsx
-│       │   │   ├── Workforce_Detail.xlsx
-│       │   │   ├── 1263_ADP_HK_NewHire.xlsx
-│       │   │   ├── 1263_ADP_HK_Termination.xlsx
-│       │   │   ├── Employee_Leave_Transactions.xlsx
+│       │   │   ├── Payroll Report.xlsx
+│       │   │   ├── Workforce Detail - Payroll-AP.xlsx
+│       │   │   ├── 1263 ADP flexiform template_HK_NewHire.xlsx
+│       │   │   ├── 1263 ADP flexiform template_HK_Termination.xlsx
+│       │   │   ├── Employee_Leave_Transactions_Report.xlsx
 │       │   │   └── ...
 │       │   ├── 202502\
 │       │   │   └── ...
 │       │   └── ...
 │       ├── Quarter\
-│       │   ├── QX_Payout_Summary_2025Q1.xlsx
-│       │   └── QX_Payout_Summary_2025Q2.xlsx
+│       │   ├── 2025QX Payout Summary.xlsx
+│       │   └── ...
 │       └── Adhoc\
-│           ├── Optional_Medical_Upgrade_2025_List.xlsx
+│           ├── Optional medical plan enrollment form.xlsx
 │           └── Special_Bonus_List_2025.xlsx
 └── Output\
     └── 2025\
@@ -53,17 +53,17 @@
 ' 读取当月 Payroll Report
 Dim currentPath As String
 currentPath = GetInputFilePathEx("PayrollReport", poCurrentMonth)
-' 结果: ...\Input\2025\Month\202502\Payroll_Report.xlsx
+' 结果: ...\Input\2025\Month\202502\Payroll Report.xlsx
 
 ' 读取上月 Payroll Report
 Dim previousPath As String
 previousPath = GetInputFilePathEx("PayrollReport", poPreviousMonth)
-' 结果: ...\Input\2025\Month\202501\Payroll_Report.xlsx
+' 结果: ...\Input\2025\Month\202501\Payroll Report.xlsx
 
 ' 读取上月 Termination 文件
 Dim termPath As String
 termPath = GetInputFilePathEx("Termination", poPreviousMonth)
-' 结果: ...\Input\2025\Month\202501\1263_ADP_HK_Termination.xlsx
+' 结果: ...\Input\2025\Month\202501\1263 ADP flexiform template_HK_Termination.xlsx
 ```
 
 ### 2. 便捷方法
@@ -116,12 +116,29 @@ CalculatePayrollHC ws, poPreviousMonth
 
 | 逻辑名称 | 物理文件名 | 期间类型 |
 |----------|------------|----------|
-| PayrollReport | Payroll_Report.xlsx | Month |
-| NewHire | 1263_ADP_HK_NewHire.xlsx | Month |
-| Termination | 1263_ADP_HK_Termination.xlsx | Month |
-| ExtraTable | Extra_Table.xlsx | Month |
-| QXPayout | QX_Payout_Summary_YYYYQX.xlsx | Quarter |
-| OptionalMedical | Optional_Medical_Upgrade_YYYY_List.xlsx | Adhoc |
+| PayrollReport | Payroll Report.xlsx | Month |
+| WorkforceDetail | Workforce Detail - Payroll-AP.xlsx | Month |
+| NewHire | 1263 ADP flexiform template_HK_NewHire.xlsx | Month |
+| Termination | 1263 ADP flexiform template_HK_Termination.xlsx | Month |
+| DataChange | 1263 ADP flexiform template_HK_DataChange.xlsx | Month |
+| Comp | 1263 ADP flexiform template_HK_Comp.xlsx | Month |
+| Attendance | 1263 ADP flexiform template_HK_Attendance.xlsx | Month |
+| Variable | 1263 ADP flexiform template_HK_Variable.xlsx | Month |
+| EmployeeLeave | Employee_Leave_Transactions_Report.xlsx | Month |
+| OneTimePayment | One time payment report.xlsx | Month |
+| InspireAwards | Inspire Awards payroll report.xlsx | Month |
+| EAOSummary | EAO Summary Report_YYYYMM.xlsx | Month |
+| MerckPayroll | Merck Payroll Summary Report——xxx.xlsx | Month |
+| SIPQIP | SIP QIP.xlsx | Month |
+| FlexClaim | MSD HK Flex_Claim_Summary_Report.xlsx | Month |
+| RSUGlobal | RSU Dividend global report.xlsx | Month |
+| RSUEY | RSU Dividend EY report.xlsx | Month |
+| DividendEY | Dividend EY report.xlsx | Month |
+| AIPPayouts | AIP Payouts Payroll Report.xlsx | Month |
+| ExtraTable | 额外表.xlsx | Month |
+| AllowancePlan | Allowance plan report.xlsx | Month |
+| QXPayout | 2025QX Payout Summary.xlsx | Quarter |
+| OptionalMedical | Optional medical plan enrollment form.xlsx | Adhoc |
 
 ## 跨年处理
 
@@ -170,11 +187,11 @@ End Function
 ### 日志示例
 
 ```
-[ERROR] modSP2_Main.ValidateRequiredInputFiles: 当月 Payroll Report 文件不存在: C:\...\Input\2025\Month\202502\Payroll_Report.xlsx
-[ERROR] modSP2_Main.ValidateRequiredInputFiles: 上月 Termination 文件不存在: C:\...\Input\2025\Month\202501\1263_ADP_HK_Termination.xlsx
+[ERROR] modSP2_Main.ValidateRequiredInputFiles: 当月 Payroll Report 文件不存在: C:\...\Input\2025\Month\202502\Payroll Report.xlsx
+[ERROR] modSP2_Main.ValidateRequiredInputFiles: 上月 Termination 文件不存在: C:\...\Input\2025\Month\202501\1263 ADP flexiform template_HK_Termination.xlsx
 [ERROR] modSP2_Main.ValidateRequiredInputFiles: 以下必需输入文件缺失:
-  - [当月] Payroll Report: C:\...\Input\2025\Month\202502\Payroll_Report.xlsx
-  - [上月] Termination: C:\...\Input\2025\Month\202501\1263_ADP_HK_Termination.xlsx
+  - [当月] Payroll Report: C:\...\Input\2025\Month\202502\Payroll Report.xlsx
+  - [上月] Termination: C:\...\Input\2025\Month\202501\1263 ADP flexiform template_HK_Termination.xlsx
 ```
 
 ## 迁移指南
