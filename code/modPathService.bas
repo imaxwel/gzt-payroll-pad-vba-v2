@@ -1,60 +1,60 @@
 Attribute VB_Name = "modPathService"
 '==============================================================================
 ' Module: modPathService
-' Purpose: 分层目录路径服务 - 支持按年/期间类型(Month/Quarter/Adhoc)组织输入文件
-' Description: 提供统一的文件路径解析接口，支持当月/上月切换，
-'              跨月、跨季度、跨年逻辑独立分层，便于后续目录结构调整
+' Purpose: Layered directory path service - supports organizing input files by year/period type (Month/Quarter/Adhoc)
+' Description: Provides unified file path resolution interface, supports current/previous month switching,
+'              cross-month, cross-quarter, cross-year logic independently layered for easy directory structure adjustment
 '==============================================================================
 Option Explicit
 
 '------------------------------------------------------------------------------
 ' Enum: ePeriodOffset
-' Purpose: 期间偏移量枚举
+' Purpose: Period offset enumeration
 '------------------------------------------------------------------------------
 Public Enum ePeriodOffset
-    poCurrentMonth = 0      ' 当月
-    poPreviousMonth = -1    ' 上月
-    poNextMonth = 1         ' 下月 (预留)
+    poCurrentMonth = 0      ' Current month
+    poPreviousMonth = -1    ' Previous month
+    poNextMonth = 1         ' Next month (reserved)
 End Enum
 
 '------------------------------------------------------------------------------
 ' Enum: ePeriodType
-' Purpose: 期间类型枚举
+' Purpose: Period type enumeration
 '------------------------------------------------------------------------------
 Public Enum ePeriodType
-    ptMonth = 1             ' 月度文件
-    ptQuarter = 2           ' 季度文件
-    ptAdhoc = 3             ' 一次性/临时文件
+    ptMonth = 1             ' Monthly file
+    ptQuarter = 2           ' Quarterly file
+    ptAdhoc = 3             ' One-time/temporary file
 End Enum
 
 '------------------------------------------------------------------------------
 ' Type: tPeriodInfo
-' Purpose: 期间信息结构
+' Purpose: Period information structure
 '------------------------------------------------------------------------------
 Public Type tPeriodInfo
-    Year As Integer         ' 年份 (e.g., 2025)
-    Month As Integer        ' 月份 (1-12)
-    Quarter As Integer      ' 季度 (1-4)
-    YearMonth As String     ' "YYYYMM" 格式
-    YearQuarter As String   ' "YYYYQX" 格式
+    Year As Integer         ' Year (e.g., 2025)
+    Month As Integer        ' Month (1-12)
+    Quarter As Integer      ' Quarter (1-4)
+    YearMonth As String     ' "YYYYMM" format
+    YearQuarter As String   ' "YYYYQX" format
 End Type
 
-' 模块级缓存 - 基础路径
+' Module-level cache - base paths
 Private mBaseInputPath As String
 Private mBaseOutputPath As String
 Private mIsPathInitialized As Boolean
 
 
 '==============================================================================
-' 第一层：基础路径初始化
+' Layer 1: Base path initialization
 '==============================================================================
 
 '------------------------------------------------------------------------------
 ' Sub: InitPathService
-' Purpose: 初始化路径服务，设置基础路径
+' Purpose: Initialize path service, set base paths
 ' Parameters:
-'   baseInputPath - 输入文件根目录 (e.g., "C:\Payroll_HK\Input\")
-'   baseOutputPath - 输出文件根目录 (e.g., "C:\Payroll_HK\Output\")
+'   baseInputPath - Input file root directory (e.g., "C:\Payroll_HK\Input\")
+'   baseOutputPath - Output file root directory (e.g., "C:\Payroll_HK\Output\")
 '------------------------------------------------------------------------------
 Public Sub InitPathService(baseInputPath As String, baseOutputPath As String)
     mBaseInputPath = EnsureTrailingSlash(baseInputPath)
@@ -67,12 +67,12 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Sub: InitPathServiceFromContext
-' Purpose: 从全局上下文初始化路径服务
+' Purpose: Initialize path service from global context
 '------------------------------------------------------------------------------
 Public Sub InitPathServiceFromContext()
     If G.IsInitialised Then
-        ' 假设 RunParams.InputFolder 是新结构的根目录
-        ' 如果是旧结构，需要调整
+        ' Assume RunParams.InputFolder is the root directory of new structure
+        ' If using old structure, adjustment is needed
         InitPathService G.RunParams.InputFolder, G.RunParams.OutputFolder
     Else
         Err.Raise vbObjectError + 1001, "InitPathServiceFromContext", _
@@ -81,30 +81,30 @@ Public Sub InitPathServiceFromContext()
 End Sub
 
 '==============================================================================
-' 第二层：期间计算逻辑 (跨月/跨季度/跨年)
+' Layer 2: Period calculation logic (cross-month/cross-quarter/cross-year)
 '==============================================================================
 
 '------------------------------------------------------------------------------
 ' Function: GetPeriodInfo
-' Purpose: 根据基准期间和偏移量计算目标期间信息
+' Purpose: Calculate target period information based on base period and offset
 ' Parameters:
-'   baseYearMonth - 基准年月 "YYYYMM"
-'   offset - 期间偏移量 (ePeriodOffset)
-' Returns: tPeriodInfo 结构
+'   baseYearMonth - Base year-month "YYYYMM"
+'   offset - Period offset (ePeriodOffset)
+' Returns: tPeriodInfo structure
 '------------------------------------------------------------------------------
 Public Function GetPeriodInfo(baseYearMonth As String, offset As ePeriodOffset) As tPeriodInfo
     Dim info As tPeriodInfo
     Dim baseYear As Integer, baseMonth As Integer
     Dim targetDate As Date
     
-    ' 解析基准年月
+    ' Parse base year-month
     baseYear = CInt(Left(baseYearMonth, 4))
     baseMonth = CInt(Right(baseYearMonth, 2))
     
-    ' 计算目标日期 (使用 DateAdd 自动处理跨年)
+    ' Calculate target date (use DateAdd to automatically handle cross-year)
     targetDate = DateAdd("m", CLng(offset), DateSerial(baseYear, baseMonth, 1))
     
-    ' 填充期间信息
+    ' Populate period information
     info.Year = Year(targetDate)
     info.Month = Month(targetDate)
     info.Quarter = GetQuarterFromMonth(info.Month)
@@ -117,7 +117,7 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Function: GetQuarterFromMonth
-' Purpose: 根据月份获取季度
+' Purpose: Get quarter from month
 '------------------------------------------------------------------------------
 Private Function GetQuarterFromMonth(mo As Integer) As Integer
     GetQuarterFromMonth = ((mo - 1) \ 3) + 1
@@ -125,7 +125,7 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Function: GetCurrentPeriodInfo
-' Purpose: 获取当前薪资月的期间信息
+' Purpose: Get period information for current payroll month
 '------------------------------------------------------------------------------
 Public Function GetCurrentPeriodInfo() As tPeriodInfo
     GetCurrentPeriodInfo = GetPeriodInfo(G.Payroll.payrollMonth, poCurrentMonth)
@@ -133,22 +133,22 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Function: GetPreviousPeriodInfo
-' Purpose: 获取上月的期间信息
+' Purpose: Get period information for previous month
 '------------------------------------------------------------------------------
 Public Function GetPreviousPeriodInfo() As tPeriodInfo
     GetPreviousPeriodInfo = GetPeriodInfo(G.Payroll.payrollMonth, poPreviousMonth)
 End Function
 
 '==============================================================================
-' 第三层：目录路径构建
+' Layer 3: Directory path construction
 '==============================================================================
 
 '------------------------------------------------------------------------------
 ' Function: BuildMonthlyInputPath
-' Purpose: 构建月度输入文件目录路径
+' Purpose: Build monthly input file directory path
 ' Parameters:
-'   periodInfo - 期间信息
-' Returns: 完整目录路径 (e.g., "...\2025\Month\202501\")
+'   periodInfo - Period information
+' Returns: Complete directory path (e.g., "...\2025\Month\202501\")
 '------------------------------------------------------------------------------
 Public Function BuildMonthlyInputPath(periodInfo As tPeriodInfo) As String
     Dim path As String
@@ -163,10 +163,10 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Function: BuildQuarterlyInputPath
-' Purpose: 构建季度输入文件目录路径
+' Purpose: Build quarterly input file directory path
 ' Parameters:
-'   periodInfo - 期间信息
-' Returns: 完整目录路径 (e.g., "...\2025\Quarter\")
+'   periodInfo - Period information
+' Returns: Complete directory path (e.g., "...\2025\Quarter\")
 '------------------------------------------------------------------------------
 Public Function BuildQuarterlyInputPath(periodInfo As tPeriodInfo) As String
     Dim path As String
@@ -180,10 +180,10 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Function: BuildAdhocInputPath
-' Purpose: 构建临时/一次性输入文件目录路径
+' Purpose: Build adhoc/one-time input file directory path
 ' Parameters:
-'   periodInfo - 期间信息
-' Returns: 完整目录路径 (e.g., "...\2025\Adhoc\")
+'   periodInfo - Period information
+' Returns: Complete directory path (e.g., "...\2025\Adhoc\")
 '------------------------------------------------------------------------------
 Public Function BuildAdhocInputPath(periodInfo As tPeriodInfo) As String
     Dim path As String
@@ -198,10 +198,10 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Function: BuildOutputPath
-' Purpose: 构建输出文件目录路径
+' Purpose: Build output file directory path
 ' Parameters:
-'   periodInfo - 期间信息
-' Returns: 完整目录路径 (e.g., "...\Output\2025\")
+'   periodInfo - Period information
+' Returns: Complete directory path (e.g., "...\Output\2025\")
 '------------------------------------------------------------------------------
 Public Function BuildOutputPath(periodInfo As tPeriodInfo) As String
     Dim path As String
@@ -213,22 +213,22 @@ Public Function BuildOutputPath(periodInfo As tPeriodInfo) As String
 End Function
 
 '==============================================================================
-' 第四层：文件名映射 (逻辑名称 -> 物理文件名)
+' Layer 4: File name mapping (logical name -> physical file name)
 '==============================================================================
 
 '------------------------------------------------------------------------------
 ' Function: GetPhysicalFileName
-' Purpose: 根据逻辑名称获取物理文件名
+' Purpose: Get physical file name from logical name
 ' Parameters:
-'   logicalName - 逻辑文件名
-'   periodInfo - 期间信息 (用于动态文件名)
-' Returns: 物理文件名
+'   logicalName - Logical file name
+'   periodInfo - Period information (for dynamic file names)
+' Returns: Physical file name
 '------------------------------------------------------------------------------
 Public Function GetPhysicalFileName(logicalName As String, periodInfo As tPeriodInfo) As String
     Dim fileName As String
     
     Select Case UCase(logicalName)
-        ' === 月度文件 (Monthly) ===
+        ' === Monthly files ===
         Case "PAYROLLREPORT"
             fileName = "Payroll Report.xlsx"
         Case "WORKFORCEDETAIL"
@@ -272,11 +272,11 @@ Public Function GetPhysicalFileName(logicalName As String, periodInfo As tPeriod
         Case "ALLOWANCEPLAN"
             fileName = "Allowance plan report.xlsx"
             
-        ' === 季度文件 (Quarterly) - 文件名包含季度信息 ===
+        ' === Quarterly files - file name contains quarter info ===
         Case "QXPAYOUT"
             fileName = CStr(periodInfo.Year) & "QX Payout Summary.xlsx"
             
-        ' === 临时文件 (Adhoc) ===
+        ' === Adhoc files ===
         Case "OPTIONALMEDICAL"
             fileName = "Optional medical plan enrollment form.xlsx"
         Case "SPECIALBONUS"
@@ -292,40 +292,40 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Function: GetFilePeriodType
-' Purpose: 根据逻辑名称获取文件的期间类型
+' Purpose: Get file period type from logical name
 ' Parameters:
-'   logicalName - 逻辑文件名
+'   logicalName - Logical file name
 ' Returns: ePeriodType
 '------------------------------------------------------------------------------
 Public Function GetFilePeriodType(logicalName As String) As ePeriodType
     Select Case UCase(logicalName)
-        ' 季度文件
+        ' Quarterly files
         Case "QXPAYOUT"
             GetFilePeriodType = ptQuarter
-        ' 临时文件
+        ' Adhoc files
         Case "OPTIONALMEDICAL", "SPECIALBONUS"
             GetFilePeriodType = ptAdhoc
-        ' 默认为月度文件
+        ' Default to monthly files
         Case Else
             GetFilePeriodType = ptMonth
     End Select
 End Function
 
 '==============================================================================
-' 第五层：统一文件路径接口 (对外暴露的主要API)
+' Layer 5: Unified file path interface (main API exposed externally)
 '==============================================================================
 
 '------------------------------------------------------------------------------
 ' Function: GetInputFilePathEx
-' Purpose: 获取输入文件完整路径 (支持期间偏移)
+' Purpose: Get complete input file path (supports period offset)
 ' Parameters:
-'   logicalName - 逻辑文件名
-'   offset - 期间偏移量 (默认当月)
-' Returns: 完整文件路径
+'   logicalName - Logical file name
+'   offset - Period offset (default current month)
+' Returns: Complete file path
 ' Example:
-'   GetInputFilePathEx("PayrollReport", poCurrentMonth)  -> 当月Payroll Report
-'   GetInputFilePathEx("PayrollReport", poPreviousMonth) -> 上月Payroll Report
-'   GetInputFilePathEx("Termination", poPreviousMonth)   -> 上月Termination
+'   GetInputFilePathEx("PayrollReport", poCurrentMonth)  -> Current month Payroll Report
+'   GetInputFilePathEx("PayrollReport", poPreviousMonth) -> Previous month Payroll Report
+'   GetInputFilePathEx("Termination", poPreviousMonth)   -> Previous month Termination
 '------------------------------------------------------------------------------
 Public Function GetInputFilePathEx(logicalName As String, _
                                    Optional offset As ePeriodOffset = poCurrentMonth) As String
@@ -334,16 +334,16 @@ Public Function GetInputFilePathEx(logicalName As String, _
     Dim fileName As String
     Dim periodType As ePeriodType
     
-    ' 确保路径服务已初始化
+    ' Ensure path service is initialized
     EnsurePathInitialized
     
-    ' 获取目标期间信息
+    ' Get target period information
     periodInfo = GetPeriodInfo(G.Payroll.payrollMonth, offset)
     
-    ' 获取文件期间类型
+    ' Get file period type
     periodType = GetFilePeriodType(logicalName)
     
-    ' 根据期间类型构建基础路径
+    ' Build base path based on period type
     Select Case periodType
         Case ptMonth
             basePath = BuildMonthlyInputPath(periodInfo)
@@ -353,7 +353,7 @@ Public Function GetInputFilePathEx(logicalName As String, _
             basePath = BuildAdhocInputPath(periodInfo)
     End Select
     
-    ' 获取物理文件名
+    ' Get physical file name
     fileName = GetPhysicalFileName(logicalName, periodInfo)
     
     GetInputFilePathEx = basePath & fileName
@@ -361,7 +361,7 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Function: GetCurrentMonthFilePath
-' Purpose: 获取当月输入文件路径 (便捷方法)
+' Purpose: Get current month input file path (convenience method)
 '------------------------------------------------------------------------------
 Public Function GetCurrentMonthFilePath(logicalName As String) As String
     GetCurrentMonthFilePath = GetInputFilePathEx(logicalName, poCurrentMonth)
@@ -369,7 +369,7 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Function: GetPreviousMonthFilePath
-' Purpose: 获取上月输入文件路径 (便捷方法)
+' Purpose: Get previous month input file path (convenience method)
 '------------------------------------------------------------------------------
 Public Function GetPreviousMonthFilePath(logicalName As String) As String
     GetPreviousMonthFilePath = GetInputFilePathEx(logicalName, poPreviousMonth)
@@ -378,10 +378,10 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Function: GetOutputFilePath
-' Purpose: 获取输出文件完整路径
+' Purpose: Get complete output file path
 ' Parameters:
-'   fileName - 输出文件名
-' Returns: 完整文件路径
+'   fileName - Output file name
+' Returns: Complete file path
 '------------------------------------------------------------------------------
 Public Function GetOutputFilePath(fileName As String) As String
     Dim periodInfo As tPeriodInfo
@@ -393,44 +393,44 @@ Public Function GetOutputFilePath(fileName As String) As String
 End Function
 
 '==============================================================================
-' 第六层：兼容层 - 支持旧目录结构 (可选)
+' Layer 6: Compatibility layer - supports legacy directory structure (optional)
 '==============================================================================
 
 '------------------------------------------------------------------------------
 ' Function: GetInputFilePathLegacy
-' Purpose: 兼容旧目录结构的文件路径获取
-' Note: 当目录结构未迁移时使用此方法
+' Purpose: Get file path compatible with legacy directory structure
+' Note: Use this method when directory structure has not been migrated
 '------------------------------------------------------------------------------
 Public Function GetInputFilePathLegacy(logicalName As String) As String
-    ' 直接调用原有的 GetInputFilePath 函数
+    ' Directly call the original GetInputFilePath function
     GetInputFilePathLegacy = GetInputFilePath(logicalName)
 End Function
 
 '------------------------------------------------------------------------------
 ' Function: GetInputFilePathAuto
-' Purpose: 自动检测目录结构并返回正确路径
+' Purpose: Auto-detect directory structure and return correct path
 ' Parameters:
-'   logicalName - 逻辑文件名
-'   offset - 期间偏移量
-' Returns: 完整文件路径 (优先新结构，回退旧结构)
+'   logicalName - Logical file name
+'   offset - Period offset
+' Returns: Complete file path (prioritize new structure, fallback to legacy)
 '------------------------------------------------------------------------------
 Public Function GetInputFilePathAuto(logicalName As String, _
                                      Optional offset As ePeriodOffset = poCurrentMonth) As String
     Dim newPath As String
     Dim legacyPath As String
     
-    ' 尝试新结构路径
+    ' Try new structure path
     On Error Resume Next
     newPath = GetInputFilePathEx(logicalName, offset)
     On Error GoTo 0
     
-    ' 检查新路径文件是否存在
+    ' Check if file exists at new path
     If Len(newPath) > 0 And Dir(newPath) <> "" Then
         GetInputFilePathAuto = newPath
         Exit Function
     End If
     
-    ' 回退到旧结构 (仅当月有效)
+    ' Fallback to legacy structure (only valid for current month)
     If offset = poCurrentMonth Then
         legacyPath = GetInputFilePathLegacy(logicalName)
         If Dir(legacyPath) <> "" Then
@@ -439,21 +439,21 @@ Public Function GetInputFilePathAuto(logicalName As String, _
         End If
     End If
     
-    ' 返回新结构路径 (即使文件不存在，让调用方处理)
+    ' Return new structure path (even if file does not exist, let caller handle)
     GetInputFilePathAuto = newPath
 End Function
 
 '==============================================================================
-' 辅助函数
+' Helper functions
 '==============================================================================
 
 '------------------------------------------------------------------------------
 ' Sub: EnsurePathInitialized
-' Purpose: 确保路径服务已初始化
+' Purpose: Ensure path service is initialized
 '------------------------------------------------------------------------------
 Private Sub EnsurePathInitialized()
     If Not mIsPathInitialized Then
-        ' 尝试从全局上下文初始化
+        ' Try to initialize from global context
         If G.IsInitialised Then
             InitPathServiceFromContext
         Else
@@ -465,7 +465,7 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Function: EnsureTrailingSlash
-' Purpose: 确保路径以反斜杠结尾
+' Purpose: Ensure path ends with backslash
 '------------------------------------------------------------------------------
 Private Function EnsureTrailingSlash(path As String) As String
     If Len(path) > 0 And Right(path, 1) <> "\" Then
@@ -478,7 +478,7 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Sub: EnsureInputFolderExists
-' Purpose: 确保输入目录存在
+' Purpose: Ensure input directory exists
 '------------------------------------------------------------------------------
 Public Sub EnsureInputFolderExists(logicalName As String, _
                                    Optional offset As ePeriodOffset = poCurrentMonth)
@@ -505,7 +505,7 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Sub: EnsureOutputFolderExists
-' Purpose: 确保输出目录存在
+' Purpose: Ensure output directory exists
 '------------------------------------------------------------------------------
 Public Sub EnsureOutputFolderExists()
     Dim periodInfo As tPeriodInfo
@@ -521,7 +521,7 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Function: FileExistsForPeriod
-' Purpose: 检查指定期间的文件是否存在
+' Purpose: Check if file exists for specified period
 '------------------------------------------------------------------------------
 Public Function FileExistsForPeriod(logicalName As String, _
                                     Optional offset As ePeriodOffset = poCurrentMonth) As Boolean
@@ -533,24 +533,24 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Function: GetPeriodDescription
-' Purpose: 获取期间描述文本 (用于日志和UI)
+' Purpose: Get period description text (for logging and UI)
 '------------------------------------------------------------------------------
 Public Function GetPeriodDescription(offset As ePeriodOffset) As String
     Select Case offset
         Case poCurrentMonth
-            GetPeriodDescription = "当月"
+            GetPeriodDescription = "CurrentMonth"
         Case poPreviousMonth
-            GetPeriodDescription = "上月"
+            GetPeriodDescription = "PreviousMonth"
         Case poNextMonth
-            GetPeriodDescription = "下月"
+            GetPeriodDescription = "NextMonth"
         Case Else
-            GetPeriodDescription = "未知期间"
+            GetPeriodDescription = "UnknownPeriod"
     End Select
 End Function
 
 '------------------------------------------------------------------------------
 ' Sub: LogPathInfo
-' Purpose: 记录路径信息到日志 (调试用)
+' Purpose: Log path information (for debugging)
 '------------------------------------------------------------------------------
 Public Sub LogPathInfo(logicalName As String, offset As ePeriodOffset)
     Dim filePath As String
@@ -559,7 +559,7 @@ Public Sub LogPathInfo(logicalName As String, offset As ePeriodOffset)
     
     filePath = GetInputFilePathEx(logicalName, offset)
     periodDesc = GetPeriodDescription(offset)
-    exists = IIf(Dir(filePath) <> "", "存在", "不存在")
+    exists = IIf(Dir(filePath) <> "", "Exists", "NotFound")
     
     LogInfo "modPathService", "LogPathInfo", _
         logicalName & " (" & periodDesc & "): " & filePath & " [" & exists & "]"
