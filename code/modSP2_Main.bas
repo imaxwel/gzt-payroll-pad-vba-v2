@@ -80,91 +80,91 @@ Private Function ValidateRequiredInputFiles() As Boolean
     
     LogInfo "modSP2_Main", "ValidateRequiredInputFiles", "Validating required input files..."
     
-    ' === 当月必需文件 ===
-    ' Payroll Report (当月) - Check Result 的基准数据
+    ' === Current Month Required Files ===
+    ' Payroll Report (Current Month) - Benchmark data for Check Result
     filePath = GetInputFilePathAuto("PayrollReport", poCurrentMonth)
     If Dir(filePath) = "" Then
         allFilesExist = False
-        missingFiles = missingFiles & vbCrLf & "  - [当月] Payroll Report: " & filePath
+        missingFiles = missingFiles & vbCrLf & "  - [CurrentMonth] Payroll Report: " & filePath
         LogError "modSP2_Main", "ValidateRequiredInputFiles", 0, _
-            "当月 Payroll Report 文件不存在: " & filePath
+            "Current month Payroll Report file does not exist: " & filePath
     Else
-        LogInfo "modSP2_Main", "ValidateRequiredInputFiles", "当月 Payroll Report 存在: " & filePath
+        LogInfo "modSP2_Main", "ValidateRequiredInputFiles", "Current month Payroll Report file exists: " & filePath
     End If
     
-    ' Workforce Detail (当月) - Master Data Check
+    ' Workforce Detail (Current Month) - Master Data Check
     filePath = GetInputFilePathAuto("WorkforceDetail", poCurrentMonth)
     If Dir(filePath) = "" Then
         allFilesExist = False
-        missingFiles = missingFiles & vbCrLf & "  - [当月] Workforce Detail: " & filePath
+        missingFiles = missingFiles & vbCrLf & "  - [CurrentMonth] Workforce Detail: " & filePath
         LogError "modSP2_Main", "ValidateRequiredInputFiles", 0, _
-            "当月 Workforce Detail 文件不存在: " & filePath
+            "Current month Workforce Detail file does not exist: " & filePath
     Else
-        LogInfo "modSP2_Main", "ValidateRequiredInputFiles", "当月 Workforce Detail 存在: " & filePath
+        LogInfo "modSP2_Main", "ValidateRequiredInputFiles", "Current month Workforce Detail file exists: " & filePath
     End If
     
-    ' Termination (当月) - HC Check
+    ' Termination (Current Month) - HC Check
     filePath = GetInputFilePathAuto("Termination", poCurrentMonth)
     If Dir(filePath) = "" Then
         allFilesExist = False
-        missingFiles = missingFiles & vbCrLf & "  - [当月] Termination: " & filePath
+        missingFiles = missingFiles & vbCrLf & "  - [CurrentMonth] Termination: " & filePath
         LogError "modSP2_Main", "ValidateRequiredInputFiles", 0, _
-            "当月 Termination 文件不存在: " & filePath
+            "Current month Termination file does not exist: " & filePath
     Else
-        LogInfo "modSP2_Main", "ValidateRequiredInputFiles", "当月 Termination 存在: " & filePath
+        LogInfo "modSP2_Main", "ValidateRequiredInputFiles", "Current month Termination file exists: " & filePath
     End If
     
-    ' NewHire (当月) - HC Check
+    ' NewHire (Current Month) - HC Check
     filePath = GetInputFilePathAuto("NewHire", poCurrentMonth)
     If Dir(filePath) = "" Then
         allFilesExist = False
-        missingFiles = missingFiles & vbCrLf & "  - [当月] NewHire: " & filePath
+        missingFiles = missingFiles & vbCrLf & "  - [CurrentMonth] NewHire: " & filePath
         LogError "modSP2_Main", "ValidateRequiredInputFiles", 0, _
-            "当月 NewHire 文件不存在: " & filePath
+            "Current month NewHire file does not exist: " & filePath
     Else
-        LogInfo "modSP2_Main", "ValidateRequiredInputFiles", "当月 NewHire 存在: " & filePath
+        LogInfo "modSP2_Main", "ValidateRequiredInputFiles", "Current month NewHire file exists: " & filePath
     End If
     
-    ' === 上月必需文件 (跨月校验) ===
-    ' Payroll Report (上月) - HC Check 计算
+    ' === Previous Month Required Files (Cross-month Validation) ===
+    ' Payroll Report (Previous Month) - HC Check Calculation
     filePath = GetInputFilePathAuto("PayrollReport", poPreviousMonth)
     If Dir(filePath) = "" Then
         allFilesExist = False
-        missingFiles = missingFiles & vbCrLf & "  - [上月] Payroll Report: " & filePath
+        missingFiles = missingFiles & vbCrLf & "  - [PreviousMonth] Payroll Report: " & filePath
         LogError "modSP2_Main", "ValidateRequiredInputFiles", 0, _
-            "上月 Payroll Report 文件不存在: " & filePath
+            "Previous month Payroll Report file does not exist: " & filePath
     Else
-        LogInfo "modSP2_Main", "ValidateRequiredInputFiles", "上月 Payroll Report 存在: " & filePath
+        LogInfo "modSP2_Main", "ValidateRequiredInputFiles", "Previous month Payroll Report file exists: " & filePath
     End If
     
-    ' Termination (上月) - HC Check 计算
+    ' Termination (Previous Month) - HC Check Calculation
     filePath = GetInputFilePathAuto("Termination", poPreviousMonth)
     If Dir(filePath) = "" Then
         allFilesExist = False
-        missingFiles = missingFiles & vbCrLf & "  - [上月] Termination: " & filePath
+        missingFiles = missingFiles & vbCrLf & "  - [PreviousMonth] Termination: " & filePath
         LogError "modSP2_Main", "ValidateRequiredInputFiles", 0, _
-            "上月 Termination 文件不存在: " & filePath
+            "Previous month Termination file does not exist: " & filePath
     Else
-        LogInfo "modSP2_Main", "ValidateRequiredInputFiles", "上月 Termination 存在: " & filePath
+        LogInfo "modSP2_Main", "ValidateRequiredInputFiles", "Previous month Termination file exists: " & filePath
     End If
     
-    ' NewHire (上月) - HC Check 计算
+    ' NewHire (Previous Month) - HC Check Calculation
     filePath = GetInputFilePathAuto("NewHire", poPreviousMonth)
     If Dir(filePath) = "" Then
         allFilesExist = False
-        missingFiles = missingFiles & vbCrLf & "  - [上月] NewHire: " & filePath
+        missingFiles = missingFiles & vbCrLf & "  - [PreviousMonth] NewHire: " & filePath
         LogError "modSP2_Main", "ValidateRequiredInputFiles", 0, _
-            "上月 NewHire 文件不存在: " & filePath
+            "Previous month NewHire file does not exist: " & filePath
     Else
-        LogInfo "modSP2_Main", "ValidateRequiredInputFiles", "上月 NewHire 存在: " & filePath
+        LogInfo "modSP2_Main", "ValidateRequiredInputFiles", "Previous month NewHire file exists: " & filePath
     End If
     
-    ' 输出验证结果
+    ' Output validation result
     If allFilesExist Then
-        LogInfo "modSP2_Main", "ValidateRequiredInputFiles", "所有必需输入文件验证通过"
+        LogInfo "modSP2_Main", "ValidateRequiredInputFiles", "All required input files validation passed"
     Else
         LogError "modSP2_Main", "ValidateRequiredInputFiles", 0, _
-            "以下必需输入文件缺失:" & missingFiles
+            "The following required input files are missing:" & missingFiles
     End If
     
     ValidateRequiredInputFiles = allFilesExist
@@ -243,13 +243,13 @@ Private Sub BuildBenchmarkAndIndex(valWb As Workbook)
     Set destWs = valWb.Worksheets("Check Result")
     Set mWeinIndex = CreateObject("Scripting.Dictionary")
     
-    ' Open Payroll Report - 使用新路径服务
+    ' Open Payroll Report - using new path service
     filePath = GetInputFilePathAuto("PayrollReport", poCurrentMonth)
     
     If Dir(filePath) = "" Then
         LogError "modSP2_Main", "BuildBenchmarkAndIndex", 0, "Payroll Report not found: " & filePath
         Err.Raise vbObjectError + 2002, "BuildBenchmarkAndIndex", _
-            "当月 Payroll Report 文件不存在: " & filePath
+            "Current month Payroll Report file does not exist: " & filePath
     End If
     
     Set srcWb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
