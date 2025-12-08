@@ -304,7 +304,7 @@ Private Sub AddRunSummary(wb As Workbook)
         If sheetWs.Name <> "RunSummary" Then
             r = r + 1
             ws.Cells(r, 1).Value = sheetWs.Name
-            ws.Cells(r, 2).Value = sheetWs.Cells(sheetWs.Rows.count, 1).End(xlUp).row - 1
+            ws.Cells(r, 2).Value = GetLastDataRow(sheetWs) - 1
         End If
     Next sheetWs
     
@@ -315,3 +315,34 @@ Private Sub AddRunSummary(wb As Workbook)
 ErrHandler:
     LogError "modSP1_Main", "AddRunSummary", Err.Number, Err.Description
 End Sub
+
+'------------------------------------------------------------------------------
+' Function: GetLastDataRow
+' Purpose: Find the last row with data across all columns (not just column A)
+' Note: Column A may be empty for rows added by GetOrAddEmployeeRow/GetOrAddRow
+'------------------------------------------------------------------------------
+Private Function GetLastDataRow(ws As Worksheet) As Long
+    Dim lastHeaderCol As Long
+    Dim checkCol As Long
+    Dim colLastRow As Long
+    Dim maxRow As Long
+
+    On Error GoTo ErrHandler
+
+    ' Find last column with header
+    lastHeaderCol = ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
+
+    ' Check each column and find the maximum row
+    maxRow = 1
+    For checkCol = 1 To lastHeaderCol
+        colLastRow = ws.Cells(ws.Rows.count, checkCol).End(xlUp).row
+        If colLastRow > maxRow Then maxRow = colLastRow
+    Next checkCol
+
+    GetLastDataRow = maxRow
+    Exit Function
+
+ErrHandler:
+    ' Fallback to column 1 if error
+    GetLastDataRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
+End Function
