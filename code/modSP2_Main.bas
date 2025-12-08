@@ -25,8 +25,8 @@ Public Sub SP2_Execute()
     ' 0. Validate required input files exist (current and previous month)
     If Not ValidateRequiredInputFiles() Then
         LogError "modSP2_Main", "SP2_Execute", 0, "Required input files validation failed. Aborting."
-        MsgBox "输入文件验证失败，请检查日志获取详细信息。" & vbCrLf & _
-               "流程已终止。", vbCritical, "HK Payroll Automation"
+        MsgBox "Required input files validation failed, check the log for details." & vbCrLf & _
+               "Aborted", vbCritical, "HK Payroll Automation"
         Err.Raise vbObjectError + 2001, "SP2_Execute", "Required input files missing"
     End If
     
