@@ -106,8 +106,8 @@ Private Sub LoadWorkforceData()
             rec("WEIN") = GetCellVal(ws, i, headers, "WEIN")
             If rec("WEIN") = "" Then rec("WEIN") = GetCellVal(ws, i, headers, "WIN")
             If rec("WEIN") = "" Then rec("WEIN") = GetCellVal(ws, i, headers, "WEINEMPLOYEE ID")
-            rec("LegalFirstName") = GetCellVal(ws, i, headers, "LEGAL FIRST NAME")
-            rec("LegalLastName") = GetCellVal(ws, i, headers, "LEGAL LAST NAME")
+            ' Directly extract Legal Full Name from Workforce Detail (not concatenated)
+            rec("LegalFullName") = GetCellVal(ws, i, headers, "LEGAL FULL NAME")
             rec("LastHireDate") = GetCellVal(ws, i, headers, "LAST HIRE DATE")
             rec("BusinessDepartment") = GetCellVal(ws, i, headers, "BUSINESS DEPARTMENT")
             rec("PositionTitle") = GetCellVal(ws, i, headers, "POSITION TITLE")
@@ -272,21 +272,41 @@ End Function
 '------------------------------------------------------------------------------
 ' Sub: WriteNameCheck
 ' Purpose: Write Legal Full Name Check
+' Logic:
+'   - "Legal full name" column: Concatenate Legal First Name & " " & Legal Last Name
+'     from Check Result sheet itself (HK Payroll Validation Output)
+'   - "Legal full name Check" column: Directly use Legal Full Name from
+'     Workforce Detail - Payroll-AP (mapped by Employee ID to WEIN)
 '------------------------------------------------------------------------------
 Private Sub WriteNameCheck(ws As Worksheet, row As Long, empId As String)
-    Dim col As Long
-    Dim fullName As String
+    Dim colFullName As Long
+    Dim colCheck As Long
+    Dim colFirstName As Long
+    Dim colLastName As Long
+    Dim firstName As String
+    Dim lastName As String
     
     On Error Resume Next
     
-    col = FindColumnByHeader(ws.Rows(4), "Legal full name Check")
-    If col = 0 Then Exit Sub
+    ' Step 1: Populate "Legal full name" column by concatenating
+    ' Legal First Name & " " & Legal Last Name from Check Result sheet
+    colFullName = FindColumnByHeader(ws.Rows(4), "Legal full name")
+    colFirstName = FindColumnByHeader(ws.Rows(4), "Legal First Name")
+    colLastName = FindColumnByHeader(ws.Rows(4), "Legal Last Name")
     
-    If mWorkforceData.Exists(empId) Then
+    If colFullName > 0 And colFirstName > 0 And colLastName > 0 Then
+        firstName = Trim(CStr(Nz(ws.Cells(row, colFirstName).Value, "")))
+        lastName = Trim(CStr(Nz(ws.Cells(row, colLastName).Value, "")))
+        ws.Cells(row, colFullName).Value = Trim(firstName & " " & lastName)
+    End If
+    
+    ' Step 2: Populate "Legal full name Check" column with Legal Full Name
+    ' directly from Workforce Detail - Payroll-AP (mapped by Employee ID)
+    colCheck = FindColumnByHeader(ws.Rows(4), "Legal full name Check")
+    If colCheck > 0 And mWorkforceData.Exists(empId) Then
         Dim rec As Object
         Set rec = mWorkforceData(empId)
-        fullName = Trim(rec("LegalFirstName") & " " & rec("LegalLastName"))
-        ws.Cells(row, col).Value = fullName
+        ws.Cells(row, colCheck).Value = rec("LegalFullName")
     End If
 End Sub
 
