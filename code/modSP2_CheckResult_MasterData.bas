@@ -73,11 +73,11 @@ Private Sub LoadWorkforceData()
     
     Set mWorkforceData = CreateObject("Scripting.Dictionary")
     
-    ' 使用新路径服务
+    ' Use new path service
     filePath = GetInputFilePathAuto("WorkforceDetail", poCurrentMonth)
     If Dir(filePath) = "" Then
         LogError "modSP2_CheckResult_MasterData", "LoadWorkforceData", 0, _
-            "Workforce Detail 文件不存在: " & filePath
+            "Workforce Detail file does not exist: " & filePath
         Exit Sub
     End If
     
@@ -150,11 +150,11 @@ Private Function LoadAllowanceData() As Object
     
     Set dict = CreateObject("Scripting.Dictionary")
     
-    ' 使用新路径服务
+    ' Use new path service
     filePath = GetInputFilePathAuto("AllowancePlan", poCurrentMonth)
     If Dir(filePath) = "" Then
         LogInfo "modSP2_CheckResult_MasterData", "LoadAllowanceData", _
-            "Allowance Plan 文件不存在 (可选): " & filePath
+            "Allowance Plan file does not exist (optional): " & filePath
         Set LoadAllowanceData = dict
         Exit Function
     End If
@@ -220,11 +220,11 @@ Private Function LoadTerminationData() As Object
     
     Set dict = CreateObject("Scripting.Dictionary")
     
-    ' 使用新路径服务
+    ' Use new path service
     filePath = GetInputFilePathAuto("Termination", poCurrentMonth)
     If Dir(filePath) = "" Then
         LogError "modSP2_CheckResult_MasterData", "LoadTerminationData", 0, _
-            "Termination 文件不存在: " & filePath
+            "Termination file does not exist: " & filePath
         Set LoadTerminationData = dict
         Exit Function
     End If

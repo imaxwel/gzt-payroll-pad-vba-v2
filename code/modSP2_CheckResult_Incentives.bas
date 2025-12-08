@@ -51,11 +51,11 @@ Private Sub ProcessOneTimePaymentCheck(ws As Worksheet, weinIndex As Object)
     
     On Error GoTo ErrHandler
     
-    ' 使用新路径服务
+    ' Use new path service
     filePath = GetInputFilePathAuto("OneTimePayment", poCurrentMonth)
     If Dir(filePath) = "" Then
         LogInfo "modSP2_CheckResult_Incentives", "ProcessOneTimePaymentCheck", _
-            "One Time Payment 文件不存在 (可选): " & filePath
+            "One Time Payment file does not exist (optional): " & filePath
         Exit Sub
     End If
     
@@ -131,11 +131,11 @@ Private Sub ProcessInspireCheck(ws As Worksheet, weinIndex As Object)
     
     On Error GoTo ErrHandler
     
-    ' 使用新路径服务
+    ' Use new path service
     filePath = GetInputFilePathAuto("InspireAwards", poCurrentMonth)
     If Dir(filePath) = "" Then
         LogInfo "modSP2_CheckResult_Incentives", "ProcessInspireCheck", _
-            "Inspire Awards 文件不存在 (可选): " & filePath
+            "Inspire Awards file does not exist (optional): " & filePath
         Exit Sub
     End If
     
@@ -203,11 +203,11 @@ Private Sub ProcessSIPCheck(ws As Worksheet, weinIndex As Object)
     
     On Error GoTo ErrHandler
     
-    ' 使用新路径服务 (季度文件)
+    ' Use new path service (quarterly file)
     filePath = GetInputFilePathAuto("QXPayout", poCurrentMonth)
     If Dir(filePath) = "" Then
         LogInfo "modSP2_CheckResult_Incentives", "ProcessSIPCheck", _
-            "QX Payout 文件不存在 (可选): " & filePath
+            "QX Payout file does not exist (optional): " & filePath
         Exit Sub
     End If
     
