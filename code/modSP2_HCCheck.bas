@@ -3,6 +3,7 @@ Attribute VB_Name = "modSP2_HCCheck"
 ' Module: modSP2_HCCheck
 ' Purpose: Subprocess 2 - HC Check sheet
 ' Description: Headcount validation and cross-check
+'              支持当月/上月文件读取，使用 modPathService 分层路径服务
 '==============================================================================
 Option Explicit
 
@@ -20,10 +21,19 @@ Public Sub SP2_BuildHCCheck(valWb As Workbook)
     ' Build header
     BuildHCCheckHeader ws
     
-    ' Calculate headcounts
-    CalculatePayrollHC ws
-    CalculateTerminatedHC ws
-    CalculateNewHireHC ws
+    ' Calculate headcounts - 当月数据
+    CalculatePayrollHC ws, poCurrentMonth
+    CalculateTerminatedHC ws, poCurrentMonth
+    CalculateNewHireHC ws, poCurrentMonth
+    CalculateExtraTableHC ws, poCurrentMonth
+    
+    ' Calculate headcounts - 上月数据
+    CalculatePayrollHC ws, poPreviousMonth
+    CalculateTerminatedHC ws, poPreviousMonth
+    CalculateNewHireHC ws, poPreviousMonth
+    CalculateExtraTableHC ws, poPreviousMonth
+    
+    ' Calculate HC formula
     CalculateHCFormula ws
     
     ' Create pivot table for Hire Status
@@ -74,46 +84,77 @@ End Sub
 '------------------------------------------------------------------------------
 ' Sub: CalculatePayrollHC
 ' Purpose: Calculate Payroll Active HC from Payroll Report
+' Parameters:
+'   ws - HC Check worksheet
+'   offset - 期间偏移量 (poCurrentMonth 或 poPreviousMonth)
 '------------------------------------------------------------------------------
-Private Sub CalculatePayrollHC(ws As Worksheet)
-    Dim checkWs As Worksheet
-    Dim lastRow As Long
+Private Sub CalculatePayrollHC(ws As Worksheet, offset As ePeriodOffset)
+    Dim wb As Workbook
+    Dim srcWs As Worksheet
+    Dim filePath As String
+    Dim lastRow As Long, i As Long
     Dim hireStatusCol As Long
     Dim activeCount As Long
-    Dim i As Long
     Dim hireStatus As String
+    Dim targetCol As Long
     
     On Error GoTo ErrHandler
     
-    Set checkWs = ws.Parent.Worksheets("Check Result")
+    ' 确定写入列: 上月=2, 当月=3
+    targetCol = IIf(offset = poPreviousMonth, 2, 3)
     
-    lastRow = checkWs.Cells(checkWs.Rows.count, 1).End(xlUp).row
-    hireStatusCol = FindColumnByHeader(checkWs.Rows(4), "Hire Status")
+    ' 使用新路径服务获取文件路径
+    filePath = GetInputFilePathAuto("PayrollReport", offset)
     
-    If hireStatusCol = 0 Then Exit Sub
+    LogInfo "modSP2_HCCheck", "CalculatePayrollHC", _
+        "Reading Payroll Report (" & GetPeriodDescription(offset) & "): " & filePath
+    
+    If Dir(filePath) = "" Then
+        LogInfo "modSP2_HCCheck", "CalculatePayrollHC", _
+            "File not found: " & filePath
+        Exit Sub
+    End If
+    
+    Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
+    Set srcWs = wb.Worksheets(1)
+    
+    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    hireStatusCol = FindColumnByHeader(srcWs.Rows(1), "Hire Status")
+    
+    If hireStatusCol = 0 Then
+        wb.Close SaveChanges:=False
+        Exit Sub
+    End If
     
     activeCount = 0
-    For i = 5 To lastRow
-        hireStatus = UCase(Trim(CStr(Nz(checkWs.Cells(i, hireStatusCol).Value, ""))))
+    For i = 2 To lastRow
+        hireStatus = UCase(Trim(CStr(Nz(srcWs.Cells(i, hireStatusCol).Value, ""))))
         If hireStatus = "ACTIVE" Then
             activeCount = activeCount + 1
         End If
     Next i
     
-    ' Write to Current Month column
-    ws.Cells(5, 3).Value = activeCount
+    wb.Close SaveChanges:=False
+    
+    ' Write to target column
+    ws.Cells(5, targetCol).Value = activeCount
     
     Exit Sub
     
 ErrHandler:
     LogError "modSP2_HCCheck", "CalculatePayrollHC", Err.Number, Err.Description
+    On Error Resume Next
+    If Not wb Is Nothing Then wb.Close SaveChanges:=False
 End Sub
 
 '------------------------------------------------------------------------------
 ' Sub: CalculateTerminatedHC
 ' Purpose: Calculate Terminated HC from Termination flexiform
+' Parameters:
+'   ws - HC Check worksheet
+'   offset - 期间偏移量 (poCurrentMonth 或 poPreviousMonth)
 '------------------------------------------------------------------------------
-Private Sub CalculateTerminatedHC(ws As Worksheet)
+Private Sub CalculateTerminatedHC(ws As Worksheet, offset As ePeriodOffset)
     Dim wb As Workbook
     Dim srcWs As Worksheet
     Dim filePath As String
@@ -122,11 +163,24 @@ Private Sub CalculateTerminatedHC(ws As Worksheet)
     Dim termDate As Date
     Dim payDate As Date
     Dim includedCount As Long, ocCount As Long
+    Dim targetCol As Long
     
     On Error GoTo ErrHandler
     
-    filePath = GetInputFilePath("Termination")
-    If Dir(filePath) = "" Then Exit Sub
+    ' 确定写入列: 上月=2, 当月=3
+    targetCol = IIf(offset = poPreviousMonth, 2, 3)
+    
+    ' 使用新路径服务获取文件路径
+    filePath = GetInputFilePathAuto("Termination", offset)
+    
+    LogInfo "modSP2_HCCheck", "CalculateTerminatedHC", _
+        "Reading Termination (" & GetPeriodDescription(offset) & "): " & filePath
+    
+    If Dir(filePath) = "" Then
+        LogInfo "modSP2_HCCheck", "CalculateTerminatedHC", _
+            "File not found: " & filePath
+        Exit Sub
+    End If
     
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)
@@ -163,9 +217,9 @@ Private Sub CalculateTerminatedHC(ws As Worksheet)
     
     wb.Close SaveChanges:=False
     
-    ' Write to Current Month column
-    ws.Cells(6, 3).Value = includedCount
-    ws.Cells(7, 3).Value = ocCount
+    ' Write to target column
+    ws.Cells(6, targetCol).Value = includedCount
+    ws.Cells(7, targetCol).Value = ocCount
     
     Exit Sub
     
@@ -178,18 +232,34 @@ End Sub
 '------------------------------------------------------------------------------
 ' Sub: CalculateNewHireHC
 ' Purpose: Calculate New Hire HC from NewHire flexiform
+' Parameters:
+'   ws - HC Check worksheet
+'   offset - 期间偏移量 (poCurrentMonth 或 poPreviousMonth)
 '------------------------------------------------------------------------------
-Private Sub CalculateNewHireHC(ws As Worksheet)
+Private Sub CalculateNewHireHC(ws As Worksheet, offset As ePeriodOffset)
     Dim wb As Workbook
     Dim srcWs As Worksheet
     Dim filePath As String
     Dim lastRow As Long
     Dim newHireCount As Long
+    Dim targetCol As Long
     
     On Error GoTo ErrHandler
     
-    filePath = GetInputFilePath("NewHire")
-    If Dir(filePath) = "" Then Exit Sub
+    ' 确定写入列: 上月=2, 当月=3
+    targetCol = IIf(offset = poPreviousMonth, 2, 3)
+    
+    ' 使用新路径服务获取文件路径
+    filePath = GetInputFilePathAuto("NewHire", offset)
+    
+    LogInfo "modSP2_HCCheck", "CalculateNewHireHC", _
+        "Reading NewHire (" & GetPeriodDescription(offset) & "): " & filePath
+    
+    If Dir(filePath) = "" Then
+        LogInfo "modSP2_HCCheck", "CalculateNewHireHC", _
+            "File not found: " & filePath
+        Exit Sub
+    End If
     
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)
@@ -199,13 +269,64 @@ Private Sub CalculateNewHireHC(ws As Worksheet)
     
     wb.Close SaveChanges:=False
     
-    ' Write to Current Month column
-    ws.Cells(8, 3).Value = newHireCount
+    ' Write to target column
+    ws.Cells(8, targetCol).Value = newHireCount
     
     Exit Sub
     
 ErrHandler:
     LogError "modSP2_HCCheck", "CalculateNewHireHC", Err.Number, Err.Description
+    On Error Resume Next
+    If Not wb Is Nothing Then wb.Close SaveChanges:=False
+End Sub
+
+'------------------------------------------------------------------------------
+' Sub: CalculateExtraTableHC
+' Purpose: Calculate HC from 额外表 (Extra Table)
+' Parameters:
+'   ws - HC Check worksheet
+'   offset - 期间偏移量 (poCurrentMonth 或 poPreviousMonth)
+'------------------------------------------------------------------------------
+Private Sub CalculateExtraTableHC(ws As Worksheet, offset As ePeriodOffset)
+    Dim wb As Workbook
+    Dim srcWs As Worksheet
+    Dim filePath As String
+    Dim lastRow As Long
+    Dim extraCount As Long
+    Dim targetCol As Long
+    
+    On Error GoTo ErrHandler
+    
+    ' 确定写入列: 上月=2, 当月=3
+    targetCol = IIf(offset = poPreviousMonth, 2, 3)
+    
+    ' 使用新路径服务获取文件路径
+    filePath = GetInputFilePathAuto("ExtraTable", offset)
+    
+    LogInfo "modSP2_HCCheck", "CalculateExtraTableHC", _
+        "Reading ExtraTable (" & GetPeriodDescription(offset) & "): " & filePath
+    
+    If Dir(filePath) = "" Then
+        LogInfo "modSP2_HCCheck", "CalculateExtraTableHC", _
+            "File not found: " & filePath
+        Exit Sub
+    End If
+    
+    Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
+    Set srcWs = wb.Worksheets(1)
+    
+    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    extraCount = lastRow - 1 ' Exclude header
+    
+    wb.Close SaveChanges:=False
+    
+    ' Write to target column (row 9 for Extra Table)
+    ws.Cells(9, targetCol).Value = extraCount
+    
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP2_HCCheck", "CalculateExtraTableHC", Err.Number, Err.Description
     On Error Resume Next
     If Not wb Is Nothing Then wb.Close SaveChanges:=False
 End Sub
