@@ -65,7 +65,7 @@ Public Function GroupByEmployeeAndType( _
         If empId <> "" Then
             key = empId & "|" & typeVal
             
-            If dict.Exists(key) Then
+            If dict.exists(key) Then
                 dict(key) = dict(key) + amt
             Else
                 dict.Add key, amt
@@ -138,7 +138,7 @@ Public Function SumPerEmployee( _
         amt = ToDouble(dataRange.Cells(i, amtCol).Value)
         
         If empId <> "" Then
-            If dict.Exists(empId) Then
+            If dict.exists(empId) Then
                 dict(empId) = dict(empId) + amt
             Else
                 dict.Add empId, amt
@@ -238,7 +238,7 @@ Public Function GroupByEmployeeAndTypeFiltered( _
             If empId <> "" Then
                 key = empId & "|" & typeVal
                 
-                If dict.Exists(key) Then
+                If dict.exists(key) Then
                     dict(key) = dict(key) + amt
                 Else
                     dict.Add key, amt
@@ -331,7 +331,7 @@ Public Function GetValueFromGroupedDict( _
     
     key = employeeId & "|" & typeValue
     
-    If dict.Exists(key) Then
+    If dict.exists(key) Then
         GetValueFromGroupedDict = dict(key)
     End If
 End Function
@@ -372,7 +372,7 @@ Public Function BuildEmployeeIndex( _
     
     For i = headerRow + 1 To lastRow
         empId = Trim(CStr(Nz(ws.Cells(i, empCol).Value, "")))
-        If empId <> "" And Not dict.Exists(empId) Then
+        If empId <> "" And Not dict.exists(empId) Then
             dict.Add empId, i
         End If
     Next i

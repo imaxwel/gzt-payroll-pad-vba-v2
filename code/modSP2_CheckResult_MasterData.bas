@@ -110,7 +110,7 @@ Private Sub LoadWorkforceData()
             rec("MonthlySalary") = RoundMonthlySalary(GetCellVal(ws, i, headers, "MONTHLY SALARY"))
             rec("EmployeeType") = GetCellVal(ws, i, headers, "EMPLOYEE TYPE")
             
-            If Not mWorkforceData.Exists(empId) Then
+            If Not mWorkforceData.exists(empId) Then
                 mWorkforceData.Add empId, rec
             End If
         End If
@@ -173,7 +173,7 @@ Private Function LoadAllowanceData() As Object
             amt = ToDouble(GetCellVal(ws, i, headers, "AMOUNT"))
             
             If empId <> "" Then
-                If dict.Exists(empId) Then
+                If dict.exists(empId) Then
                     dict(empId) = dict(empId) + amt
                 Else
                     dict.Add empId, amt
@@ -240,7 +240,7 @@ Private Function LoadTerminationData() As Object
         If empCode <> "" Then
             wein = NormalizeEmployeeId(empCode)
             
-            If Not dict.Exists(wein) Then
+            If Not dict.exists(wein) Then
                 dict.Add wein, termDate
             End If
         End If
@@ -271,7 +271,7 @@ Private Sub WriteNameCheck(ws As Worksheet, row As Long, empId As String)
     col = FindColumnByHeader(ws.Rows(4), "Legal full name Check")
     If col = 0 Then Exit Sub
     
-    If mWorkforceData.Exists(empId) Then
+    If mWorkforceData.exists(empId) Then
         Dim rec As Object
         Set rec = mWorkforceData(empId)
         fullName = Trim(rec("LegalFirstName") & " " & rec("LegalLastName"))
@@ -291,7 +291,7 @@ Private Sub WriteDateChecks(ws As Worksheet, row As Long, empId As String, termD
     
     ' Last Hire Date Check
     col = FindColumnByHeader(ws.Rows(4), "Last Hire Date Check")
-    If col > 0 And mWorkforceData.Exists(empId) Then
+    If col > 0 And mWorkforceData.exists(empId) Then
         ws.Cells(row, col).Value = mWorkforceData(empId)("LastHireDate")
     End If
     
@@ -299,7 +299,7 @@ Private Sub WriteDateChecks(ws As Worksheet, row As Long, empId As String, termD
     col = FindColumnByHeader(ws.Rows(4), "Last Employment Date Check")
     If col > 0 Then
         wein = NormalizeEmployeeId(empId)
-        If wein <> "" And termData.Exists(wein) Then
+        If wein <> "" And termData.exists(wein) Then
             ws.Cells(row, col).Value = termData(wein)
         End If
     End If
@@ -314,7 +314,7 @@ Private Sub WriteOrgChecks(ws As Worksheet, row As Long, empId As String)
     
     On Error Resume Next
     
-    If Not mWorkforceData.Exists(empId) Then Exit Sub
+    If Not mWorkforceData.exists(empId) Then Exit Sub
     
     Dim rec As Object
     Set rec = mWorkforceData(empId)
@@ -343,7 +343,7 @@ Private Sub WritePayChecks(ws As Worksheet, row As Long, empId As String, allowa
     
     On Error Resume Next
     
-    If Not mWorkforceData.Exists(empId) Then Exit Sub
+    If Not mWorkforceData.exists(empId) Then Exit Sub
     
     Dim rec As Object
     Set rec = mWorkforceData(empId)
@@ -370,7 +370,7 @@ Private Sub WritePayChecks(ws As Worksheet, row As Long, empId As String, allowa
     ' Monthly Transport Allowance Check
     col = FindColumnByHeader(ws.Rows(4), "Monthly Transport Allowance Check")
     If col > 0 Then
-        If allowanceData.Exists(empId) Then
+        If allowanceData.exists(empId) Then
             ws.Cells(row, col).Value = RoundAmount2(allowanceData(empId))
         End If
     End If
@@ -383,7 +383,7 @@ Private Function GetCellVal(ws As Worksheet, row As Long, headers As Object, hea
     Dim col As Long
     GetCellVal = ""
     
-    If headers.Exists(UCase(headerName)) Then
+    If headers.exists(UCase(headerName)) Then
         col = headers(UCase(headerName))
         GetCellVal = Trim(CStr(Nz(ws.Cells(row, col).Value, "")))
     End If

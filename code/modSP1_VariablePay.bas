@@ -1,5 +1,4 @@
 Attribute VB_Name = "modSP1_VariablePay"
-Attribute VB_Name = "modSP1_VariablePay"
 '==============================================================================
 ' Module: modSP1_VariablePay
 ' Purpose: Subprocess 1 - VariablePay sheet population
@@ -740,14 +739,14 @@ Private Function GetOrAddRow(ws As Worksheet, wein As String, empIndex As Object
     Dim newRow As Long
     
     ' Try WEIN first
-    If empIndex.Exists(wein) Then
+    If empIndex.exists(wein) Then
         GetOrAddRow = empIndex(wein)
         Exit Function
     End If
     
     ' Try Employee Code
     empCode = EmpCodeFromWein(wein)
-    If empCode <> "" And empIndex.Exists(empCode) Then
+    If empCode <> "" And empIndex.exists(empCode) Then
         GetOrAddRow = empIndex(empCode)
         Exit Function
     End If

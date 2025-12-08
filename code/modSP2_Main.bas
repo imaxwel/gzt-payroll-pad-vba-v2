@@ -149,7 +149,7 @@ Private Sub BuildBenchmarkAndIndex(valWb As Workbook)
         For i = 5 To 4 + lastRow - 1
             Dim wein As String
             wein = Trim(CStr(Nz(destWs.Cells(i, weinCol).Value, "")))
-            If wein <> "" And Not mWeinIndex.Exists(wein) Then
+            If wein <> "" And Not mWeinIndex.exists(wein) Then
                 mWeinIndex.Add wein, i
             End If
         Next i
