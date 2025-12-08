@@ -43,8 +43,13 @@ Private Sub ProcessInspireGrossUp(ws As Worksheet, weinIndex As Object)
     
     On Error GoTo ErrHandler
     
-    filePath = GetInputFilePath("InspireAwards")
-    If Dir(filePath) = "" Then Exit Sub
+    ' 使用新路径服务
+    filePath = GetInputFilePathAuto("InspireAwards", poCurrentMonth)
+    If Dir(filePath) = "" Then
+        LogInfo "modSP2_CheckResult_BenefitsTax", "ProcessInspireGrossUp", _
+            "Inspire Awards 文件不存在 (可选): " & filePath
+        Exit Sub
+    End If
     
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)

@@ -73,8 +73,13 @@ Private Sub LoadWorkforceData()
     
     Set mWorkforceData = CreateObject("Scripting.Dictionary")
     
-    filePath = GetInputFilePath("WorkforceDetail")
-    If Dir(filePath) = "" Then Exit Sub
+    ' 使用新路径服务
+    filePath = GetInputFilePathAuto("WorkforceDetail", poCurrentMonth)
+    If Dir(filePath) = "" Then
+        LogError "modSP2_CheckResult_MasterData", "LoadWorkforceData", 0, _
+            "Workforce Detail 文件不存在: " & filePath
+        Exit Sub
+    End If
     
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set ws = wb.Worksheets(1)
@@ -145,8 +150,11 @@ Private Function LoadAllowanceData() As Object
     
     Set dict = CreateObject("Scripting.Dictionary")
     
-    filePath = GetInputFilePath("AllowancePlan")
+    ' 使用新路径服务
+    filePath = GetInputFilePathAuto("AllowancePlan", poCurrentMonth)
     If Dir(filePath) = "" Then
+        LogInfo "modSP2_CheckResult_MasterData", "LoadAllowanceData", _
+            "Allowance Plan 文件不存在 (可选): " & filePath
         Set LoadAllowanceData = dict
         Exit Function
     End If
@@ -212,8 +220,11 @@ Private Function LoadTerminationData() As Object
     
     Set dict = CreateObject("Scripting.Dictionary")
     
-    filePath = GetInputFilePath("Termination")
+    ' 使用新路径服务
+    filePath = GetInputFilePathAuto("Termination", poCurrentMonth)
     If Dir(filePath) = "" Then
+        LogError "modSP2_CheckResult_MasterData", "LoadTerminationData", 0, _
+            "Termination 文件不存在: " & filePath
         Set LoadTerminationData = dict
         Exit Function
     End If

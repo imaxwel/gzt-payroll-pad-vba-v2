@@ -136,8 +136,50 @@ prevInfo = GetPeriodInfo("202501", poPreviousMonth)
 ' prevInfo.YearMonth = "202412"
 ```
 
+## 输入文件验证
+
+Subprocess 2 在执行前会验证所有必需的输入文件是否存在（包括当月和上月）。
+
+### 必需文件列表
+
+| 文件 | 当月 | 上月 | 用途 |
+|------|------|------|------|
+| PayrollReport | ✓ | ✓ | Check Result 基准数据 / HC Check |
+| WorkforceDetail | ✓ | - | Master Data Check |
+| Termination | ✓ | ✓ | HC Check 计算 |
+| NewHire | ✓ | ✓ | HC Check 计算 |
+
+### 验证失败处理
+
+如果任何必需文件缺失：
+1. 在日志中记录详细的错误信息（包括缺失文件路径）
+2. 弹出对话框提示用户
+3. 终止流程执行，不生成输出文件
+
+### 验证函数
+
+```vba
+' 在 modSP2_Main 中
+Private Function ValidateRequiredInputFiles() As Boolean
+    ' 验证当月和上月的必需文件
+    ' 返回 True 表示所有文件存在
+    ' 返回 False 表示有文件缺失
+End Function
+```
+
+### 日志示例
+
+```
+[ERROR] modSP2_Main.ValidateRequiredInputFiles: 当月 Payroll Report 文件不存在: C:\...\Input\2025\Month\202502\Payroll_Report.xlsx
+[ERROR] modSP2_Main.ValidateRequiredInputFiles: 上月 Termination 文件不存在: C:\...\Input\2025\Month\202501\1263_ADP_HK_Termination.xlsx
+[ERROR] modSP2_Main.ValidateRequiredInputFiles: 以下必需输入文件缺失:
+  - [当月] Payroll Report: C:\...\Input\2025\Month\202502\Payroll_Report.xlsx
+  - [上月] Termination: C:\...\Input\2025\Month\202501\1263_ADP_HK_Termination.xlsx
+```
+
 ## 迁移指南
 
 1. 将现有输入文件按新目录结构重新组织
 2. 使用 `GetInputFilePathAuto` 实现平滑过渡
 3. 完成迁移后，可直接使用 `GetInputFilePathEx`
+4. 确保当月和上月的必需文件都已准备好
