@@ -33,7 +33,7 @@ Public Sub SP2_Check_PayItems(valWb As Workbook, weinIndex As Object)
         WriteEAOChecks ws, row, CStr(wein)
     Next wein
     
-    ' Write PPTO EAO Rate from È¢ùÂ§ñË°®
+    ' Write PPTO EAO Rate from ∂ÓÕ‚±Ì
     WritePPTOEAORateCheck ws, weinIndex
     
     LogInfo "modSP2_CheckResult_PayItems", "SP2_Check_PayItems", "Pay items checks completed"
@@ -139,7 +139,7 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Sub: WritePPTOEAORateCheck
-' Purpose: Write PPTO EAO Rate input Check column from È¢ùÂ§ñË°®
+' Purpose: Write PPTO EAO Rate input Check column from ∂ÓÕ‚±Ì
 '------------------------------------------------------------------------------
 Private Sub WritePPTOEAORateCheck(ws As Worksheet, weinIndex As Object)
     Dim extraWb As Workbook
@@ -159,7 +159,7 @@ Private Sub WritePPTOEAORateCheck(ws As Worksheet, weinIndex As Object)
     If extraWb Is Nothing Then Exit Sub
     
     On Error Resume Next
-    Set srcWs = extraWb.Worksheets("ÈúÄË¶ÅÊØèÊúàÁª¥Êä§")
+    Set srcWs = extraWb.Worksheets("Ãÿ ‚Ω±Ω")
     On Error GoTo ErrHandler
     
     If srcWs Is Nothing Then Exit Sub
@@ -205,3 +205,4 @@ Private Function GetPPTOCellVal(ws As Worksheet, row As Long, headers As Object,
         GetPPTOCellVal = Trim(CStr(Nz(ws.Cells(row, col).Value, "")))
     End If
 End Function
+

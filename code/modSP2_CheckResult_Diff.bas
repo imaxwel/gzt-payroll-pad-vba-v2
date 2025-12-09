@@ -39,16 +39,16 @@ Public Sub SP2_ComputeDiff(valWb As Workbook, weinIndex As Object)
         field = GetTemplateField(i)
         
         If field.HasDiff Then
-            benchmarkCol = GetBenchmarkColIndex(field.BenchmarkName)
-            checkCol = GetCheckColIndex(field.BenchmarkName)
-            diffCol = GetDiffColIndex(field.BenchmarkName)
+            benchmarkCol = GetBenchmarkColIndex(field.benchmarkName)
+            checkCol = GetCheckColIndex(field.benchmarkName)
+            diffCol = GetDiffColIndex(field.benchmarkName)
             
             If benchmarkCol > 0 And checkCol > 0 And diffCol > 0 Then
-                ComputeDiffColumn ws, benchmarkCol, checkCol, diffCol, 5, lastRow, field.BenchmarkName
+                ComputeDiffColumn ws, benchmarkCol, checkCol, diffCol, 5, lastRow, field.benchmarkName
                 processedCount = processedCount + 1
             Else
                 LogInfo "modSP2_CheckResult_Diff", "SP2_ComputeDiff", _
-                    "Skipping field (columns not found): " & field.BenchmarkName & _
+                    "Skipping field (columns not found): " & field.benchmarkName & _
                     " (Bench=" & benchmarkCol & ", Check=" & checkCol & ", Diff=" & diffCol & ")"
             End If
         End If
