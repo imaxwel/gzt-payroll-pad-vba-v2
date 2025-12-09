@@ -271,43 +271,54 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Sub: WriteNameCheck
-' Purpose: Write Legal Full Name Check
+' Purpose: Write Legal Full Name and Check columns
 ' Logic:
-'   - "Legal full name" column: Concatenate Legal First Name & " " & Legal Last Name
+'   - "Legal Full Name" column: Concatenate Legal First Name & " " & Legal Last Name
 '     from Check Result sheet itself (HK Payroll Validation Output)
-'   - "Legal full name Check" column: Directly use Legal Full Name from
+'   - "Legal Full Name Check" column: Directly use Legal Full Name from
 '     Workforce Detail - Payroll-AP (mapped by Employee ID to WEIN)
+'   - Diff column is computed later by SP2_ComputeDiff
 '------------------------------------------------------------------------------
 Private Sub WriteNameCheck(ws As Worksheet, row As Long, empId As String)
-    Dim colFullName As Long
-    Dim colCheck As Long
     Dim colFirstName As Long
     Dim colLastName As Long
+    Dim colFullName As Long
+    Dim colCheck As Long
     Dim firstName As String
     Dim lastName As String
+    Dim fullName As String
+    Dim checkValue As String
     
     On Error Resume Next
     
-    ' Step 1: Populate "Legal full name" column by concatenating
-    ' Legal First Name & " " & Legal Last Name from Check Result sheet
-    colFullName = GetBenchmarkColIndex("Legal full name")
+    ' Find Legal First Name and Legal Last Name columns from Payroll Report
     colFirstName = FindColumnByHeader(ws.Rows(4), "Legal First Name")
     colLastName = FindColumnByHeader(ws.Rows(4), "Legal Last Name")
     
+    ' Find the inserted Legal Full Name and Check columns
+    ' These are inserted right after Legal First Name column
+    colFullName = FindColumnByHeader(ws.Rows(4), "Legal Full Name")
+    colCheck = FindColumnByHeader(ws.Rows(4), "Legal Full Name Check")
+    
+    ' Step 1: Populate "Legal Full Name" column by concatenating
+    ' Legal First Name & " " & Legal Last Name from Check Result sheet
     If colFullName > 0 And colFirstName > 0 And colLastName > 0 Then
         firstName = Trim(CStr(Nz(ws.Cells(row, colFirstName).Value, "")))
         lastName = Trim(CStr(Nz(ws.Cells(row, colLastName).Value, "")))
-        ws.Cells(row, colFullName).Value = Trim(firstName & " " & lastName)
+        fullName = Trim(firstName & " " & lastName)
+        ws.Cells(row, colFullName).Value = fullName
     End If
     
-    ' Step 2: Populate "Legal full name Check" column with Legal Full Name
+    ' Step 2: Populate "Legal Full Name Check" column with Legal Full Name
     ' directly from Workforce Detail - Payroll-AP (mapped by Employee ID)
-    colCheck = GetCheckColIndex("Legal full name")
     If colCheck > 0 And mWorkforceData.exists(empId) Then
         Dim rec As Object
         Set rec = mWorkforceData(empId)
-        ws.Cells(row, colCheck).Value = rec("LegalFullName")
+        checkValue = Trim(CStr(Nz(rec("LegalFullName"), "")))
+        ws.Cells(row, colCheck).Value = checkValue
     End If
+    
+    ' Note: Diff column will be computed by SP2_ComputeDiff module
 End Sub
 
 '------------------------------------------------------------------------------

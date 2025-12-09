@@ -44,10 +44,12 @@ Public Sub InitializeTemplate()
         .HasDiff = True
     End With
     
-    ' Field 2: Legal full name - has Check and Diff
+    ' Field 2: Legal Full Name - has Check and Diff
+    ' Note: This field is dynamically inserted after Legal First Name column
+    ' by concatenating Legal First Name & " " & Legal Last Name
     idx = idx + 1
     With mTemplateFields(idx)
-        .benchmarkName = "Legal full name"
+        .benchmarkName = "Legal Full Name"
         .HasCheck = True
         .HasDiff = True
     End With

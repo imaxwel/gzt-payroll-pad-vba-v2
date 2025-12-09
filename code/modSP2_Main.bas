@@ -340,24 +340,43 @@ Private Sub InsertCheckDiffColumns(ws As Worksheet, headerRow As Long)
     For col = lastCol To 1 Step -1
         headerValue = Trim(CStr(Nz(ws.Cells(headerRow, col).Value, "")))
         
-        ' Check if this column needs Check/Diff columns
-        fieldIdx = FindTemplateFieldByName(headerValue)
-        
-        If fieldIdx > 0 Then
-            field = GetTemplateField(fieldIdx)
+        ' Special handling for Legal First Name: insert Legal Full Name, Check, and Diff columns
+        If UCase(headerValue) = "LEGAL FIRST NAME" Then
+            ' Insert in reverse order: Diff, Check, Legal Full Name
+            ws.Columns(col + 1).Insert Shift:=xlToRight
+            ws.Cells(headerRow, col + 1).Value = "Legal Full Name Diff"
+            insertCount = insertCount + 1
             
-            ' Insert Diff column first (will be after Check column)
-            If field.HasDiff Then
-                ws.Columns(col + 1).Insert Shift:=xlToRight
-                ws.Cells(headerRow, col + 1).Value = headerValue & " Diff"
-                insertCount = insertCount + 1
-            End If
+            ws.Columns(col + 1).Insert Shift:=xlToRight
+            ws.Cells(headerRow, col + 1).Value = "Legal Full Name Check"
+            insertCount = insertCount + 1
             
-            ' Insert Check column (will be right after benchmark)
-            If field.HasCheck Then
-                ws.Columns(col + 1).Insert Shift:=xlToRight
-                ws.Cells(headerRow, col + 1).Value = headerValue & " Check"
-                insertCount = insertCount + 1
+            ws.Columns(col + 1).Insert Shift:=xlToRight
+            ws.Cells(headerRow, col + 1).Value = "Legal Full Name"
+            insertCount = insertCount + 1
+            
+            LogInfo "modSP2_Main", "InsertCheckDiffColumns", _
+                "Inserted Legal Full Name columns after Legal First Name at col " & col
+        Else
+            ' Check if this column needs Check/Diff columns
+            fieldIdx = FindTemplateFieldByName(headerValue)
+            
+            If fieldIdx > 0 Then
+                field = GetTemplateField(fieldIdx)
+                
+                ' Insert Diff column first (will be after Check column)
+                If field.HasDiff Then
+                    ws.Columns(col + 1).Insert Shift:=xlToRight
+                    ws.Cells(headerRow, col + 1).Value = headerValue & " Diff"
+                    insertCount = insertCount + 1
+                End If
+                
+                ' Insert Check column (will be right after benchmark)
+                If field.HasCheck Then
+                    ws.Columns(col + 1).Insert Shift:=xlToRight
+                    ws.Cells(headerRow, col + 1).Value = headerValue & " Check"
+                    insertCount = insertCount + 1
+                End If
             End If
         End If
     Next col
