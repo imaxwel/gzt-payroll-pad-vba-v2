@@ -35,13 +35,19 @@ Public Sub SP2_Check_MasterData(valWb As Workbook, weinIndex As Object)
     Dim wein As Variant
     Dim row As Long
     Dim empId As String
+    Dim weinStr As String
     
     For Each wein In weinIndex.Keys
         row = weinIndex(wein)
-        empId = EmpIdFromWein(CStr(wein))
+        weinStr = CStr(wein)
+        empId = EmpIdFromWein(weinStr)
+        
+        ' If empId mapping not found, use WEIN directly as Employee ID
+        ' (In Workforce Detail, Employee ID is often the same as WEIN)
+        If empId = "" Then empId = weinStr
         
         ' Write Check values
-        WriteNameCheck ws, row, empId
+        WriteNameCheck ws, row, empId, weinStr
         WriteDateChecks ws, row, empId, termData
         WriteOrgChecks ws, row, empId
         WritePayChecks ws, row, empId, allowanceData
@@ -279,7 +285,7 @@ End Function
 '     Workforce Detail - Payroll-AP (mapped by Employee ID to WEIN)
 '   - Diff column is computed later by SP2_ComputeDiff
 '------------------------------------------------------------------------------
-Private Sub WriteNameCheck(ws As Worksheet, row As Long, empId As String)
+Private Sub WriteNameCheck(ws As Worksheet, row As Long, empId As String, wein As String)
     Dim colFirstName As Long
     Dim colLastName As Long
     Dim colFullName As Long
@@ -288,6 +294,7 @@ Private Sub WriteNameCheck(ws As Worksheet, row As Long, empId As String)
     Dim lastName As String
     Dim fullName As String
     Dim checkValue As String
+    Dim lookupKey As String
     
     On Error Resume Next
     
@@ -310,12 +317,26 @@ Private Sub WriteNameCheck(ws As Worksheet, row As Long, empId As String)
     End If
     
     ' Step 2: Populate "Legal Full Name Check" column with Legal Full Name
-    ' directly from Workforce Detail - Payroll-AP (mapped by Employee ID)
-    If colCheck > 0 And mWorkforceData.exists(empId) Then
+    ' directly from Workforce Detail - Payroll-AP
+    ' Note: In Workforce Detail, Employee ID is the same as WEIN in Payroll Report
+    ' Try empId first, then fall back to wein as the lookup key
+    If colCheck > 0 Then
         Dim rec As Object
-        Set rec = mWorkforceData(empId)
-        checkValue = Trim(CStr(Nz(rec("LegalFullName"), "")))
-        ws.Cells(row, colCheck).Value = checkValue
+        lookupKey = ""
+        
+        ' Try empId first
+        If empId <> "" And mWorkforceData.exists(empId) Then
+            lookupKey = empId
+        ' Fall back to wein (WEIN in Payroll Report = Employee ID in Workforce Detail)
+        ElseIf wein <> "" And mWorkforceData.exists(wein) Then
+            lookupKey = wein
+        End If
+        
+        If lookupKey <> "" Then
+            Set rec = mWorkforceData(lookupKey)
+            checkValue = Trim(CStr(Nz(rec("LegalFullName"), "")))
+            ws.Cells(row, colCheck).Value = checkValue
+        End If
     End If
     
     ' Note: Diff column will be computed by SP2_ComputeDiff module
