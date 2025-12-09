@@ -254,7 +254,7 @@ Public Function GetPhysicalFileName(logicalName As String, periodInfo As tPeriod
         Case "EAOSUMMARY"
             fileName = "EAO Summary Report_YYYYMM.xlsx"
         Case "MERCKPAYROLL"
-            fileName = "Merck Payroll Summary Report‚Äî‚Äîxxx.xlsx"
+            fileName = "Merck Payroll Summary Report°™°™xxx.xlsx"
         Case "SIPQIP"
             fileName = "SIP QIP.xlsx"
         Case "FLEXCLAIM"
@@ -268,7 +268,7 @@ Public Function GetPhysicalFileName(logicalName As String, periodInfo As tPeriod
         Case "AIPPAYOUTS"
             fileName = "AIP Payouts Payroll Report.xlsx"
         Case "EXTRATABLE"
-            fileName = "È¢ùÂ§ñË°®.xlsx"
+            fileName = "∂ÓÕ‚±Ì.xlsx"
         Case "ALLOWANCEPLAN"
             fileName = "Allowance plan report.xlsx"
             
@@ -586,4 +586,5 @@ Public Sub LogPathInfo(logicalName As String, offset As ePeriodOffset)
     LogInfo "modPathService", "LogPathInfo", _
         logicalName & " (" & periodDesc & "): " & filePath & " [" & exists & "]"
 End Sub
+
 

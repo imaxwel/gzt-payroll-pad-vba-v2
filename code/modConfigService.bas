@@ -2,12 +2,12 @@ Attribute VB_Name = "modConfigService"
 '==============================================================================
 ' Module: modConfigService
 ' Purpose: Configuration and parameter reading services
-' Description: Handles reading from config.xlsx and È¢ùÂ§ñË°®.xlsx
+' Description: Handles reading from config.xlsx and ∂ÓÕ‚±Ì.xlsx
 '==============================================================================
 Option Explicit
 
 Private Const CONFIG_FILE As String = "config.xlsx"
-Private Const EXTRA_TABLE_FILE As String = "È¢ùÂ§ñË°®.xlsx"
+Private Const EXTRA_TABLE_FILE As String = "∂ÓÕ‚±Ì.xlsx"
 
 '------------------------------------------------------------------------------
 ' Function: LoadRunParamsFromWorkbook
@@ -151,7 +151,7 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Function: OpenExtraTableWorkbook
-' Purpose: Open the È¢ùÂ§ñË°®.xlsx workbook
+' Purpose: Open the ∂ÓÕ‚±Ì.xlsx workbook
 ' Returns: Workbook object or Nothing if not found
 '------------------------------------------------------------------------------
 Public Function OpenExtraTableWorkbook() As Workbook
@@ -306,7 +306,7 @@ Public Function GetInputFilePath(logicalName As String) As String
         Case "WORKFORCEDETAIL"
             fileName = "Workforce Detail - Payroll-AP.xlsx"
         Case "MERCKPAYROLL"
-            fileName = "Merck Payroll Summary Report‚Äî‚Äîxxx.xlsx"
+            fileName = "Merck Payroll Summary Report°™°™xxx.xlsx"
         Case "SIPQIP"
             fileName = "SIP QIP.xlsx"
         Case "FLEXCLAIM"
@@ -318,7 +318,7 @@ Public Function GetInputFilePath(logicalName As String) As String
         Case "AIPPAYOUTS"
             fileName = "AIP Payouts Payroll Report.xlsx"
         Case "EXTRATABLE"
-            fileName = "È¢ùÂ§ñË°®.xlsx"
+            fileName = "∂ÓÕ‚±Ì.xlsx"
         Case "PAYROLLREPORT"
             fileName = "Payroll Report.xlsx"
         Case "ALLOWANCEPLAN"
@@ -373,3 +373,4 @@ ErrHandler:
     
     Set fso = Nothing
 End Sub
+

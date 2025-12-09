@@ -145,7 +145,7 @@ Private Function LoadLeaveTransactions() As Collection
             rec(LR_UNIQUEKEY) = uniqueKey
             
             ' Only add if not already processed
-            If Not mLeaveHistory.Exists(uniqueKey) Then
+            If Not mLeaveHistory.exists(uniqueKey) Then
                 col.Add rec
             End If
         End If
@@ -196,7 +196,7 @@ Private Sub ProcessAnnualLeave(ws As Worksheet, leaveRecords As Collection, empI
             
             ' Aggregate by employee
             recWein = CStr(rec(LR_WEIN))
-            If Not empDays.Exists(recWein) Then
+            If Not empDays.exists(recWein) Then
                 empDays.Add recWein, Array(0#, 0#, 0#)
             End If
             
@@ -270,7 +270,7 @@ Private Sub ProcessSickLeave(ws As Worksheet, leaveRecords As Collection, empInd
                 
                 ' Aggregate
                 recWein = CStr(rec(LR_WEIN))
-                If Not empDays.Exists(recWein) Then
+                If Not empDays.exists(recWein) Then
                     empDays.Add recWein, Array(0#, 0#)
                 End If
                 
@@ -339,7 +339,7 @@ Private Sub ProcessUnpaidLeave(ws As Worksheet, leaveRecords As Collection, empI
                             currentDays, prevDays, olderDays
             
             recWein = CStr(rec(LR_WEIN))
-            If Not empDays.Exists(recWein) Then
+            If Not empDays.exists(recWein) Then
                 empDays.Add recWein, Array(0#, 0#)
             End If
             
@@ -407,7 +407,7 @@ Private Sub ProcessPPTO(ws As Worksheet, leaveRecords As Collection, empIndex As
                             currentDays, prevDays, olderDays
             
             recWein = CStr(rec(LR_WEIN))
-            If Not empDays.Exists(recWein) Then
+            If Not empDays.exists(recWein) Then
                 empDays.Add recWein, Array(0#, 0#)
             End If
             
@@ -467,7 +467,7 @@ Private Sub ProcessMaternityLeave(ws As Worksheet, leaveRecords As Collection, e
             ' TODO: Check 40 weeks service requirement
             
             recWein = CStr(rec(LR_WEIN))
-            If Not empDays.Exists(recWein) Then
+            If Not empDays.exists(recWein) Then
                 empDays.Add recWein, 0#
             End If
             empDays(recWein) = empDays(recWein) + CDbl(rec(LR_TOTALDAYS))
@@ -518,7 +518,7 @@ Private Sub ProcessPaternityLeave(ws As Worksheet, leaveRecords As Collection, e
         
         If UCase(CStr(rec(LR_LEAVETYPE))) Like "*PATERNITY*" Then
             recWein = CStr(rec(LR_WEIN))
-            If Not empDays.Exists(recWein) Then
+            If Not empDays.exists(recWein) Then
                 empDays.Add recWein, 0#
             End If
             empDays(recWein) = empDays(recWein) + CDbl(rec(LR_TOTALDAYS))
@@ -557,7 +557,7 @@ Private Function GetCellValue(ws As Worksheet, row As Long, headers As Object, h
     Dim col As Long
     GetCellValue = ""
     
-    If headers.Exists(UCase(headerName)) Then
+    If headers.exists(UCase(headerName)) Then
         col = headers(UCase(headerName))
         GetCellValue = Trim(CStr(Nz(ws.Cells(row, col).Value, "")))
     End If
@@ -568,7 +568,7 @@ Private Function GetOrAddEmployeeRow(ws As Worksheet, wein As String, empIndex A
     Dim newRow As Long
     
     ' Try to find by WEIN in index
-    If empIndex.Exists(wein) Then
+    If empIndex.exists(wein) Then
         GetOrAddEmployeeRow = empIndex(wein)
         Exit Function
     End If
@@ -576,7 +576,7 @@ Private Function GetOrAddEmployeeRow(ws As Worksheet, wein As String, empIndex A
     ' Try Employee Code
     Dim empCode As String
     empCode = EmpCodeFromWein(wein)
-    If empCode <> "" And empIndex.Exists(empCode) Then
+    If empCode <> "" And empIndex.exists(empCode) Then
         GetOrAddEmployeeRow = empIndex(empCode)
         Exit Function
     End If

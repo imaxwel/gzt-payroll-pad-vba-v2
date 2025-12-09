@@ -76,20 +76,20 @@ Public Sub BuildEmployeeMappings()
         
         ' Build WEIN <-> Employee ID mappings
         If wein <> "" And empId <> "" Then
-            If Not G.DictWeinToEmpId.Exists(wein) Then
+            If Not G.DictWeinToEmpId.exists(wein) Then
                 G.DictWeinToEmpId.Add wein, empId
             End If
-            If Not G.DictEmpIdToWein.Exists(empId) Then
+            If Not G.DictEmpIdToWein.exists(empId) Then
                 G.DictEmpIdToWein.Add empId, wein
             End If
         End If
         
         ' Build Employee Code <-> WEIN mappings
         If empCode <> "" And wein <> "" Then
-            If Not G.DictEmpCodeToWein.Exists(empCode) Then
+            If Not G.DictEmpCodeToWein.exists(empCode) Then
                 G.DictEmpCodeToWein.Add empCode, wein
             End If
-            If Not G.DictWeinToEmpCode.Exists(wein) Then
+            If Not G.DictWeinToEmpCode.exists(wein) Then
                 G.DictWeinToEmpCode.Add wein, empCode
             End If
         End If
@@ -120,7 +120,7 @@ Public Function WeinFromEmpId(empId As String) As String
     
     If G.DictEmpIdToWein Is Nothing Then Exit Function
     
-    If G.DictEmpIdToWein.Exists(empId) Then
+    If G.DictEmpIdToWein.exists(empId) Then
         WeinFromEmpId = G.DictEmpIdToWein(empId)
     End If
 End Function
@@ -137,7 +137,7 @@ Public Function EmpIdFromWein(wein As String) As String
     
     If G.DictWeinToEmpId Is Nothing Then Exit Function
     
-    If G.DictWeinToEmpId.Exists(wein) Then
+    If G.DictWeinToEmpId.exists(wein) Then
         EmpIdFromWein = G.DictWeinToEmpId(wein)
     End If
 End Function
@@ -154,7 +154,7 @@ Public Function WeinFromEmpCode(empCode As String) As String
     
     If G.DictEmpCodeToWein Is Nothing Then Exit Function
     
-    If G.DictEmpCodeToWein.Exists(empCode) Then
+    If G.DictEmpCodeToWein.exists(empCode) Then
         WeinFromEmpCode = G.DictEmpCodeToWein(empCode)
     End If
 End Function
@@ -171,7 +171,7 @@ Public Function EmpCodeFromWein(wein As String) As String
     
     If G.DictWeinToEmpCode Is Nothing Then Exit Function
     
-    If G.DictWeinToEmpCode.Exists(wein) Then
+    If G.DictWeinToEmpCode.exists(wein) Then
         EmpCodeFromWein = G.DictWeinToEmpCode(wein)
     End If
 End Function
@@ -199,7 +199,7 @@ Public Function MapOrAppendByWein( _
     On Error GoTo ErrHandler
     
     ' Check if already in index
-    If weinIndex.Exists(wein) Then
+    If weinIndex.exists(wein) Then
         MapOrAppendByWein = weinIndex(wein)
         Exit Function
     End If
@@ -317,7 +317,7 @@ Public Function NormalizeEmployeeId(empIdValue As String) As String
     ' Try to convert to WEIN using all available mappings
     ' First check if it's already a WEIN
     If Not G.DictWeinToEmpId Is Nothing Then
-        If G.DictWeinToEmpId.Exists(result) Then
+        If G.DictWeinToEmpId.exists(result) Then
             NormalizeEmployeeId = result
             Exit Function
         End If
@@ -325,7 +325,7 @@ Public Function NormalizeEmployeeId(empIdValue As String) As String
     
     ' Try Employee ID -> WEIN
     If Not G.DictEmpIdToWein Is Nothing Then
-        If G.DictEmpIdToWein.Exists(result) Then
+        If G.DictEmpIdToWein.exists(result) Then
             NormalizeEmployeeId = G.DictEmpIdToWein(result)
             Exit Function
         End If
@@ -333,7 +333,7 @@ Public Function NormalizeEmployeeId(empIdValue As String) As String
     
     ' Try Employee Code -> WEIN
     If Not G.DictEmpCodeToWein Is Nothing Then
-        If G.DictEmpCodeToWein.Exists(result) Then
+        If G.DictEmpCodeToWein.exists(result) Then
             NormalizeEmployeeId = G.DictEmpCodeToWein(result)
             Exit Function
         End If

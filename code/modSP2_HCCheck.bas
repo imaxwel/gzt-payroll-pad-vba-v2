@@ -394,7 +394,7 @@ Private Function GetCellVal(ws As Worksheet, row As Long, headers As Object, hea
     Dim col As Long
     GetCellVal = ""
     
-    If headers.Exists(UCase(headerName)) Then
+    If headers.exists(UCase(headerName)) Then
         col = headers(UCase(headerName))
         GetCellVal = Trim(CStr(Nz(ws.Cells(row, col).Value, "")))
     End If

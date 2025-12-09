@@ -86,7 +86,7 @@ Public Sub LoadEAOData()
             rec(EAO_TOTAL_WAGE) = ToDouble(GetCellValueByHeader(ws, i, headers, "TotalWage_12Month"))
             rec(EAO_UNTAKEN_AL) = ToDouble(GetCellValueByHeader(ws, i, headers, "UntakenAnnualLeaveDays"))
             
-            If Not mEAOCache.Exists(wein) Then
+            If Not mEAOCache.exists(wein) Then
                 mEAOCache.Add wein, rec
             End If
         End If
@@ -129,7 +129,7 @@ Private Function GetEAORecord(wein As String) As Variant
         Exit Function
     End If
     
-    If mEAOCache.Exists(wein) Then
+    If mEAOCache.exists(wein) Then
         GetEAORecord = mEAOCache(wein)
     Else
         GetEAORecord = emptyRec
@@ -293,7 +293,7 @@ Private Function BuildHeaderIndex(headerRow As Range) As Object
     
     For i = 1 To headerRow.Columns.count
         headerName = Trim(CStr(Nz(headerRow.Cells(1, i).Value, "")))
-        If headerName <> "" And Not dict.Exists(headerName) Then
+        If headerName <> "" And Not dict.exists(headerName) Then
             dict.Add headerName, i
         End If
     Next i
@@ -306,7 +306,7 @@ Private Function GetCellValueByHeader(ws As Worksheet, rowNum As Long, headers A
     
     GetCellValueByHeader = ""
     
-    If headers.Exists(headerName) Then
+    If headers.exists(headerName) Then
         col = headers(headerName)
         GetCellValueByHeader = Trim(CStr(Nz(ws.Cells(rowNum, col).Value, "")))
     End If
