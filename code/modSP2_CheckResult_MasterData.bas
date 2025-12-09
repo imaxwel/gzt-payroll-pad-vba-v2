@@ -47,6 +47,7 @@ Public Sub SP2_Check_MasterData(valWb As Workbook, weinIndex As Object)
         If empId = "" Then empId = weinStr
         
         ' Write Check values
+        WriteWeinCheck ws, row, empId
         WriteNameCheck ws, row, empId, weinStr
         WriteDateChecks ws, row, empId, termData
         WriteOrgChecks ws, row, empId
@@ -91,8 +92,6 @@ Private Sub LoadWorkforceData()
         Exit Sub
     End If
     
-    LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", "Opening file: " & filePath
-    
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set ws = wb.Worksheets(1)
     
@@ -106,8 +105,6 @@ Private Sub LoadWorkforceData()
             On Error GoTo ErrHandler
             If cellVal = "EMPLOYEE ID" Then
                 headerRow = i
-                LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", _
-                    "Found header row at row " & headerRow & ", Employee ID at column " & c
                 Exit For
             End If
         Next c
@@ -132,26 +129,6 @@ Private Sub LoadWorkforceData()
         End If
     Next c
     
-    LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", _
-        "Built header index with " & headers.count & " columns"
-    
-    ' Debug: Log if key columns are found
-    If headers.exists("EMPLOYEE ID") Then
-        LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", _
-            "Employee ID column found at: " & headers("EMPLOYEE ID")
-    Else
-        LogError "modSP2_CheckResult_MasterData", "LoadWorkforceData", 0, _
-            "Employee ID column NOT found in headers"
-    End If
-    
-    If headers.exists("LEGAL FULL NAME") Then
-        LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", _
-            "Legal Full Name column found at: " & headers("LEGAL FULL NAME")
-    Else
-        LogError "modSP2_CheckResult_MasterData", "LoadWorkforceData", 0, _
-            "Legal Full Name column NOT found in headers"
-    End If
-    
     ' Find last row with data (use Employee ID column)
     Dim empIdCol As Long
     empIdCol = 0
@@ -166,8 +143,6 @@ Private Sub LoadWorkforceData()
     End If
     
     lastRow = ws.Cells(ws.Rows.count, empIdCol).End(xlUp).row
-    LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", _
-        "Data range: row " & (headerRow + 1) & " to " & lastRow
     
     ' Load data starting from row after header
     For i = headerRow + 1 To lastRow
@@ -194,11 +169,6 @@ Private Sub LoadWorkforceData()
             
             If Not mWorkforceData.exists(empId) Then
                 mWorkforceData.Add empId, rec
-                ' Debug: Log first few records
-                If mWorkforceData.count <= 3 Then
-                    LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", _
-                        "Loaded record - EmpID: " & empId & ", LegalFullName: " & rec("LegalFullName")
-                End If
             End If
         End If
     Next i
@@ -353,6 +323,30 @@ ErrHandler:
 End Function
 
 '------------------------------------------------------------------------------
+' Sub: WriteWeinCheck
+' Purpose: Write WEIN Check column
+' Logic:
+'   - WEIN Check column: Get Employee ID from Workforce Detail - Payroll-AP
+'     (Employee ID in Workforce Detail = WEIN in Payroll Report)
+'------------------------------------------------------------------------------
+Private Sub WriteWeinCheck(ws As Worksheet, row As Long, empId As String)
+    Dim colCheck As Long
+    
+    On Error Resume Next
+    
+    ' Find WEIN Check column
+    colCheck = GetCheckColIndex("WEIN")
+    
+    ' Write Employee ID from Workforce Detail as WEIN Check
+    ' (In Workforce Detail, Employee ID is the same as WEIN)
+    If colCheck > 0 And empId <> "" Then
+        If mWorkforceData.exists(empId) Then
+            ws.Cells(row, colCheck).Value = mWorkforceData(empId)("EmployeeID")
+        End If
+    End If
+End Sub
+
+'------------------------------------------------------------------------------
 ' Sub: WriteNameCheck
 ' Purpose: Write Legal Full Name and Check columns
 ' Logic:
@@ -372,7 +366,6 @@ Private Sub WriteNameCheck(ws As Worksheet, row As Long, empId As String, wein A
     Dim fullName As String
     Dim checkValue As String
     Dim lookupKey As String
-    Static logCount As Long ' Only log first few for debugging
     
     On Error Resume Next
     
@@ -384,15 +377,6 @@ Private Sub WriteNameCheck(ws As Worksheet, row As Long, empId As String, wein A
     ' These are inserted right after Legal First Name column
     colFullName = FindColumnByHeader(ws.Rows(4), "Legal Full Name")
     colCheck = FindColumnByHeader(ws.Rows(4), "Legal Full Name Check")
-    
-    ' Debug: Log column positions for first record
-    If logCount = 0 Then
-        LogInfo "modSP2_CheckResult_MasterData", "WriteNameCheck", _
-            "Column positions - FirstName:" & colFirstName & ", LastName:" & colLastName & _
-            ", FullName:" & colFullName & ", Check:" & colCheck
-        LogInfo "modSP2_CheckResult_MasterData", "WriteNameCheck", _
-            "mWorkforceData has " & mWorkforceData.count & " records"
-    End If
     
     ' Step 1: Populate "Legal Full Name" column by concatenating
     ' Legal First Name & " " & Legal Last Name from Check Result sheet
@@ -419,33 +403,12 @@ Private Sub WriteNameCheck(ws As Worksheet, row As Long, empId As String, wein A
             lookupKey = wein
         End If
         
-        ' Debug: Log lookup attempts for first few records
-        If logCount < 5 Then
-            LogInfo "modSP2_CheckResult_MasterData", "WriteNameCheck", _
-                "Row " & row & " - WEIN:" & wein & ", empId:" & empId & _
-                ", lookupKey:" & lookupKey & ", found:" & (lookupKey <> "")
-        End If
-        
         If lookupKey <> "" Then
             Set rec = mWorkforceData(lookupKey)
             checkValue = Trim(CStr(Nz(rec("LegalFullName"), "")))
             ws.Cells(row, colCheck).Value = checkValue
-            
-            ' Debug: Log successful writes for first few records
-            If logCount < 5 Then
-                LogInfo "modSP2_CheckResult_MasterData", "WriteNameCheck", _
-                    "Row " & row & " - Written Legal Full Name Check: " & checkValue
-            End If
-        Else
-            ' Debug: Log failed lookups for first few records
-            If logCount < 5 Then
-                LogInfo "modSP2_CheckResult_MasterData", "WriteNameCheck", _
-                    "Row " & row & " - No match found for WEIN:" & wein & " or empId:" & empId
-            End If
         End If
     End If
-    
-    logCount = logCount + 1
     
     ' Note: Diff column will be computed by SP2_ComputeDiff module
 End Sub
