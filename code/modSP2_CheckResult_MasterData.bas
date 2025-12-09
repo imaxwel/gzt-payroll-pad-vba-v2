@@ -75,7 +75,7 @@ Private Sub LoadWorkforceData()
     
     ' Use new path service
     filePath = GetInputFilePathAuto("WorkforceDetail", poCurrentMonth)
-    If Dir(filePath) = "" Then
+    If Not FileExistsSafe(filePath) Then
         LogError "modSP2_CheckResult_MasterData", "LoadWorkforceData", 0, _
             "Workforce Detail file does not exist: " & filePath
         Exit Sub
@@ -152,7 +152,7 @@ Private Function LoadAllowanceData() As Object
     
     ' Use new path service
     filePath = GetInputFilePathAuto("AllowancePlan", poCurrentMonth)
-    If Dir(filePath) = "" Then
+    If Not FileExistsSafe(filePath) Then
         LogInfo "modSP2_CheckResult_MasterData", "LoadAllowanceData", _
             "Allowance Plan file does not exist (optional): " & filePath
         Set LoadAllowanceData = dict
@@ -222,7 +222,7 @@ Private Function LoadTerminationData() As Object
     
     ' Use new path service
     filePath = GetInputFilePathAuto("Termination", poCurrentMonth)
-    If Dir(filePath) = "" Then
+    If Not FileExistsSafe(filePath) Then
         LogError "modSP2_CheckResult_MasterData", "LoadTerminationData", 0, _
             "Termination file does not exist: " & filePath
         Set LoadTerminationData = dict

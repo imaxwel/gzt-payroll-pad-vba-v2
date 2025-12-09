@@ -45,7 +45,7 @@ Private Sub ProcessInspireGrossUp(ws As Worksheet, weinIndex As Object)
     
     ' Use new path service
     filePath = GetInputFilePathAuto("InspireAwards", poCurrentMonth)
-    If Dir(filePath) = "" Then
+    If Not FileExistsSafe(filePath) Then
         LogInfo "modSP2_CheckResult_BenefitsTax", "ProcessInspireGrossUp", _
             "Inspire Awards file does not exist (optional): " & filePath
         Exit Sub

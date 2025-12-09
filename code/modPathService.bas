@@ -425,7 +425,7 @@ Public Function GetInputFilePathAuto(logicalName As String, _
     On Error GoTo 0
     
     ' Check if file exists at new path
-    If Len(newPath) > 0 And Dir(newPath) <> "" Then
+    If Len(newPath) > 0 And FileExistsSafe(newPath) Then
         GetInputFilePathAuto = newPath
         Exit Function
     End If
@@ -433,7 +433,7 @@ Public Function GetInputFilePathAuto(logicalName As String, _
     ' Fallback to legacy structure (only valid for current month)
     If offset = poCurrentMonth Then
         legacyPath = GetInputFilePathLegacy(logicalName)
-        If Dir(legacyPath) <> "" Then
+        If FileExistsSafe(legacyPath) Then
             GetInputFilePathAuto = legacyPath
             Exit Function
         End If
@@ -528,7 +528,29 @@ Public Function FileExistsForPeriod(logicalName As String, _
     Dim filePath As String
     
     filePath = GetInputFilePathEx(logicalName, offset)
-    FileExistsForPeriod = (Dir(filePath) <> "")
+    FileExistsForPeriod = FileExistsSafe(filePath)
+End Function
+
+'------------------------------------------------------------------------------
+' Function: FileExistsSafe
+' Purpose: Safely check if file exists (handles paths with spaces and special chars)
+' Note: Uses FileSystemObject for more reliable file existence check
+'------------------------------------------------------------------------------
+Public Function FileExistsSafe(filePath As String) As Boolean
+    Dim fso As Object
+    
+    On Error Resume Next
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    If Err.Number <> 0 Then
+        ' Fallback to Dir if FSO not available
+        Err.Clear
+        FileExistsSafe = (Len(Dir(filePath)) > 0)
+        Exit Function
+    End If
+    On Error GoTo 0
+    
+    FileExistsSafe = fso.FileExists(filePath)
+    Set fso = Nothing
 End Function
 
 '------------------------------------------------------------------------------
@@ -559,7 +581,7 @@ Public Sub LogPathInfo(logicalName As String, offset As ePeriodOffset)
     
     filePath = GetInputFilePathEx(logicalName, offset)
     periodDesc = GetPeriodDescription(offset)
-    exists = IIf(Dir(filePath) <> "", "Exists", "NotFound")
+    exists = IIf(FileExistsSafe(filePath), "Exists", "NotFound")
     
     LogInfo "modPathService", "LogPathInfo", _
         logicalName & " (" & periodDesc & "): " & filePath & " [" & exists & "]"

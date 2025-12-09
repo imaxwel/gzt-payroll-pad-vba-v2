@@ -83,7 +83,7 @@ Private Function ValidateRequiredInputFiles() As Boolean
     ' === Current Month Required Files ===
     ' Payroll Report (Current Month) - Benchmark data for Check Result
     filePath = GetInputFilePathAuto("PayrollReport", poCurrentMonth)
-    If Dir(filePath) = "" Then
+    If Not FileExistsSafe(filePath) Then
         allFilesExist = False
         missingFiles = missingFiles & vbCrLf & "  - [CurrentMonth] Payroll Report: " & filePath
         LogError "modSP2_Main", "ValidateRequiredInputFiles", 0, _
@@ -94,7 +94,7 @@ Private Function ValidateRequiredInputFiles() As Boolean
     
     ' Workforce Detail (Current Month) - Master Data Check
     filePath = GetInputFilePathAuto("WorkforceDetail", poCurrentMonth)
-    If Dir(filePath) = "" Then
+    If Not FileExistsSafe(filePath) Then
         allFilesExist = False
         missingFiles = missingFiles & vbCrLf & "  - [CurrentMonth] Workforce Detail: " & filePath
         LogError "modSP2_Main", "ValidateRequiredInputFiles", 0, _
@@ -105,7 +105,7 @@ Private Function ValidateRequiredInputFiles() As Boolean
     
     ' Termination (Current Month) - HC Check
     filePath = GetInputFilePathAuto("Termination", poCurrentMonth)
-    If Dir(filePath) = "" Then
+    If Not FileExistsSafe(filePath) Then
         allFilesExist = False
         missingFiles = missingFiles & vbCrLf & "  - [CurrentMonth] Termination: " & filePath
         LogError "modSP2_Main", "ValidateRequiredInputFiles", 0, _
@@ -116,7 +116,7 @@ Private Function ValidateRequiredInputFiles() As Boolean
     
     ' NewHire (Current Month) - HC Check
     filePath = GetInputFilePathAuto("NewHire", poCurrentMonth)
-    If Dir(filePath) = "" Then
+    If Not FileExistsSafe(filePath) Then
         allFilesExist = False
         missingFiles = missingFiles & vbCrLf & "  - [CurrentMonth] NewHire: " & filePath
         LogError "modSP2_Main", "ValidateRequiredInputFiles", 0, _
@@ -128,7 +128,7 @@ Private Function ValidateRequiredInputFiles() As Boolean
     ' === Previous Month Required Files (Cross-month Validation) ===
     ' Payroll Report (Previous Month) - HC Check Calculation
     filePath = GetInputFilePathAuto("PayrollReport", poPreviousMonth)
-    If Dir(filePath) = "" Then
+    If Not FileExistsSafe(filePath) Then
         allFilesExist = False
         missingFiles = missingFiles & vbCrLf & "  - [PreviousMonth] Payroll Report: " & filePath
         LogError "modSP2_Main", "ValidateRequiredInputFiles", 0, _
@@ -139,7 +139,7 @@ Private Function ValidateRequiredInputFiles() As Boolean
     
     ' Termination (Previous Month) - HC Check Calculation
     filePath = GetInputFilePathAuto("Termination", poPreviousMonth)
-    If Dir(filePath) = "" Then
+    If Not FileExistsSafe(filePath) Then
         allFilesExist = False
         missingFiles = missingFiles & vbCrLf & "  - [PreviousMonth] Termination: " & filePath
         LogError "modSP2_Main", "ValidateRequiredInputFiles", 0, _
@@ -150,7 +150,7 @@ Private Function ValidateRequiredInputFiles() As Boolean
     
     ' NewHire (Previous Month) - HC Check Calculation
     filePath = GetInputFilePathAuto("NewHire", poPreviousMonth)
-    If Dir(filePath) = "" Then
+    If Not FileExistsSafe(filePath) Then
         allFilesExist = False
         missingFiles = missingFiles & vbCrLf & "  - [PreviousMonth] NewHire: " & filePath
         LogError "modSP2_Main", "ValidateRequiredInputFiles", 0, _
@@ -246,7 +246,7 @@ Private Sub BuildBenchmarkAndIndex(valWb As Workbook)
     ' Open Payroll Report - using new path service
     filePath = GetInputFilePathAuto("PayrollReport", poCurrentMonth)
     
-    If Dir(filePath) = "" Then
+    If Not FileExistsSafe(filePath) Then
         LogError "modSP2_Main", "BuildBenchmarkAndIndex", 0, "Payroll Report not found: " & filePath
         Err.Raise vbObjectError + 2002, "BuildBenchmarkAndIndex", _
             "Current month Payroll Report file does not exist: " & filePath
