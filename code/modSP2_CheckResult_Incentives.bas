@@ -60,7 +60,7 @@ Private Sub ProcessOneTimePaymentCheck(ws As Worksheet, weinIndex As Object)
     ' Use new path service
     filePath = GetInputFilePathAuto("OneTimePayment", poCurrentMonth)
     If Not FileExistsSafe(filePath) Then
-        LogInfo "modSP2_CheckResult_Incentives", "ProcessOneTimePaymentCheck", _
+        LogWarn "modSP2_CheckResult_Incentives", "ProcessOneTimePaymentCheck", _
             "One Time Payment file does not exist (optional): " & filePath
         Exit Sub
     End If
@@ -146,7 +146,7 @@ Private Sub ProcessInspireCheck(ws As Worksheet, weinIndex As Object)
     ' Use new path service
     filePath = GetInputFilePathAuto("InspireAwards", poCurrentMonth)
     If Not FileExistsSafe(filePath) Then
-        LogInfo "modSP2_CheckResult_Incentives", "ProcessInspireCheck", _
+        LogWarn "modSP2_CheckResult_Incentives", "ProcessInspireCheck", _
             "Inspire Awards file does not exist (optional): " & filePath
         Exit Sub
     End If
@@ -218,7 +218,7 @@ Private Sub ProcessSIPCheck(ws As Worksheet, weinIndex As Object)
     ' Use new path service (quarterly file)
     filePath = GetInputFilePathAuto("QXPayout", poCurrentMonth)
     If Not FileExistsSafe(filePath) Then
-        LogInfo "modSP2_CheckResult_Incentives", "ProcessSIPCheck", _
+        LogWarn "modSP2_CheckResult_Incentives", "ProcessSIPCheck", _
             "QX Payout file does not exist (optional): " & filePath
         Exit Sub
     End If
@@ -410,7 +410,7 @@ Private Sub ProcessIAPaySplitCheck(ws As Worksheet, weinIndex As Object)
     ' Use new path service
     filePath = GetInputFilePathAuto("MerckPayroll", poCurrentMonth)
     If Not FileExistsSafe(filePath) Then
-        LogInfo "modSP2_CheckResult_Incentives", "ProcessIAPaySplitCheck", _
+        LogWarn "modSP2_CheckResult_Incentives", "ProcessIAPaySplitCheck", _
             "Merck Payroll Summary file does not exist (optional): " & filePath
         Exit Sub
     End If
