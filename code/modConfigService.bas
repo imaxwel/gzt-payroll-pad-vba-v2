@@ -2,12 +2,12 @@ Attribute VB_Name = "modConfigService"
 '==============================================================================
 ' Module: modConfigService
 ' Purpose: Configuration and parameter reading services
-' Description: Handles reading from config.xlsx and 额外表.xlsx
+' Description: Handles reading from config.xlsx and Extra.xlsx
 '==============================================================================
 Option Explicit
 
 Private Const CONFIG_FILE As String = "config.xlsx"
-Private Const EXTRA_TABLE_FILE As String = "额外表.xlsx"
+Private Const EXTRA_TABLE_FILE As String = "Extra.xlsx"
 
 '------------------------------------------------------------------------------
 ' Function: LoadRunParamsFromWorkbook
@@ -151,7 +151,7 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Function: OpenExtraTableWorkbook
-' Purpose: Open the 额外表.xlsx workbook
+' Purpose: Open the Extra.xlsx workbook
 ' Returns: Workbook object or Nothing if not found
 '------------------------------------------------------------------------------
 Public Function OpenExtraTableWorkbook() As Workbook
@@ -318,7 +318,7 @@ Public Function GetInputFilePath(logicalName As String) As String
         Case "AIPPAYOUTS"
             fileName = "AIP Payouts Payroll Report.xlsx"
         Case "EXTRATABLE"
-            fileName = "额外表.xlsx"
+            fileName = "Extra.xlsx"
         Case "PAYROLLREPORT"
             fileName = "Payroll Report.xlsx"
         Case "ALLOWANCEPLAN"

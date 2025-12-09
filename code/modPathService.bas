@@ -268,7 +268,7 @@ Public Function GetPhysicalFileName(logicalName As String, periodInfo As tPeriod
         Case "AIPPAYOUTS"
             fileName = "AIP Payouts Payroll Report.xlsx"
         Case "EXTRATABLE"
-            fileName = "∂ÓÕ‚±Ì.xlsx"
+            fileName = "Extra.xlsx"
         Case "ALLOWANCEPLAN"
             fileName = "Allowance plan report.xlsx"
             
