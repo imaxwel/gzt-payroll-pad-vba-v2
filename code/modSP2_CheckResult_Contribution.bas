@@ -280,7 +280,7 @@ Private Sub WriteOptionalMedicalCheck(ws As Worksheet, weinIndex As Object)
     ' Use new path service
     filePath = GetInputFilePathAuto("OptionalMedical", poCurrentMonth)
     If Not FileExistsSafe(filePath) Then
-        LogInfo "modSP2_CheckResult_Contribution", "WriteOptionalMedicalCheck", _
+        LogWarning "modSP2_CheckResult_Contribution", "WriteOptionalMedicalCheck", _
             "Optional medical plan file does not exist (optional): " & filePath
         Exit Sub
     End If

@@ -206,7 +206,7 @@ Private Function LoadAllowanceData() As Object
     ' Use new path service
     filePath = GetInputFilePathAuto("AllowancePlan", poCurrentMonth)
     If Not FileExistsSafe(filePath) Then
-        LogInfo "modSP2_CheckResult_MasterData", "LoadAllowanceData", _
+        LogWarning "modSP2_CheckResult_MasterData", "LoadAllowanceData", _
             "Allowance Plan file does not exist (optional): " & filePath
         Set LoadAllowanceData = dict
         Exit Function
