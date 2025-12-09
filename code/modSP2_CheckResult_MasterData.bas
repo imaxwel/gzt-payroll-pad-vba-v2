@@ -74,6 +74,10 @@ Private Sub LoadWorkforceData()
     Dim headers As Object
     Dim empId As String
     Dim rec As Object
+    Dim headerRow As Long
+    Dim c As Long
+    Dim lastCol As Long
+    Dim cellVal As String
     
     On Error GoTo ErrHandler
     
@@ -87,19 +91,86 @@ Private Sub LoadWorkforceData()
         Exit Sub
     End If
     
+    LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", "Opening file: " & filePath
+    
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set ws = wb.Worksheets(1)
     
-    ' Build header index
+    ' Find header row by searching for "Employee ID" column
+    ' Workforce Detail file may have filter criteria rows at the top
+    headerRow = 0
+    For i = 1 To 50 ' Search first 50 rows
+        For c = 1 To 200 ' Search first 200 columns
+            On Error Resume Next
+            cellVal = UCase(Trim(CStr(ws.Cells(i, c).Value)))
+            On Error GoTo ErrHandler
+            If cellVal = "EMPLOYEE ID" Then
+                headerRow = i
+                LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", _
+                    "Found header row at row " & headerRow & ", Employee ID at column " & c
+                Exit For
+            End If
+        Next c
+        If headerRow > 0 Then Exit For
+    Next i
+    
+    If headerRow = 0 Then
+        LogError "modSP2_CheckResult_MasterData", "LoadWorkforceData", 0, _
+            "Could not find header row with 'Employee ID' column in Workforce Detail file"
+        wb.Close SaveChanges:=False
+        Exit Sub
+    End If
+    
+    ' Build header index from the found header row
     Set headers = CreateObject("Scripting.Dictionary")
-    Dim c As Long
-    For c = 1 To ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
-        headers(UCase(Trim(CStr(ws.Cells(1, c).Value)))) = c
+    lastCol = ws.Cells(headerRow, ws.Columns.count).End(xlToLeft).Column
+    
+    For c = 1 To lastCol
+        cellVal = UCase(Trim(CStr(Nz(ws.Cells(headerRow, c).Value, ""))))
+        If cellVal <> "" And Not headers.exists(cellVal) Then
+            headers(cellVal) = c
+        End If
     Next c
     
-    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
+    LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", _
+        "Built header index with " & headers.count & " columns"
     
-    For i = 2 To lastRow
+    ' Debug: Log if key columns are found
+    If headers.exists("EMPLOYEE ID") Then
+        LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", _
+            "Employee ID column found at: " & headers("EMPLOYEE ID")
+    Else
+        LogError "modSP2_CheckResult_MasterData", "LoadWorkforceData", 0, _
+            "Employee ID column NOT found in headers"
+    End If
+    
+    If headers.exists("LEGAL FULL NAME") Then
+        LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", _
+            "Legal Full Name column found at: " & headers("LEGAL FULL NAME")
+    Else
+        LogError "modSP2_CheckResult_MasterData", "LoadWorkforceData", 0, _
+            "Legal Full Name column NOT found in headers"
+    End If
+    
+    ' Find last row with data (use Employee ID column)
+    Dim empIdCol As Long
+    empIdCol = 0
+    If headers.exists("EMPLOYEE ID") Then empIdCol = headers("EMPLOYEE ID")
+    If empIdCol = 0 And headers.exists("EMPLOYEEID") Then empIdCol = headers("EMPLOYEEID")
+    
+    If empIdCol = 0 Then
+        LogError "modSP2_CheckResult_MasterData", "LoadWorkforceData", 0, _
+            "Cannot determine Employee ID column for finding last row"
+        wb.Close SaveChanges:=False
+        Exit Sub
+    End If
+    
+    lastRow = ws.Cells(ws.Rows.count, empIdCol).End(xlUp).row
+    LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", _
+        "Data range: row " & (headerRow + 1) & " to " & lastRow
+    
+    ' Load data starting from row after header
+    For i = headerRow + 1 To lastRow
         ' Try multiple field name variants for Employee ID
         empId = GetCellVal(ws, i, headers, "EMPLOYEE ID")
         If empId = "" Then empId = GetCellVal(ws, i, headers, "EMPLOYEEID")
@@ -123,13 +194,19 @@ Private Sub LoadWorkforceData()
             
             If Not mWorkforceData.exists(empId) Then
                 mWorkforceData.Add empId, rec
+                ' Debug: Log first few records
+                If mWorkforceData.count <= 3 Then
+                    LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", _
+                        "Loaded record - EmpID: " & empId & ", LegalFullName: " & rec("LegalFullName")
+                End If
             End If
         End If
     Next i
     
     wb.Close SaveChanges:=False
     
-    LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", "Loaded " & mWorkforceData.count & " records"
+    LogInfo "modSP2_CheckResult_MasterData", "LoadWorkforceData", _
+        "Loaded " & mWorkforceData.count & " records from Workforce Detail"
     Exit Sub
     
 ErrHandler:
@@ -295,6 +372,7 @@ Private Sub WriteNameCheck(ws As Worksheet, row As Long, empId As String, wein A
     Dim fullName As String
     Dim checkValue As String
     Dim lookupKey As String
+    Static logCount As Long ' Only log first few for debugging
     
     On Error Resume Next
     
@@ -306,6 +384,15 @@ Private Sub WriteNameCheck(ws As Worksheet, row As Long, empId As String, wein A
     ' These are inserted right after Legal First Name column
     colFullName = FindColumnByHeader(ws.Rows(4), "Legal Full Name")
     colCheck = FindColumnByHeader(ws.Rows(4), "Legal Full Name Check")
+    
+    ' Debug: Log column positions for first record
+    If logCount = 0 Then
+        LogInfo "modSP2_CheckResult_MasterData", "WriteNameCheck", _
+            "Column positions - FirstName:" & colFirstName & ", LastName:" & colLastName & _
+            ", FullName:" & colFullName & ", Check:" & colCheck
+        LogInfo "modSP2_CheckResult_MasterData", "WriteNameCheck", _
+            "mWorkforceData has " & mWorkforceData.count & " records"
+    End If
     
     ' Step 1: Populate "Legal Full Name" column by concatenating
     ' Legal First Name & " " & Legal Last Name from Check Result sheet
@@ -332,12 +419,33 @@ Private Sub WriteNameCheck(ws As Worksheet, row As Long, empId As String, wein A
             lookupKey = wein
         End If
         
+        ' Debug: Log lookup attempts for first few records
+        If logCount < 5 Then
+            LogInfo "modSP2_CheckResult_MasterData", "WriteNameCheck", _
+                "Row " & row & " - WEIN:" & wein & ", empId:" & empId & _
+                ", lookupKey:" & lookupKey & ", found:" & (lookupKey <> "")
+        End If
+        
         If lookupKey <> "" Then
             Set rec = mWorkforceData(lookupKey)
             checkValue = Trim(CStr(Nz(rec("LegalFullName"), "")))
             ws.Cells(row, colCheck).Value = checkValue
+            
+            ' Debug: Log successful writes for first few records
+            If logCount < 5 Then
+                LogInfo "modSP2_CheckResult_MasterData", "WriteNameCheck", _
+                    "Row " & row & " - Written Legal Full Name Check: " & checkValue
+            End If
+        Else
+            ' Debug: Log failed lookups for first few records
+            If logCount < 5 Then
+                LogInfo "modSP2_CheckResult_MasterData", "WriteNameCheck", _
+                    "Row " & row & " - No match found for WEIN:" & wein & " or empId:" & empId
+            End If
         End If
     End If
+    
+    logCount = logCount + 1
     
     ' Note: Diff column will be computed by SP2_ComputeDiff module
 End Sub
