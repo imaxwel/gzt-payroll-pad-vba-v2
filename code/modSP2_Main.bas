@@ -539,6 +539,7 @@ End Sub
 '------------------------------------------------------------------------------
 Private Sub FinalizeValidationOutput(valWb As Workbook)
     Dim ws As Worksheet
+    Dim lastRow As Long, lastCol As Long
     
     On Error GoTo ErrHandler
     
@@ -547,6 +548,13 @@ Private Sub FinalizeValidationOutput(valWb As Workbook)
     ' Apply formatting to Check Result
     Set ws = valWb.Worksheets("Check Result")
     ApplyStandardFormatting ws, 4
+    
+    ' Apply center alignment to Check Result sheet (header row 4 and all data rows)
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
+    lastCol = ws.Cells(4, ws.Columns.count).End(xlToLeft).Column
+    If lastRow >= 4 And lastCol >= 1 Then
+        ws.Range(ws.Cells(4, 1), ws.Cells(lastRow, lastCol)).HorizontalAlignment = xlCenter
+    End If
     
     ' Apply conditional formatting to Diff columns
     ApplyDiffFormatting ws
