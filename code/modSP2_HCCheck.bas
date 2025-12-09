@@ -313,10 +313,38 @@ Private Sub CalculateExtraTableHC(ws As Worksheet, offset As ePeriodOffset)
     End If
     
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
+    
+    ' 检查工作簿是否成功打开
+    If wb Is Nothing Then
+        LogError "modSP2_HCCheck", "CalculateExtraTableHC", 0, _
+            "Failed to open workbook: " & filePath
+        ws.Cells(9, targetCol).Value = 0
+        Exit Sub
+    End If
+    
+    ' 检查工作簿是否有工作表
+    If wb.Worksheets.count = 0 Then
+        LogError "modSP2_HCCheck", "CalculateExtraTableHC", 0, _
+            "Workbook has no worksheets: " & filePath
+        wb.Close SaveChanges:=False
+        ws.Cells(9, targetCol).Value = 0
+        Exit Sub
+    End If
+    
     Set srcWs = wb.Worksheets(1)
+    
+    ' 检查工作表对象是否有效
+    If srcWs Is Nothing Then
+        LogError "modSP2_HCCheck", "CalculateExtraTableHC", 0, _
+            "Failed to get worksheet from: " & filePath
+        wb.Close SaveChanges:=False
+        ws.Cells(9, targetCol).Value = 0
+        Exit Sub
+    End If
     
     lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
     extraCount = lastRow - 1 ' Exclude header
+    If extraCount < 0 Then extraCount = 0
     
     wb.Close SaveChanges:=False
     
@@ -329,6 +357,7 @@ ErrHandler:
     LogError "modSP2_HCCheck", "CalculateExtraTableHC", Err.Number, Err.Description
     On Error Resume Next
     If Not wb Is Nothing Then wb.Close SaveChanges:=False
+    ws.Cells(9, targetCol).Value = 0
 End Sub
 
 '------------------------------------------------------------------------------
