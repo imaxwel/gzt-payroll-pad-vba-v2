@@ -22,6 +22,7 @@
 		"modSP2_CheckResult_MasterData": "modSP2_CheckResult_MasterData.bas",
 		"modSP2_CheckResult_PayItems": "modSP2_CheckResult_PayItems.bas",
 		"modSP2_HCCheck": "modSP2_HCCheck.bas",
-		"modPathService": "modPathService.bas"
+		"modPathService": "modPathService.bas",
+		"modSP2_CheckResultTemplate": "modSP2_CheckResultTemplate.bas"
 	}
 }
