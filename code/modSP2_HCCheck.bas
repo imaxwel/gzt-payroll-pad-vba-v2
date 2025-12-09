@@ -4,6 +4,7 @@ Attribute VB_Name = "modSP2_HCCheck"
 ' Purpose: Subprocess 2 - HC Check sheet
 ' Description: Headcount validation and cross-check
 '              支持当月/上月文件读取，使用 modPathService 分层路径服务
+'              按需求说明书结构输出：PivotTable区域 + HC明细表
 '==============================================================================
 Option Explicit
 
@@ -18,8 +19,14 @@ Public Sub SP2_BuildHCCheck(valWb As Workbook)
     
     Set ws = valWb.Worksheets("HC Check")
     
-    ' Build header
+    ' Build header and structure
     BuildHCCheckHeader ws
+    
+    ' Create pivot table for Hire Status (Row 3-5)
+    CreateHireStatusPivot valWb, ws
+    
+    ' Build HC detail table (Row 10-15)
+    BuildHCDetailTable ws
     
     ' Calculate headcounts - 当月数据
     CalculatePayrollHC ws, poCurrentMonth
@@ -33,11 +40,11 @@ Public Sub SP2_BuildHCCheck(valWb As Workbook)
     CalculateNewHireHC ws, poPreviousMonth
     CalculateExtraTableHC ws, poPreviousMonth
     
-    ' Calculate HC formula
+    ' Calculate HC formula and Check column
     CalculateHCFormula ws
     
-    ' Create pivot table for Hire Status
-    CreateHireStatusPivot valWb
+    ' Apply formatting
+    ApplyHCCheckFormatting ws
     
     LogInfo "modSP2_HCCheck", "SP2_BuildHCCheck", "HC Check sheet built"
     
@@ -49,44 +56,157 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Sub: BuildHCCheckHeader
-' Purpose: Build the HC Check sheet header
+' Purpose: Build the HC Check sheet header (Row 1)
 '------------------------------------------------------------------------------
 Private Sub BuildHCCheckHeader(ws As Worksheet)
     On Error Resume Next
     
-    ws.Cells(1, 1).Value = "HK Payroll HC Check"
-    ws.Cells(1, 1).Font.Bold = True
-    ws.Cells(1, 1).Font.Size = 14
+    ' Row 1: Payroll Month
+    ws.Cells(1, 1).Value = "Payroll Month"
+    ws.Cells(1, 2).Value = G.Payroll.payrollMonth
+End Sub
+
+'------------------------------------------------------------------------------
+' Sub: BuildHCDetailTable
+' Purpose: Build the HC detail table structure (Row 10-15)
+'------------------------------------------------------------------------------
+Private Sub BuildHCDetailTable(ws As Worksheet)
+    Dim prevMonthName As String
+    Dim currMonthName As String
     
-    ws.Cells(2, 1).Value = "Payroll Month: " & G.Payroll.payrollMonth
+    On Error Resume Next
     
-    ' Headers
-    ws.Cells(4, 1).Value = "Category"
-    ws.Cells(4, 2).Value = "Previous Month"
-    ws.Cells(4, 3).Value = "Current Month"
-    ws.Cells(4, 4).Value = "Check"
-    ws.Range("A4:D4").Font.Bold = True
-    ws.Range("A4:D4").Interior.Color = RGB(200, 200, 200)
+    ' Get month names dynamically
+    prevMonthName = GetMonthShortName(G.Payroll.PrevMonthStart) & "(Previous Month)"
+    currMonthName = GetMonthShortName(G.Payroll.monthStart) & "(Current Month)"
     
-    ' Row labels
-    ws.Cells(5, 1).Value = "Payroll Active HC"
-    ws.Cells(6, 1).Value = "Terminated HC (Included)"
-    ws.Cells(7, 1).Value = "Terminated HC (OC)"
-    ws.Cells(8, 1).Value = "New Hire HC"
-    ws.Cells(9, 1).Value = "Previous Month Terminated HC (额外表)"
+    ' Row 10: Column headers
     ws.Cells(10, 1).Value = ""
-    ws.Cells(11, 1).Value = "Calculated HC"
-    ws.Cells(11, 1).Font.Bold = True
+    ws.Cells(10, 2).Value = prevMonthName
+    ws.Cells(10, 3).Value = currMonthName
+    ws.Range("A10:C10").Font.Bold = True
     
-    ws.Columns("A:D").AutoFit
+    ' Row 11-15: Row labels
+    ws.Cells(11, 1).Value = "Payroll HC"
+    ws.Cells(12, 1).Value = "Current Month Terminated HC(included)"
+    ws.Cells(13, 1).Value = "Current Month Terminated HC(OC)"
+    ws.Cells(14, 1).Value = "Previous Month Terminated HC(included)"
+    ws.Cells(15, 1).Value = "Current Month New HC"
+    
+    ' Initialize values to 0
+    Dim r As Long
+    For r = 11 To 15
+        ws.Cells(r, 2).Value = 0
+        ws.Cells(r, 3).Value = 0
+    Next r
+End Sub
+
+'------------------------------------------------------------------------------
+' Function: GetMonthShortName
+' Purpose: Get short month name (e.g., "Nov", "Dec") from a date
+'------------------------------------------------------------------------------
+Private Function GetMonthShortName(d As Date) As String
+    GetMonthShortName = Format(d, "mmm")
+End Function
+
+'------------------------------------------------------------------------------
+' Sub: CreateHireStatusPivot
+' Purpose: Create pivot table for Hire Status (Row 3-5)
+'          Using current month's Payroll Report as data source
+'------------------------------------------------------------------------------
+Private Sub CreateHireStatusPivot(valWb As Workbook, ws As Worksheet)
+    Dim srcWb As Workbook
+    Dim srcWs As Worksheet
+    Dim filePath As String
+    Dim lastRow As Long, i As Long
+    Dim hireStatusCol As Long, weinCol As Long
+    Dim statusCounts As Object
+    Dim hireStatus As String
+    Dim activeCount As Long
+    Dim grandTotal As Long
+    Dim calculatedCheck As Long
+    
+    On Error GoTo ErrHandler
+    
+    ' Row 3: Headers for pivot-like table
+    ws.Cells(3, 1).Value = "Row Labels"
+    ws.Cells(3, 2).Value = "Count of WEIN"
+    ws.Cells(3, 3).Value = "Check"
+    ws.Range("A3:C3").Font.Bold = True
+    
+    ' Get current month Payroll Report
+    filePath = GetInputFilePathAuto("PayrollReport", poCurrentMonth)
+    
+    If Not FileExistsSafe(filePath) Then
+        LogError "modSP2_HCCheck", "CreateHireStatusPivot", 0, "File not found: " & filePath
+        ws.Cells(4, 1).Value = "Active"
+        ws.Cells(4, 2).Value = 0
+        ws.Cells(5, 1).Value = "Grand Total"
+        ws.Cells(5, 2).Value = 0
+        Exit Sub
+    End If
+    
+    Set srcWb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
+    Set srcWs = srcWb.Worksheets(1)
+    
+    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    hireStatusCol = FindColumnByHeader(srcWs.Rows(1), "Hire Status")
+    weinCol = FindColumnByHeader(srcWs.Rows(1), "WEIN")
+    
+    If hireStatusCol = 0 Then
+        srcWb.Close SaveChanges:=False
+        ws.Cells(4, 1).Value = "Active"
+        ws.Cells(4, 2).Value = 0
+        ws.Cells(5, 1).Value = "Grand Total"
+        ws.Cells(5, 2).Value = 0
+        Exit Sub
+    End If
+    
+    ' Count by Hire Status
+    Set statusCounts = CreateObject("Scripting.Dictionary")
+    grandTotal = 0
+    
+    For i = 2 To lastRow
+        hireStatus = Trim(CStr(Nz(srcWs.Cells(i, hireStatusCol).Value, "")))
+        If hireStatus <> "" Then
+            If Not statusCounts.exists(hireStatus) Then
+                statusCounts(hireStatus) = 0
+            End If
+            statusCounts(hireStatus) = statusCounts(hireStatus) + 1
+            grandTotal = grandTotal + 1
+        End If
+    Next i
+    
+    srcWb.Close SaveChanges:=False
+    
+    ' Write Active count (Row 4)
+    activeCount = 0
+    If statusCounts.exists("Active") Then activeCount = statusCounts("Active")
+    
+    ws.Cells(4, 1).Value = "Active"
+    ws.Cells(4, 2).Value = activeCount
+    
+    ' Row 5: Grand Total
+    ws.Cells(5, 1).Value = "Grand Total"
+    ws.Cells(5, 2).Value = grandTotal
+    ws.Range("A5:B5").Font.Bold = True
+    ws.Range("A5:B5").Interior.Color = RGB(255, 255, 200)  ' Light yellow for Grand Total
+    
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP2_HCCheck", "CreateHireStatusPivot", Err.Number, Err.Description
+    On Error Resume Next
+    If Not srcWb Is Nothing Then srcWb.Close SaveChanges:=False
 End Sub
 
 '------------------------------------------------------------------------------
 ' Sub: CalculatePayrollHC
-' Purpose: Calculate Payroll Active HC from Payroll Report
+' Purpose: Calculate Payroll HC from Payroll Report (Active status count)
 ' Parameters:
 '   ws - HC Check worksheet
 '   offset - 期间偏移量 (poCurrentMonth 或 poPreviousMonth)
+' Writes to Row 11
 '------------------------------------------------------------------------------
 Private Sub CalculatePayrollHC(ws As Worksheet, offset As ePeriodOffset)
     Dim wb As Workbook
@@ -136,8 +256,8 @@ Private Sub CalculatePayrollHC(ws As Worksheet, offset As ePeriodOffset)
     
     wb.Close SaveChanges:=False
     
-    ' Write to target column
-    ws.Cells(5, targetCol).Value = activeCount
+    ' Write to Row 11 (Payroll HC)
+    ws.Cells(11, targetCol).Value = activeCount
     
     Exit Sub
     
@@ -153,6 +273,7 @@ End Sub
 ' Parameters:
 '   ws - HC Check worksheet
 '   offset - 期间偏移量 (poCurrentMonth 或 poPreviousMonth)
+' Writes to Row 12 (included) and Row 13 (OC)
 '------------------------------------------------------------------------------
 Private Sub CalculateTerminatedHC(ws As Worksheet, offset As ePeriodOffset)
     Dim wb As Workbook
@@ -217,9 +338,9 @@ Private Sub CalculateTerminatedHC(ws As Worksheet, offset As ePeriodOffset)
     
     wb.Close SaveChanges:=False
     
-    ' Write to target column
-    ws.Cells(6, targetCol).Value = includedCount
-    ws.Cells(7, targetCol).Value = ocCount
+    ' Write to Row 12 (Current Month Terminated HC included) and Row 13 (OC)
+    ws.Cells(12, targetCol).Value = includedCount
+    ws.Cells(13, targetCol).Value = ocCount
     
     Exit Sub
     
@@ -235,6 +356,7 @@ End Sub
 ' Parameters:
 '   ws - HC Check worksheet
 '   offset - 期间偏移量 (poCurrentMonth 或 poPreviousMonth)
+' Writes to Row 15
 '------------------------------------------------------------------------------
 Private Sub CalculateNewHireHC(ws As Worksheet, offset As ePeriodOffset)
     Dim wb As Workbook
@@ -266,11 +388,12 @@ Private Sub CalculateNewHireHC(ws As Worksheet, offset As ePeriodOffset)
     
     lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
     newHireCount = lastRow - 1 ' Exclude header
+    If newHireCount < 0 Then newHireCount = 0
     
     wb.Close SaveChanges:=False
     
-    ' Write to target column
-    ws.Cells(8, targetCol).Value = newHireCount
+    ' Write to Row 15 (Current Month New HC)
+    ws.Cells(15, targetCol).Value = newHireCount
     
     Exit Sub
     
@@ -282,10 +405,11 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Sub: CalculateExtraTableHC
-' Purpose: Calculate HC from 额外表 (Extra Table)
+' Purpose: Calculate HC from 额外表 (Extra Table) - Previous Month Terminated HC
 ' Parameters:
 '   ws - HC Check worksheet
 '   offset - 期间偏移量 (poCurrentMonth 或 poPreviousMonth)
+' Writes to Row 14
 '------------------------------------------------------------------------------
 Private Sub CalculateExtraTableHC(ws As Worksheet, offset As ePeriodOffset)
     Dim wb As Workbook
@@ -309,6 +433,7 @@ Private Sub CalculateExtraTableHC(ws As Worksheet, offset As ePeriodOffset)
     If Not FileExistsSafe(filePath) Then
         LogError "modSP2_HCCheck", "CalculateExtraTableHC", 0, _
             "File not found: " & filePath
+        ws.Cells(14, targetCol).Value = 0
         Exit Sub
     End If
     
@@ -318,7 +443,7 @@ Private Sub CalculateExtraTableHC(ws As Worksheet, offset As ePeriodOffset)
     If wb Is Nothing Then
         LogError "modSP2_HCCheck", "CalculateExtraTableHC", 0, _
             "Failed to open workbook: " & filePath
-        ws.Cells(9, targetCol).Value = 0
+        ws.Cells(14, targetCol).Value = 0
         Exit Sub
     End If
     
@@ -327,18 +452,24 @@ Private Sub CalculateExtraTableHC(ws As Worksheet, offset As ePeriodOffset)
         LogError "modSP2_HCCheck", "CalculateExtraTableHC", 0, _
             "Workbook has no worksheets: " & filePath
         wb.Close SaveChanges:=False
-        ws.Cells(9, targetCol).Value = 0
+        ws.Cells(14, targetCol).Value = 0
         Exit Sub
     End If
     
-    Set srcWs = wb.Worksheets(1)
+    ' Try to find "Previous Month Terminated HC" sheet, fallback to first sheet
+    On Error Resume Next
+    Set srcWs = wb.Worksheets("Previous Month Terminated HC")
+    If srcWs Is Nothing Then
+        Set srcWs = wb.Worksheets(1)
+    End If
+    On Error GoTo ErrHandler
     
     ' 检查工作表对象是否有效
     If srcWs Is Nothing Then
         LogError "modSP2_HCCheck", "CalculateExtraTableHC", 0, _
             "Failed to get worksheet from: " & filePath
         wb.Close SaveChanges:=False
-        ws.Cells(9, targetCol).Value = 0
+        ws.Cells(14, targetCol).Value = 0
         Exit Sub
     End If
     
@@ -348,8 +479,8 @@ Private Sub CalculateExtraTableHC(ws As Worksheet, offset As ePeriodOffset)
     
     wb.Close SaveChanges:=False
     
-    ' Write to target column (row 9 for Extra Table)
-    ws.Cells(9, targetCol).Value = extraCount
+    ' Write to Row 14 (Previous Month Terminated HC included)
+    ws.Cells(14, targetCol).Value = extraCount
     
     Exit Sub
     
@@ -357,63 +488,71 @@ ErrHandler:
     LogError "modSP2_HCCheck", "CalculateExtraTableHC", Err.Number, Err.Description
     On Error Resume Next
     If Not wb Is Nothing Then wb.Close SaveChanges:=False
-    ws.Cells(9, targetCol).Value = 0
+    ws.Cells(14, targetCol).Value = 0
 End Sub
 
 '------------------------------------------------------------------------------
 ' Sub: CalculateHCFormula
-' Purpose: Calculate HC check formula
-' Formula: LastMonthPayrollHC - LastMonthTerminatedIncluded - CurrentMonthTerminatedOC + CurrentMonthNewHC
+' Purpose: Calculate HC check formula and write to Check column
+' Formula: Last Month's Payroll HC - Last Month's Current Month Terminated HC (included)
+'          - Current Month's Current Month Terminated HC (OC) + Current Month's Current Month New HC
+' Check column is placed at Row 4, Column C (next to Active row in pivot area)
 '------------------------------------------------------------------------------
 Private Sub CalculateHCFormula(ws As Worksheet)
-    Dim prevActiveHC As Double
+    Dim prevPayrollHC As Double
     Dim prevTermIncluded As Double
     Dim currTermOC As Double
     Dim currNewHire As Double
     Dim calculatedHC As Double
-    Dim actualHC As Double
+    Dim actualActiveHC As Double
     
     On Error Resume Next
     
-    prevActiveHC = ToDouble(ws.Cells(5, 2).Value)
-    prevTermIncluded = ToDouble(ws.Cells(6, 2).Value)
-    currTermOC = ToDouble(ws.Cells(7, 3).Value)
-    currNewHire = ToDouble(ws.Cells(8, 3).Value)
-    actualHC = ToDouble(ws.Cells(5, 3).Value)
+    ' Read values from HC detail table (Row 11-15)
+    prevPayrollHC = ToDouble(ws.Cells(11, 2).Value)      ' Previous Month Payroll HC
+    prevTermIncluded = ToDouble(ws.Cells(12, 2).Value)   ' Previous Month - Current Month Terminated HC (included)
+    currTermOC = ToDouble(ws.Cells(13, 3).Value)         ' Current Month - Current Month Terminated HC (OC)
+    currNewHire = ToDouble(ws.Cells(15, 3).Value)        ' Current Month - Current Month New HC
     
-    calculatedHC = prevActiveHC - prevTermIncluded - currTermOC + currNewHire
+    ' Actual Active HC from pivot table (Row 4, Column B)
+    actualActiveHC = ToDouble(ws.Cells(4, 2).Value)
     
-    ws.Cells(11, 3).Value = calculatedHC
+    ' Calculate: prevPayrollHC - prevTermIncluded - currTermOC + currNewHire
+    calculatedHC = prevPayrollHC - prevTermIncluded - currTermOC + currNewHire
     
-    ' Check column
-    If calculatedHC = actualHC Then
-        ws.Cells(11, 4).Value = "MATCH"
-        ws.Cells(11, 4).Interior.Color = RGB(200, 255, 200)
-    Else
-        ws.Cells(11, 4).Value = "MISMATCH"
-        ws.Cells(11, 4).Interior.Color = RGB(255, 200, 200)
-    End If
+    ' Write calculated value to Check column (Row 4, Column C)
+    ws.Cells(4, 3).Value = calculatedHC
 End Sub
 
 '------------------------------------------------------------------------------
-' Sub: CreateHireStatusPivot
-' Purpose: Create pivot table for Hire Status
+' Sub: ApplyHCCheckFormatting
+' Purpose: Apply formatting to HC Check sheet
 '------------------------------------------------------------------------------
-Private Sub CreateHireStatusPivot(valWb As Workbook)
-    ' Pivot table creation would require more complex implementation
-    ' Placeholder for now
-    
+Private Sub ApplyHCCheckFormatting(ws As Worksheet)
     On Error Resume Next
     
-    Dim ws As Worksheet
-    Set ws = valWb.Worksheets("HC Check")
+    ' Format pivot table area (Row 3-5)
+    ws.Range("A3:C3").Interior.Color = RGB(200, 200, 200)  ' Header gray
     
-    ws.Cells(14, 1).Value = "Hire Status Summary"
-    ws.Cells(14, 1).Font.Bold = True
+    ' Format Grand Total row
+    ws.Range("A5:B5").Font.Bold = True
+    ws.Range("A5:B5").Interior.Color = RGB(255, 255, 200)  ' Light yellow
     
-    ' Note: Full pivot table implementation would go here
-    ' For simplicity, we'll just add a note
-    ws.Cells(15, 1).Value = "(Pivot table to be created manually or via additional code)"
+    ' Format HC detail table header (Row 10)
+    ws.Range("A10:C10").Font.Bold = True
+    ws.Range("A10:C10").Interior.Color = RGB(0, 0, 0)      ' Black background
+    ws.Range("A10:C10").Font.Color = RGB(255, 255, 255)    ' White text
+    
+    ' Highlight current month column (Column C) with yellow for data rows
+    ws.Range("C11:C15").Interior.Color = RGB(255, 255, 0)  ' Yellow
+    
+    ' Auto-fit columns
+    ws.Columns("A:C").AutoFit
+    
+    ' Set minimum column width for readability
+    If ws.Columns("A").ColumnWidth < 35 Then ws.Columns("A").ColumnWidth = 35
+    If ws.Columns("B").ColumnWidth < 20 Then ws.Columns("B").ColumnWidth = 20
+    If ws.Columns("C").ColumnWidth < 20 Then ws.Columns("C").ColumnWidth = 20
 End Sub
 
 '------------------------------------------------------------------------------
