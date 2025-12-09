@@ -224,7 +224,8 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Sub: BuildBenchmarkAndIndex
-' Purpose: Copy Payroll Report to Check Result and build WEIN index
+' Purpose: Copy Payroll Report to Check Result, insert Check/Diff columns,
+'          and build WEIN index according to HK payroll validation output template
 '------------------------------------------------------------------------------
 Private Sub BuildBenchmarkAndIndex(valWb As Workbook)
     Dim srcWb As Workbook
@@ -242,6 +243,9 @@ Private Sub BuildBenchmarkAndIndex(valWb As Workbook)
     
     Set destWs = valWb.Worksheets("Check Result")
     Set mWeinIndex = CreateObject("Scripting.Dictionary")
+    
+    ' Initialize template structure
+    InitializeTemplate
     
     ' Open Payroll Report - using new path service
     filePath = GetInputFilePathAuto("PayrollReport", poCurrentMonth)
@@ -263,11 +267,19 @@ Private Sub BuildBenchmarkAndIndex(valWb As Workbook)
     Set srcRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
     srcRange.Copy destWs.Cells(4, 1)
     
+    srcWb.Close SaveChanges:=False
+    Set srcWb = Nothing
+    
+    ' Insert Check and Diff columns according to template
+    InsertCheckDiffColumns destWs, 4
+    
     ' Build WEIN index (try multiple field name variants)
     weinCol = FindColumnByHeader(destWs.Rows(4), "WEIN,WIN,WEINEmployee ID,Employee CodeWIN,Employee ID,EmployeeID")
     
     If weinCol > 0 Then
-        For i = 5 To 4 + lastRow - 1
+        Dim dataLastRow As Long
+        dataLastRow = destWs.Cells(destWs.Rows.count, weinCol).End(xlUp).row
+        For i = 5 To dataLastRow
             Dim wein As String
             wein = Trim(CStr(Nz(destWs.Cells(i, weinCol).Value, "")))
             If wein <> "" And Not mWeinIndex.exists(wein) Then
@@ -276,7 +288,8 @@ Private Sub BuildBenchmarkAndIndex(valWb As Workbook)
         Next i
     End If
     
-    srcWb.Close SaveChanges:=False
+    ' Update template column indices after inserting Check/Diff columns
+    UpdateTemplateColumnIndices destWs, 4
     
     ' Add summary header row
     destWs.Cells(1, 1).Value = "HK Payroll Validation - Check Result"
@@ -298,6 +311,63 @@ ErrHandler:
     LogError "modSP2_Main", "BuildBenchmarkAndIndex", Err.Number, Err.Description
     On Error Resume Next
     If Not srcWb Is Nothing Then srcWb.Close SaveChanges:=False
+End Sub
+
+'------------------------------------------------------------------------------
+' Sub: InsertCheckDiffColumns
+' Purpose: Insert Check and Diff columns after each benchmark column
+'          according to the 63-field template structure
+' Parameters:
+'   ws - Check Result worksheet
+'   headerRow - Row number of the header
+'------------------------------------------------------------------------------
+Private Sub InsertCheckDiffColumns(ws As Worksheet, headerRow As Long)
+    Dim lastCol As Long
+    Dim col As Long
+    Dim headerValue As String
+    Dim fieldIdx As Long
+    Dim insertCount As Long
+    Dim field As tCheckResultColumn
+    
+    On Error GoTo ErrHandler
+    
+    LogInfo "modSP2_Main", "InsertCheckDiffColumns", "Inserting Check and Diff columns"
+    
+    ' Process from right to left to avoid column shift issues
+    lastCol = ws.Cells(headerRow, ws.Columns.count).End(xlToLeft).Column
+    insertCount = 0
+    
+    For col = lastCol To 1 Step -1
+        headerValue = Trim(CStr(Nz(ws.Cells(headerRow, col).Value, "")))
+        
+        ' Check if this column needs Check/Diff columns
+        fieldIdx = FindTemplateFieldByName(headerValue)
+        
+        If fieldIdx > 0 Then
+            field = GetTemplateField(fieldIdx)
+            
+            ' Insert Diff column first (will be after Check column)
+            If field.HasDiff Then
+                ws.Columns(col + 1).Insert Shift:=xlToRight
+                ws.Cells(headerRow, col + 1).Value = headerValue & " Diff"
+                insertCount = insertCount + 1
+            End If
+            
+            ' Insert Check column (will be right after benchmark)
+            If field.HasCheck Then
+                ws.Columns(col + 1).Insert Shift:=xlToRight
+                ws.Cells(headerRow, col + 1).Value = headerValue & " Check"
+                insertCount = insertCount + 1
+            End If
+        End If
+    Next col
+    
+    LogInfo "modSP2_Main", "InsertCheckDiffColumns", "Inserted " & insertCount & " columns"
+    
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP2_Main", "InsertCheckDiffColumns", Err.Number, Err.Description
 End Sub
 
 '------------------------------------------------------------------------------
@@ -479,13 +549,13 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Sub: ApplyDiffFormatting
-' Purpose: Apply formatting to Diff columns
+' Purpose: Apply formatting to Diff columns (conditional formatting for TRUE/FALSE)
+' Note: FALSE counts and red highlighting are already done in SP2_ComputeDiff
 '------------------------------------------------------------------------------
 Private Sub ApplyDiffFormatting(ws As Worksheet)
     Dim lastCol As Long
     Dim col As Long
     Dim headerValue As String
-    Dim firstDiffCol As Long, lastDiffCol As Long
     Dim lastRow As Long
     
     On Error GoTo ErrHandler
@@ -493,25 +563,14 @@ Private Sub ApplyDiffFormatting(ws As Worksheet)
     lastCol = ws.Cells(4, ws.Columns.count).End(xlToLeft).Column
     lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
-    firstDiffCol = 0
-    lastDiffCol = 0
-    
-    ' Find Diff columns (columns ending with "Diff")
+    ' Find Diff columns and apply conditional formatting
     For col = 1 To lastCol
         headerValue = Trim(CStr(Nz(ws.Cells(4, col).Value, "")))
         If Right(UCase(headerValue), 4) = "DIFF" Then
-            If firstDiffCol = 0 Then firstDiffCol = col
-            lastDiffCol = col
-            
-            ' Apply conditional formatting
+            ' Apply conditional formatting for TRUE/FALSE values
             ApplyConditionalFormatting ws.Range(ws.Cells(5, col), ws.Cells(lastRow, col))
         End If
     Next col
-    
-    ' Summarize Diff columns
-    If firstDiffCol > 0 And lastDiffCol > 0 Then
-        SummarizeDiffColumns ws, 3, 5, lastRow, firstDiffCol, lastDiffCol
-    End If
     
     Exit Sub
     

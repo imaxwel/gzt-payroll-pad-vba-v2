@@ -33,6 +33,9 @@ Public Sub SP2_Check_PayItems(valWb As Workbook, weinIndex As Object)
         WriteEAOChecks ws, row, CStr(wein)
     Next wein
     
+    ' Write PPTO EAO Rate from 额外表
+    WritePPTOEAORateCheck ws, weinIndex
+    
     LogInfo "modSP2_CheckResult_PayItems", "SP2_Check_PayItems", "Pay items checks completed"
     
     Exit Sub
@@ -51,10 +54,34 @@ Private Sub WriteBasePayCheck(ws As Worksheet, row As Long, wein As String)
     On Error Resume Next
     
     ' Base Pay 60001000 Check
-    col = FindColumnByHeader(ws.Rows(4), "Base Pay 60001000 Check")
+    col = GetCheckColIndex("Base Pay 60001000")
     If col > 0 Then
         ' Formula: Actual working days * Monthly Salary / calendar days
         ' This would need actual working days from another source
+        ' Placeholder implementation
+    End If
+    
+    ' Base Pay(Temp) 60101000 Check
+    col = GetCheckColIndex("Base Pay(Temp) 60101000")
+    If col > 0 Then
+        ' Placeholder implementation for temp employees
+    End If
+    
+    ' Salary Adj 60001000 Check
+    col = GetCheckColIndex("Salary Adj 60001000")
+    If col > 0 Then
+        ' Placeholder implementation
+    End If
+    
+    ' Transport Allowance 60409960 Check
+    col = GetCheckColIndex("Transport Allowance 60409960")
+    If col > 0 Then
+        ' Placeholder implementation
+    End If
+    
+    ' Transport Allowance Adj 60409960 Check
+    col = GetCheckColIndex("Transport Allowance Adj 60409960")
+    If col > 0 Then
         ' Placeholder implementation
     End If
 End Sub
@@ -69,25 +96,25 @@ Private Sub WriteLeavePaymentChecks(ws As Worksheet, row As Long, wein As String
     On Error Resume Next
     
     ' Maternity Leave Payment Check
-    col = FindColumnByHeader(ws.Rows(4), "Maternity Leave Payment Check")
+    col = GetCheckColIndex("Maternity Leave Payment 60001000")
     If col > 0 Then
         ws.Cells(row, col).Value = CalcMaternityLeavePayment(wein)
     End If
     
     ' Sick Leave Payment Check
-    col = FindColumnByHeader(ws.Rows(4), "Sick Leave Payment Check")
+    col = GetCheckColIndex("Sick Leave Payment 60001000")
     If col > 0 Then
         ws.Cells(row, col).Value = CalcSickLeavePayment(wein)
     End If
     
     ' PPTO Payment Check
-    col = FindColumnByHeader(ws.Rows(4), "PPTO Payment Check")
+    col = GetCheckColIndex("Paid Parental Time Off (PPTO) payment")
     If col > 0 Then
         ws.Cells(row, col).Value = CalcPPTOPayment(wein)
     End If
     
     ' No Pay Leave Deduction Check
-    col = FindColumnByHeader(ws.Rows(4), "No Pay Leave Deduction Check")
+    col = GetCheckColIndex("No Pay Leave Deduction 60001000")
     If col > 0 Then
         ws.Cells(row, col).Value = CalcNoPayLeaveDeduction(wein)
     End If
@@ -103,8 +130,78 @@ Private Sub WriteEAOChecks(ws As Worksheet, row As Long, wein As String)
     On Error Resume Next
     
     ' Total EAO Adj Check
-    col = FindColumnByHeader(ws.Rows(4), "Total EAO Adj Check")
+    col = GetCheckColIndex("Total EAO Adj 60409960")
     If col > 0 Then
         ws.Cells(row, col).Value = CalcTotalEAOAdj(wein)
     End If
 End Sub
+
+
+'------------------------------------------------------------------------------
+' Sub: WritePPTOEAORateCheck
+' Purpose: Write PPTO EAO Rate input Check column from 额外表
+'------------------------------------------------------------------------------
+Private Sub WritePPTOEAORateCheck(ws As Worksheet, weinIndex As Object)
+    Dim extraWb As Workbook
+    Dim srcWs As Worksheet
+    Dim lastRow As Long, i As Long
+    Dim headers As Object
+    Dim wein As String
+    Dim row As Long, col As Long
+    Dim pptoRate As Double
+    
+    On Error GoTo ErrHandler
+    
+    col = GetCheckColIndex("PPTO EAO Rate input")
+    If col = 0 Then Exit Sub
+    
+    Set extraWb = OpenExtraTableWorkbook()
+    If extraWb Is Nothing Then Exit Sub
+    
+    On Error Resume Next
+    Set srcWs = extraWb.Worksheets("需要每月维护")
+    On Error GoTo ErrHandler
+    
+    If srcWs Is Nothing Then Exit Sub
+    
+    ' Build header index
+    Set headers = CreateObject("Scripting.Dictionary")
+    Dim c As Long
+    For c = 1 To srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
+        headers(UCase(Trim(CStr(srcWs.Cells(1, c).Value)))) = c
+    Next c
+    
+    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    
+    For i = 2 To lastRow
+        ' Get WEIN
+        wein = GetPPTOCellVal(srcWs, i, headers, "WEIN")
+        If wein = "" Then wein = GetPPTOCellVal(srcWs, i, headers, "WIN")
+        
+        If wein <> "" And weinIndex.exists(wein) Then
+            row = weinIndex(wein)
+            pptoRate = ToDouble(GetPPTOCellVal(srcWs, i, headers, "PPTO EAO RATE INPUT"))
+            If pptoRate > 0 Then
+                ws.Cells(row, col).Value = pptoRate
+            End If
+        End If
+    Next i
+    
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP2_CheckResult_PayItems", "WritePPTOEAORateCheck", Err.Number, Err.Description
+End Sub
+
+'------------------------------------------------------------------------------
+' Helper: GetPPTOCellVal
+'------------------------------------------------------------------------------
+Private Function GetPPTOCellVal(ws As Worksheet, row As Long, headers As Object, headerName As String) As String
+    Dim col As Long
+    GetPPTOCellVal = ""
+    
+    If headers.exists(UCase(headerName)) Then
+        col = headers(UCase(headerName))
+        GetPPTOCellVal = Trim(CStr(Nz(ws.Cells(row, col).Value, "")))
+    End If
+End Function

@@ -3,54 +3,123 @@ Attribute VB_Name = "modSP2_CheckResult_Diff"
 ' Module: modSP2_CheckResult_Diff
 ' Purpose: Subprocess 2 - Diff column computation
 ' Description: Computes TRUE/FALSE comparison between Benchmark and Check
+'              for all 63 fields according to HK payroll validation output template
 '==============================================================================
 Option Explicit
 
 '------------------------------------------------------------------------------
 ' Sub: SP2_ComputeDiff
-' Purpose: Compute all Diff columns
+' Purpose: Compute all Diff columns for the 63 template fields
 '------------------------------------------------------------------------------
 Public Sub SP2_ComputeDiff(valWb As Workbook, weinIndex As Object)
     Dim ws As Worksheet
-    Dim lastCol As Long, lastRow As Long
-    Dim col As Long
-    Dim headerValue As String
+    Dim lastRow As Long
+    Dim i As Long
+    Dim fieldCount As Long
+    Dim field As tCheckResultColumn
     Dim benchmarkCol As Long, checkCol As Long, diffCol As Long
+    Dim processedCount As Long
     
     On Error GoTo ErrHandler
     
     Set ws = valWb.Worksheets("Check Result")
     
-    lastCol = ws.Cells(4, ws.Columns.count).End(xlToLeft).Column
+    ' Get data range
     lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
+    If lastRow < 5 Then lastRow = 5 ' At least one data row
     
-    ' Find and process each Diff column
-    For col = 1 To lastCol
-        headerValue = Trim(CStr(Nz(ws.Cells(4, col).Value, "")))
+    ' Update template column indices
+    UpdateTemplateColumnIndices ws, 4
+    
+    ' Process each template field
+    fieldCount = GetTemplateFieldCount()
+    processedCount = 0
+    
+    For i = 1 To fieldCount
+        field = GetTemplateField(i)
         
-        ' Check if this is a Diff column
-        If Right(UCase(headerValue), 4) = "DIFF" Then
-            diffCol = col
+        If field.HasDiff Then
+            benchmarkCol = GetBenchmarkColIndex(field.BenchmarkName)
+            checkCol = GetCheckColIndex(field.BenchmarkName)
+            diffCol = GetDiffColIndex(field.BenchmarkName)
             
-            ' Find corresponding Benchmark and Check columns
-            Dim baseName As String
-            baseName = Left(headerValue, Len(headerValue) - 5) ' Remove " Diff"
-            
-            benchmarkCol = FindColumnByHeader(ws.Rows(4), baseName)
-            checkCol = FindColumnByHeader(ws.Rows(4), baseName & " Check")
-            
-            If benchmarkCol > 0 And checkCol > 0 Then
-                ComputeDiffColumn ws, benchmarkCol, checkCol, diffCol, 5, lastRow, baseName
+            If benchmarkCol > 0 And checkCol > 0 And diffCol > 0 Then
+                ComputeDiffColumn ws, benchmarkCol, checkCol, diffCol, 5, lastRow, field.BenchmarkName
+                processedCount = processedCount + 1
+            Else
+                LogInfo "modSP2_CheckResult_Diff", "SP2_ComputeDiff", _
+                    "Skipping field (columns not found): " & field.BenchmarkName & _
+                    " (Bench=" & benchmarkCol & ", Check=" & checkCol & ", Diff=" & diffCol & ")"
             End If
         End If
-    Next col
+    Next i
     
-    LogInfo "modSP2_CheckResult_Diff", "SP2_ComputeDiff", "Diff computation completed"
+    ' Compute FALSE counts and highlight in row 3
+    ComputeFalseCountsAndHighlight ws, 4, 3, 5, lastRow
+    
+    LogInfo "modSP2_CheckResult_Diff", "SP2_ComputeDiff", _
+        "Diff computation completed for " & processedCount & " fields"
     
     Exit Sub
     
 ErrHandler:
     LogError "modSP2_CheckResult_Diff", "SP2_ComputeDiff", Err.Number, Err.Description
+End Sub
+
+'------------------------------------------------------------------------------
+' Sub: ComputeFalseCountsAndHighlight
+' Purpose: Count FALSE values in each Diff column and highlight if > 0
+' Parameters:
+'   ws - Check Result worksheet
+'   headerRow - Row number of the header
+'   countRow - Row number to write FALSE counts
+'   firstDataRow - First row of data
+'   lastDataRow - Last row of data
+'------------------------------------------------------------------------------
+Private Sub ComputeFalseCountsAndHighlight(ws As Worksheet, headerRow As Long, _
+    countRow As Long, firstDataRow As Long, lastDataRow As Long)
+    
+    Dim lastCol As Long
+    Dim col As Long
+    Dim headerValue As String
+    Dim falseCount As Long
+    Dim rng As Range
+    
+    On Error GoTo ErrHandler
+    
+    lastCol = ws.Cells(headerRow, ws.Columns.count).End(xlToLeft).Column
+    
+    For col = 1 To lastCol
+        headerValue = Trim(CStr(Nz(ws.Cells(headerRow, col).Value, "")))
+        
+        ' Check if this is a Diff column
+        If Right(UCase(headerValue), 4) = "DIFF" Then
+            ' Count FALSE values
+            Set rng = ws.Range(ws.Cells(firstDataRow, col), ws.Cells(lastDataRow, col))
+            falseCount = WorksheetFunction.CountIf(rng, "FALSE")
+            
+            ' Write count to count row
+            With ws.Cells(countRow, col)
+                .Value = falseCount
+                
+                ' Highlight red if FALSE count > 0
+                If falseCount > 0 Then
+                    .Interior.Color = vbRed
+                    .Font.Color = vbWhite
+                    .Font.Bold = True
+                Else
+                    .Interior.ColorIndex = xlColorIndexNone
+                    .Font.Color = vbBlack
+                    .Font.Bold = False
+                End If
+            End With
+        End If
+    Next col
+    
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP2_CheckResult_Diff", "ComputeFalseCountsAndHighlight", Err.Number, Err.Description
 End Sub
 
 '------------------------------------------------------------------------------

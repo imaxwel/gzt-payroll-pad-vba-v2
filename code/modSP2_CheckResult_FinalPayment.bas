@@ -35,6 +35,7 @@ Public Sub SP2_Check_FinalPayment(valWb As Workbook, weinIndex As Object)
         WritePILCheck ws, row, CStr(wein)
         WriteGratuitiesBackPayCheck ws, row, CStr(wein)
         WriteYearEndBonusCheck ws, row, CStr(wein)
+        WriteUntakenALPaymentCheck ws, row, CStr(wein)
     Next wein
     
     LogInfo "modSP2_CheckResult_FinalPayment", "SP2_Check_FinalPayment", "Final payment checks completed"
@@ -151,14 +152,14 @@ Private Sub WriteSeveranceLongServiceCheck(ws As Worksheet, row As Long, wein As
     ' Statutory: Min(Min(Monthly Salary * 2/3, 15000) * YOS, 390000)
     
     ' Severance Payment Check
-    col = FindColumnByHeader(ws.Rows(4), "Severance Payment Check")
+    col = GetCheckColIndex("Severance Payment 60404000")
     If col > 0 Then
         ' Placeholder calculation
         ' ws.Cells(row, col).Value = RoundAmount2(payment)
     End If
     
     ' Long Service Payment Check
-    col = FindColumnByHeader(ws.Rows(4), "Long Service Payment Check")
+    col = GetCheckColIndex("Long Service Payment 60409960")
     If col > 0 Then
         ' Placeholder calculation
         ' ws.Cells(row, col).Value = RoundAmount2(payment)
@@ -180,13 +181,13 @@ Private Sub WritePILCheck(ws As Worksheet, row As Long, wein As String)
     Set params = mFinalPayParams(wein)
     
     ' PIL EE to ER Check
-    col = FindColumnByHeader(ws.Rows(4), "PIL EE to ER Check")
+    col = GetCheckColIndex("PIL EE to ER 60001000")
     If col > 0 Then
         ' Placeholder: Calculate based on notice period and dates
     End If
     
     ' PIL ER to EE Check
-    col = FindColumnByHeader(ws.Rows(4), "PIL ER to EE Check")
+    col = GetCheckColIndex("PIL ER to EE 60001000")
     If col > 0 Then
         ' Placeholder: Calculate based on notice period and dates
     End If
@@ -207,13 +208,13 @@ Private Sub WriteGratuitiesBackPayCheck(ws As Worksheet, row As Long, wein As St
     Set params = mFinalPayParams(wein)
     
     ' Gratuities Check
-    col = FindColumnByHeader(ws.Rows(4), "Gratuities Check")
+    col = GetCheckColIndex("Gratuities 99999999")
     If col > 0 Then
         ws.Cells(row, col).Value = RoundAmount2(params("Gratuities"))
     End If
     
     ' Back Pay Check
-    col = FindColumnByHeader(ws.Rows(4), "Back Pay Check")
+    col = GetCheckColIndex("Back Pay 99999999")
     If col > 0 Then
         ws.Cells(row, col).Value = RoundAmount2(params("BackPay"))
     End If
@@ -230,12 +231,12 @@ Private Sub WriteYearEndBonusCheck(ws As Worksheet, row As Long, wein As String)
     On Error Resume Next
     
     ' Year End Bonus Check
-    col = FindColumnByHeader(ws.Rows(4), "Year End Bonus Check")
+    col = GetCheckColIndex("Year End Bonus 60208000")
     If col = 0 Then Exit Sub
     
     ' Get Monthly Salary
     Dim colSalary As Long
-    colSalary = FindColumnByHeader(ws.Rows(4), "Monthly Base Pay Check")
+    colSalary = GetCheckColIndex("Monthly Base Pay")
     If colSalary > 0 Then
         monthlySalary = ToDouble(ws.Cells(row, colSalary).Value)
     End If
@@ -262,3 +263,41 @@ Private Function GetCellVal(ws As Worksheet, row As Long, headers As Object, hea
         GetCellVal = Trim(CStr(Nz(ws.Cells(row, col).Value, "")))
     End If
 End Function
+
+
+'------------------------------------------------------------------------------
+' Sub: WriteUntakenALPaymentCheck
+' Purpose: Write Untaken Annual Leave Payment Check
+' Formula: MAX(Monthly Salary / 22, AverageDayWage_12Month) * Untaken Annual Leave Days
+'------------------------------------------------------------------------------
+Private Sub WriteUntakenALPaymentCheck(ws As Worksheet, row As Long, wein As String)
+    Dim col As Long
+    Dim monthlySalary As Double
+    Dim avgDayWage As Double
+    Dim untakenDays As Double
+    Dim payment As Double
+    
+    On Error Resume Next
+    
+    col = GetCheckColIndex("Untaken Annual Leave Payment 60409960")
+    If col = 0 Then Exit Sub
+    
+    ' Get Monthly Salary from Check Result
+    Dim colSalary As Long
+    colSalary = GetCheckColIndex("Monthly Base Pay")
+    If colSalary > 0 Then
+        monthlySalary = ToDouble(ws.Cells(row, colSalary).Value)
+    End If
+    
+    ' Get Average Day Wage from EAO data (would need to be loaded)
+    ' avgDayWage = GetEAOValue(wein, "AverageDayWage_12Month")
+    
+    ' Get Untaken Annual Leave Days (would need to be loaded from EAO or Leave data)
+    ' untakenDays = GetEAOValue(wein, "UntakenALDays")
+    
+    ' Calculate payment
+    ' payment = WorksheetFunction.Max(monthlySalary / 22, avgDayWage) * untakenDays
+    
+    ' Placeholder: actual implementation would calculate based on EAO data
+    ' ws.Cells(row, col).Value = RoundAmount2(payment)
+End Sub

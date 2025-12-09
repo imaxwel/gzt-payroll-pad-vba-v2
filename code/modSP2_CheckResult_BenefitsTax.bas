@@ -68,7 +68,7 @@ Private Sub ProcessInspireGrossUp(ws As Worksheet, weinIndex As Object)
     Dim col As Long, row As Long
     Dim inspireAmt As Double, grossUp As Double
     
-    col = FindColumnByHeader(ws.Rows(4), "Inspire Points (Gross Up) 60701000 Check")
+    col = GetCheckColIndex("Inspire Points (Gross Up) 60701000")
     If col = 0 Then
         wb.Close SaveChanges:=False
         Exit Sub

@@ -290,7 +290,7 @@ Private Sub WriteNameCheck(ws As Worksheet, row As Long, empId As String)
     
     ' Step 1: Populate "Legal full name" column by concatenating
     ' Legal First Name & " " & Legal Last Name from Check Result sheet
-    colFullName = FindColumnByHeader(ws.Rows(4), "Legal full name")
+    colFullName = GetBenchmarkColIndex("Legal full name")
     colFirstName = FindColumnByHeader(ws.Rows(4), "Legal First Name")
     colLastName = FindColumnByHeader(ws.Rows(4), "Legal Last Name")
     
@@ -302,7 +302,7 @@ Private Sub WriteNameCheck(ws As Worksheet, row As Long, empId As String)
     
     ' Step 2: Populate "Legal full name Check" column with Legal Full Name
     ' directly from Workforce Detail - Payroll-AP (mapped by Employee ID)
-    colCheck = FindColumnByHeader(ws.Rows(4), "Legal full name Check")
+    colCheck = GetCheckColIndex("Legal full name")
     If colCheck > 0 And mWorkforceData.exists(empId) Then
         Dim rec As Object
         Set rec = mWorkforceData(empId)
@@ -320,14 +320,14 @@ Private Sub WriteDateChecks(ws As Worksheet, row As Long, empId As String, termD
     
     On Error Resume Next
     
-    ' Last Hire Date Check
-    col = FindColumnByHeader(ws.Rows(4), "Last Hire Date Check")
+    ' Last Hired Date Check
+    col = GetCheckColIndex("Last Hired Date")
     If col > 0 And mWorkforceData.exists(empId) Then
         ws.Cells(row, col).Value = mWorkforceData(empId)("LastHireDate")
     End If
     
     ' Last Employment Date Check (Termination Date)
-    col = FindColumnByHeader(ws.Rows(4), "Last Employment Date Check")
+    col = GetCheckColIndex("Last Employment Date")
     If col > 0 Then
         wein = NormalizeEmployeeId(empId)
         If wein <> "" And termData.exists(wein) Then
@@ -351,15 +351,15 @@ Private Sub WriteOrgChecks(ws As Worksheet, row As Long, empId As String)
     Set rec = mWorkforceData(empId)
     
     ' Business Department Check
-    col = FindColumnByHeader(ws.Rows(4), "Business Department Check")
+    col = GetCheckColIndex("Business Department")
     If col > 0 Then ws.Cells(row, col).Value = rec("BusinessDepartment")
     
     ' Position Title Check
-    col = FindColumnByHeader(ws.Rows(4), "Position Title Check")
+    col = GetCheckColIndex("Position Title")
     If col > 0 Then ws.Cells(row, col).Value = rec("PositionTitle")
     
     ' Cost Center Code Check
-    col = FindColumnByHeader(ws.Rows(4), "Cost Center Code Check")
+    col = GetCheckColIndex("Cost Center Code")
     If col > 0 Then ws.Cells(row, col).Value = rec("CostCenterID")
 End Sub
 
@@ -383,7 +383,7 @@ Private Sub WritePayChecks(ws As Worksheet, row As Long, empId As String, allowa
     empType = UCase(rec("EmployeeType"))
     
     ' Monthly Base Pay Check (Regular employees)
-    col = FindColumnByHeader(ws.Rows(4), "Monthly Base Pay Check")
+    col = GetCheckColIndex("Monthly Base Pay")
     If col > 0 Then
         If InStr(empType, "REGULAR") > 0 Then
             ws.Cells(row, col).Value = monthlySalary
@@ -391,7 +391,7 @@ Private Sub WritePayChecks(ws As Worksheet, row As Long, empId As String, allowa
     End If
     
     ' Monthly Base Pay (Temp) Check (Intern/Co-ops)
-    col = FindColumnByHeader(ws.Rows(4), "Monthly Base Pay (Temp) Check")
+    col = GetCheckColIndex("Monthly Base Pay(Temp)")
     If col > 0 Then
         If InStr(empType, "INTERN") > 0 Or InStr(empType, "CO-OP") > 0 Then
             ws.Cells(row, col).Value = monthlySalary
@@ -399,7 +399,7 @@ Private Sub WritePayChecks(ws As Worksheet, row As Long, empId As String, allowa
     End If
     
     ' Monthly Transport Allowance Check
-    col = FindColumnByHeader(ws.Rows(4), "Monthly Transport Allowance Check")
+    col = GetCheckColIndex("Monthly Transport Allowance")
     If col > 0 Then
         If allowanceData.exists(empId) Then
             ws.Cells(row, col).Value = RoundAmount2(allowanceData(empId))
