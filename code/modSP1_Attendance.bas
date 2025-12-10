@@ -214,21 +214,30 @@ Private Sub ProcessAnnualLeave(ws As Worksheet, leaveRecords As Collection, empI
     
     ' Write to Attendance sheet
     Dim wein As Variant
-    Dim colCurrent As Long, colPrev As Long, colDeduction As Long
+    Dim colCurrent As Long, colPrev As Long, colDeduction As Long, colDeductionLast As Long
     
     colCurrent = FindColumnByHeader(ws.Rows(1), "Days_AnnualLeave")
     colPrev = FindColumnByHeader(ws.Rows(1), "Days_AnnualLeave_LastMonth")
     colDeduction = FindColumnByHeader(ws.Rows(1), "Days_AnnualLeaveForDeduction")
+    colDeductionLast = FindColumnByHeader(ws.Rows(1), "Days_AnnualLeaveForDeduction_LastMonth")
     
     For Each wein In empDays.Keys
         row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
         If row > 0 Then
             arr = empDays(wein)
+            ' Current month days
             If colCurrent > 0 Then ws.Cells(row, colCurrent).Value = RoundAmount2(arr(0))
+            ' Previous month days
             If colPrev > 0 Then ws.Cells(row, colPrev).Value = RoundAmount2(arr(1))
-            If colDeduction > 0 Then ws.Cells(row, colDeduction).Value = RoundAmount2(arr(0) + arr(1))
+            ' Current month deduction (same as current month days per requirement)
+            If colDeduction > 0 Then ws.Cells(row, colDeduction).Value = RoundAmount2(arr(0))
+            ' Previous month deduction (same as previous month days per requirement)
+            If colDeductionLast > 0 Then ws.Cells(row, colDeductionLast).Value = RoundAmount2(arr(1))
         End If
     Next wein
+    
+    ' Write Annual Leave EAO Adj_Input to VariablePay for older periods (before previous month)
+    WriteAnnualLeaveEAOAdj empDays
     
     LogInfo "modSP1_Attendance", "ProcessAnnualLeave", "Processed " & empDays.count & " employees"
     
@@ -597,3 +606,70 @@ Private Function GetOrAddEmployeeRow(ws As Worksheet, wein As String, empIndex A
     
     GetOrAddEmployeeRow = newRow
 End Function
+
+'------------------------------------------------------------------------------
+' Sub: WriteAnnualLeaveEAOAdj
+' Purpose: Write Annual Leave EAO Adj_Input to VariablePay for older periods
+' Description: For Annual Leave records dated before the previous month,
+'              calculate EAO adjustment using formula:
+'              (AverageDayWage_12Month - DailySalary) * TOTAL_DAYS
+'              and write to VariablePay.Annual Leave EAO Adj_Input
+'------------------------------------------------------------------------------
+Private Sub WriteAnnualLeaveEAOAdj(empDays As Object)
+    Dim ws As Worksheet
+    Dim empIndex As Object
+    Dim wein As Variant
+    Dim arr As Variant
+    Dim olderDays As Double
+    Dim eaoAdj As Double
+    Dim col As Long, row As Long
+    
+    On Error GoTo ErrHandler
+    
+    ' Get VariablePay sheet from the flexi output workbook
+    On Error Resume Next
+    Set ws = G.FlexiOutputWb.Worksheets("VariablePay")
+    On Error GoTo ErrHandler
+    
+    If ws Is Nothing Then
+        LogWarning "modSP1_Attendance", "WriteAnnualLeaveEAOAdj", "VariablePay sheet not found"
+        Exit Sub
+    End If
+    
+    ' Build employee index for VariablePay sheet
+    Set empIndex = BuildEmployeeIndex(ws, "Employee Code,EmployeeCode,Employee Reference,EmployeeNumber,Employee Number")
+    
+    ' Find target column
+    col = FindColumnByHeader(ws.Rows(1), "Annual Leave EAO Adj_Input")
+    
+    If col = 0 Then
+        LogWarning "modSP1_Attendance", "WriteAnnualLeaveEAOAdj", "Annual Leave EAO Adj_Input column not found"
+        Exit Sub
+    End If
+    
+    ' Process each employee with older period days
+    For Each wein In empDays.Keys
+        arr = empDays(wein)
+        olderDays = arr(2)  ' Days from periods before previous month
+        
+        If olderDays > 0 Then
+            ' Calculate EAO adjustment: (AverageDayWage_12Month - DailySalary) * TOTAL_DAYS
+            eaoAdj = CalcAnnualLeaveEAOAdj(CStr(wein), olderDays)
+            
+            If eaoAdj > 0 Then
+                row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
+                If row > 0 Then
+                    ' Add to existing value (in case there are multiple entries)
+                    ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, eaoAdj)
+                End If
+            End If
+        End If
+    Next wein
+    
+    LogInfo "modSP1_Attendance", "WriteAnnualLeaveEAOAdj", "Processed Annual Leave EAO adjustments"
+    
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP1_Attendance", "WriteAnnualLeaveEAOAdj", Err.Number, Err.Description
+End Sub
