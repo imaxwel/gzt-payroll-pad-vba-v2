@@ -90,9 +90,9 @@ Private Sub ProcessOneTimePayment(ws As Worksheet, empIndex As Object)
         "Completed On,CompletedOn,Completed Date", _
         "Scheduled Payment Date,ScheduledPaymentDate,Scheduled Pay Date", _
         G.Payroll.PreviousCutoff, _
-        G.Payroll.CurrentCutoff, _
-        G.Payroll.PrevMonthStart, _
-        G.Payroll.PrevMonthEnd, _
+        G.Payroll.currentCutoff, _
+        G.Payroll.prevMonthStart, _
+        G.Payroll.prevMonthEnd, _
         excludeTypes)
     
     ' Map to VariablePay columns
@@ -600,7 +600,7 @@ End Sub
 '------------------------------------------------------------------------------
 ' Sub: ProcessMerckPayrollSummary
 ' Purpose: Process Merck Payroll Summary Report for IA Pay Split
-' Note: Each employee has a separate sheet named "Merck Payroll Summary Reportâ€”â€”xxx"
+' Note: Each employee has a separate sheet named "Merck Payroll Summary Report¡ª¡ªxxx"
 '       where xxx is the Employee ID
 '------------------------------------------------------------------------------
 Private Sub ProcessMerckPayrollSummary(ws As Worksheet, empIndex As Object)
@@ -633,7 +633,7 @@ Private Sub ProcessMerckPayrollSummary(ws As Worksheet, empIndex As Object)
     For Each srcWs In wb.Worksheets
         sheetName = srcWs.Name
         
-        ' Check if sheet name matches pattern "Merck Payroll Summary Reportâ€”â€”xxx"
+        ' Check if sheet name matches pattern "Merck Payroll Summary Report¡ª¡ªxxx"
         empIdFromSheet = ExtractEmployeeIdFromSheetName(sheetName)
         If empIdFromSheet = "" Then GoTo NextSheet
         
@@ -691,7 +691,7 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Function: ExtractEmployeeIdFromSheetName
-' Purpose: Extract Employee ID from sheet name pattern "Merck Payroll Summary Reportâ€”â€”xxx"
+' Purpose: Extract Employee ID from sheet name pattern "Merck Payroll Summary Report¡ª¡ªxxx"
 ' Returns: Employee ID string or empty string if pattern not matched
 '------------------------------------------------------------------------------
 Private Function ExtractEmployeeIdFromSheetName(sheetName As String) As String
@@ -700,8 +700,8 @@ Private Function ExtractEmployeeIdFromSheetName(sheetName As String) As String
     
     ExtractEmployeeIdFromSheetName = ""
     
-    ' Look for the separator "â€”â€”" (Chinese em dash) or "--" (double hyphen)
-    pos = InStr(sheetName, "â€”â€”")
+    ' Look for the separator "¡ª¡ª" (Chinese em dash) or "--" (double hyphen)
+    pos = InStr(sheetName, "¡ª¡ª")
     If pos > 0 Then
         ExtractEmployeeIdFromSheetName = Trim(Mid(sheetName, pos + 2))
         Exit Function
@@ -713,8 +713,8 @@ Private Function ExtractEmployeeIdFromSheetName(sheetName As String) As String
         Exit Function
     End If
     
-    ' Also try single em dash "â€”"
-    pos = InStr(sheetName, "â€”")
+    ' Also try single em dash "¡ª"
+    pos = InStr(sheetName, "¡ª")
     If pos > 0 Then
         ExtractEmployeeIdFromSheetName = Trim(Mid(sheetName, pos + 1))
         Exit Function
@@ -746,7 +746,7 @@ Private Function FindFlexiFormEmployeeId(srcWs As Worksheet) As String
     
     If Not cell Is Nothing Then
         ' Employee ID is in the cell to the right of the label
-        FindFlexiFormEmployeeId = Trim(CStr(Nz(cell.Offset(0, 1).Value, "")))
+        FindFlexiFormEmployeeId = Trim(CStr(Nz(cell.offset(0, 1).Value, "")))
     End If
     
     On Error GoTo 0
@@ -781,7 +781,7 @@ Private Function FindMerckPayrollValue(srcWs As Worksheet, headerKeyword As Stri
     
     If Not cell Is Nothing Then
         ' Value is in the cell directly below the header
-        Set valueCell = cell.Offset(1, 0)
+        Set valueCell = cell.offset(1, 0)
         FindMerckPayrollValue = ToDouble(valueCell.Value)
     End If
     
@@ -790,8 +790,8 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Sub: ProcessExtraTable
-' Purpose: Process é¢å¤–è¡¨ for PPTO EAO Rate input and Flexible benefits
-' Note: Both PPTO EAO Rate input and Flexible benefits come from [ç‰¹æ®Šå¥–é‡‘] sheet
+' Purpose: Process Additional table for PPTO EAO Rate input and Flexible benefits
+' Note: Both PPTO EAO Rate input and Flexible benefits come from [ÌØÊâ½±½ğ] sheet
 '------------------------------------------------------------------------------
 Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     Dim wb As Workbook
@@ -808,13 +808,13 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     Set wb = OpenExtraTableWorkbook()
     If wb Is Nothing Then Exit Sub
     
-    ' Process [ç‰¹æ®Šå¥–é‡‘] sheet for PPTO EAO Rate input and Flexible benefits
+    ' Process [ÌØÊâ½±½ğ] sheet for PPTO EAO Rate input and Flexible benefits
     On Error Resume Next
-    Set srcWs = wb.Worksheets("ç‰¹æ®Šå¥–é‡‘")
+    Set srcWs = wb.Worksheets("ÌØÊâ½±½ğ")
     On Error GoTo ErrHandler
     
     If srcWs Is Nothing Then
-        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "Sheet [ç‰¹æ®Šå¥–é‡‘] not found in Extra Table"
+        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "Sheet [ÌØÊâ½±½ğ] not found in Extra Table"
         Exit Sub
     End If
     
@@ -827,7 +827,7 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     colFlexBenefit = FindColumnByHeader(ws.Rows(1), "Flexible benefits")
     
     If weinCol = 0 Then
-        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "WEIN column not found in [ç‰¹æ®Šå¥–é‡‘] sheet"
+        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "WEIN column not found in [ÌØÊâ½±½ğ] sheet"
         Exit Sub
     End If
     
@@ -858,7 +858,7 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
         End If
     Next i
     
-    LogInfo "modSP1_VariablePay", "ProcessExtraTable", "Processed Extra Table [ç‰¹æ®Šå¥–é‡‘] sheet"
+    LogInfo "modSP1_VariablePay", "ProcessExtraTable", "Processed Extra Table [ÌØÊâ½±½ğ] sheet"
     Exit Sub
     
 ErrHandler:
@@ -902,4 +902,6 @@ Private Function GetOrAddRow(ws As Worksheet, wein As String, empIndex As Object
     
     GetOrAddRow = newRow
 End Function
+
+
 
