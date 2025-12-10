@@ -493,6 +493,7 @@ Private Sub ProcessAIPPayouts(ws As Worksheet, empIndex As Object)
         bonusAmt = ToDouble(srcWs.Cells(i, amtCol).Value)
         
         If wein <> "" And bonusAmt <> 0 Then
+            wein = NormalizeEmployeeId(wein)
             row = GetOrAddRow(ws, wein, empIndex)
             If row > 0 Then
                 ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, bonusAmt)
