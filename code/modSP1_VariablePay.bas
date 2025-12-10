@@ -106,7 +106,7 @@ Private Sub ProcessOneTimePayment(ws As Worksheet, empIndex As Object)
     planMapping.Add "MD AWARD", "MD Award"
     planMapping.Add "EMPLOYEE AWARD", "Employee Award"
     planMapping.Add "NEW YEAR'S ALLOWANCE", "Red Packet"
-    planMapping.Add "RED PACKET", "Red Packet"
+    ' Note: RED PACKET type is handled separately in Check Result only (not VariablePay)
     planMapping.Add "CASH AWARD", "Other Allowance"
     planMapping.Add "SIP TO AIP TRANSITION", "Other Allowance"
     
