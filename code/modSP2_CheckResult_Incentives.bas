@@ -390,17 +390,19 @@ End Function
 ' Sub: ProcessIAPaySplitCheck
 ' Purpose: Process IA Pay Split Check from Merck Payroll Summary Report
 ' Formula: IA Pay Split = Net Pay (include EAO & leave payment) + MPF EE MC + MPF EE VC
+' Note: Each employee has a separate sheet named "Merck Payroll Summary Report——xxx"
+'       where xxx is the Employee ID
 '------------------------------------------------------------------------------
 Private Sub ProcessIAPaySplitCheck(ws As Worksheet, weinIndex As Object)
     Dim wb As Workbook
     Dim srcWs As Worksheet
     Dim filePath As String
-    Dim lastRow As Long, i As Long
-    Dim headers As Object
-    Dim empId As String, wein As String
+    Dim sheetName As String
+    Dim empIdFromSheet As String, empIdFromCell As String, wein As String
     Dim row As Long, col As Long
     Dim netPay As Double, mpfEEMC As Double, mpfEEVC As Double
     Dim iaPaySplit As Double
+    Dim processedCount As Long
     
     On Error GoTo ErrHandler
     
@@ -416,44 +418,51 @@ Private Sub ProcessIAPaySplitCheck(ws As Worksheet, weinIndex As Object)
     End If
     
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
-    Set srcWs = wb.Worksheets(1)
     
-    ' Build header index
-    Set headers = CreateObject("Scripting.Dictionary")
-    Dim c As Long
-    For c = 1 To srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
-        headers(UCase(Trim(CStr(srcWs.Cells(1, c).Value)))) = c
-    Next c
+    processedCount = 0
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
-    
-    For i = 2 To lastRow
-        ' Get Employee ID
-        empId = GetIACellVal(srcWs, i, headers, "EMPLOYEE ID")
-        If empId = "" Then empId = GetIACellVal(srcWs, i, headers, "EMPLOYEEID")
+    ' Iterate through all sheets looking for employee report sheets
+    For Each srcWs In wb.Worksheets
+        sheetName = srcWs.Name
         
-        If empId <> "" Then
-            wein = NormalizeEmployeeId(empId)
-            
-            If weinIndex.exists(wein) Then
-                row = weinIndex(wein)
-                
-                ' Get values for IA Pay Split calculation
-                netPay = ToDouble(GetIACellVal(srcWs, i, headers, "NET PAY"))
-                mpfEEMC = ToDouble(GetIACellVal(srcWs, i, headers, "MPF EE MC"))
-                mpfEEVC = ToDouble(GetIACellVal(srcWs, i, headers, "MPF EE VC"))
-                
-                ' Calculate IA Pay Split
-                iaPaySplit = netPay + mpfEEMC + mpfEEVC
-                
-                If iaPaySplit <> 0 Then
-                    ws.Cells(row, col).Value = RoundAmount2(iaPaySplit)
-                End If
-            End If
+        ' Check if sheet name matches pattern "Merck Payroll Summary Report——xxx"
+        empIdFromSheet = ExtractEmpIdFromSheetName(sheetName)
+        If empIdFromSheet = "" Then GoTo NextSheet
+        
+        ' Validate Employee ID from "Flexi form:" cell
+        empIdFromCell = FindFlexiFormEmpId(srcWs)
+        If empIdFromCell <> "" And empIdFromCell <> empIdFromSheet Then
+            LogWarning "modSP2_CheckResult_Incentives", "ProcessIAPaySplitCheck", _
+                "Employee ID mismatch: Sheet name has '" & empIdFromSheet & _
+                "' but Flexi form cell has '" & empIdFromCell & "'. Using sheet name value."
         End If
-    Next i
+        
+        wein = NormalizeEmployeeId(empIdFromSheet)
+        
+        If weinIndex.exists(wein) Then
+            row = weinIndex(wein)
+            
+            ' Extract values from the sheet using adaptive header search
+            netPay = FindMerckValue(srcWs, "Net Pay (include EAO & leave payment)")
+            mpfEEMC = FindMerckValue(srcWs, "MPF EE MC")
+            mpfEEVC = FindMerckValue(srcWs, "MPF EE VC")
+            
+            ' Calculate IA Pay Split = Net Pay + MPF EE MC + MPF EE VC
+            iaPaySplit = netPay + mpfEEMC + mpfEEVC
+            
+            If iaPaySplit <> 0 Then
+                ws.Cells(row, col).Value = RoundAmount2(iaPaySplit)
+            End If
+            
+            processedCount = processedCount + 1
+        End If
+        
+NextSheet:
+    Next srcWs
     
     wb.Close SaveChanges:=False
+    LogInfo "modSP2_CheckResult_Incentives", "ProcessIAPaySplitCheck", _
+        "Processed IA Pay Split Check: " & processedCount & " employees"
     Exit Sub
     
 ErrHandler:
@@ -463,14 +472,99 @@ ErrHandler:
 End Sub
 
 '------------------------------------------------------------------------------
-' Helper: GetIACellVal
+' Function: ExtractEmpIdFromSheetName
+' Purpose: Extract Employee ID from sheet name pattern "Merck Payroll Summary Report——xxx"
+' Returns: Employee ID string or empty string if pattern not matched
 '------------------------------------------------------------------------------
-Private Function GetIACellVal(ws As Worksheet, row As Long, headers As Object, headerName As String) As String
-    Dim col As Long
-    GetIACellVal = ""
+Private Function ExtractEmpIdFromSheetName(sheetName As String) As String
+    Dim pos As Long
     
-    If headers.exists(UCase(headerName)) Then
-        col = headers(UCase(headerName))
-        GetIACellVal = Trim(CStr(Nz(ws.Cells(row, col).Value, "")))
+    ExtractEmpIdFromSheetName = ""
+    
+    ' Look for the separator "——" (Chinese em dash) or "--" (double hyphen)
+    pos = InStr(sheetName, "——")
+    If pos > 0 Then
+        ExtractEmpIdFromSheetName = Trim(Mid(sheetName, pos + 2))
+        Exit Function
     End If
+    
+    pos = InStr(sheetName, "--")
+    If pos > 0 Then
+        ExtractEmpIdFromSheetName = Trim(Mid(sheetName, pos + 2))
+        Exit Function
+    End If
+    
+    ' Also try single em dash "—"
+    pos = InStr(sheetName, "—")
+    If pos > 0 Then
+        ExtractEmpIdFromSheetName = Trim(Mid(sheetName, pos + 1))
+        Exit Function
+    End If
+End Function
+
+'------------------------------------------------------------------------------
+' Function: FindFlexiFormEmpId
+' Purpose: Find Employee ID from "Flexi form:" label in the sheet
+' Returns: Employee ID string or empty string if not found
+'------------------------------------------------------------------------------
+Private Function FindFlexiFormEmpId(srcWs As Worksheet) As String
+    Dim cell As Range
+    Dim searchRange As Range
+    Dim lastRow As Long, lastCol As Long
+    
+    FindFlexiFormEmpId = ""
+    
+    On Error Resume Next
+    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    lastCol = srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
+    If lastRow < 1 Then lastRow = 100
+    If lastCol < 1 Then lastCol = 20
+    
+    Set searchRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
+    
+    ' Search for "Flexi form" label
+    Set cell = searchRange.Find(What:="Flexi form", LookIn:=xlValues, LookAt:=xlPart, MatchCase:=False)
+    
+    If Not cell Is Nothing Then
+        ' Employee ID is in the cell to the right of the label
+        FindFlexiFormEmpId = Trim(CStr(Nz(cell.Offset(0, 1).Value, "")))
+    End If
+    
+    On Error GoTo 0
+End Function
+
+'------------------------------------------------------------------------------
+' Function: FindMerckValue
+' Purpose: Find value by searching for header keyword and reading the value below it
+' Parameters:
+'   srcWs - Source worksheet
+'   headerKeyword - Header text to search for
+' Returns: Double value found below the header, or 0 if not found
+'------------------------------------------------------------------------------
+Private Function FindMerckValue(srcWs As Worksheet, headerKeyword As String) As Double
+    Dim cell As Range
+    Dim searchRange As Range
+    Dim lastRow As Long, lastCol As Long
+    Dim valueCell As Range
+    
+    FindMerckValue = 0
+    
+    On Error Resume Next
+    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    lastCol = srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
+    If lastRow < 1 Then lastRow = 100
+    If lastCol < 1 Then lastCol = 20
+    
+    Set searchRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
+    
+    ' Search for header keyword
+    Set cell = searchRange.Find(What:=headerKeyword, LookIn:=xlValues, LookAt:=xlPart, MatchCase:=False)
+    
+    If Not cell Is Nothing Then
+        ' Value is in the cell directly below the header
+        Set valueCell = cell.Offset(1, 0)
+        FindMerckValue = ToDouble(valueCell.Value)
+    End If
+    
+    On Error GoTo 0
 End Function

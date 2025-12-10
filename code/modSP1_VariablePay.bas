@@ -581,19 +581,20 @@ End Sub
 '------------------------------------------------------------------------------
 ' Sub: ProcessMerckPayrollSummary
 ' Purpose: Process Merck Payroll Summary Report for IA Pay Split
+' Note: Each employee has a separate sheet named "Merck Payroll Summary Report——xxx"
+'       where xxx is the Employee ID
 '------------------------------------------------------------------------------
 Private Sub ProcessMerckPayrollSummary(ws As Worksheet, empIndex As Object)
     Dim wb As Workbook
     Dim srcWs As Worksheet
     Dim filePath As String
-    Dim lastRow As Long, i As Long
-    Dim empId As String, wein As String
+    Dim sheetName As String
+    Dim empIdFromSheet As String, empIdFromCell As String, wein As String
     Dim netPay As Double, mpfEEMC As Double, mpfEEVC As Double
     Dim iaPaySplit As Double, mpfRI As Double, mpfVCRI As Double
     Dim row As Long
-    Dim empIdCol As Long, netPayCol As Long, mpfRICol As Long
-    Dim mpfVCRICol As Long, mpfEEMCCol As Long, mpfEEVCCol As Long
     Dim colIAPaySplit As Long, colMPFRI As Long, colMPFVCRI As Long
+    Dim processedCount As Long
     
     On Error GoTo ErrHandler
     
@@ -601,65 +602,66 @@ Private Sub ProcessMerckPayrollSummary(ws As Worksheet, empIndex As Object)
     If Dir(filePath) = "" Then Exit Sub
     
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
-    Set srcWs = wb.Worksheets(1)
     
-    ' Find columns (try multiple field name variants)
-    empIdCol = FindColumnByHeader(srcWs.Rows(1), "Employee ID,EmployeeID,WEIN,WIN,Employee Number ID")
-    netPayCol = FindColumnByHeader(srcWs.Rows(1), "Net Pay (include EAO & leave payment)")
-    mpfRICol = FindColumnByHeader(srcWs.Rows(1), "MPF Relevant Income")
-    mpfVCRICol = FindColumnByHeader(srcWs.Rows(1), "MPF VC Relevant Income")
-    mpfEEMCCol = FindColumnByHeader(srcWs.Rows(1), "MPF EE MC")
-    mpfEEVCCol = FindColumnByHeader(srcWs.Rows(1), "MPF EE VC")
-    
-    If empIdCol = 0 Then
-        wb.Close SaveChanges:=False
-        Exit Sub
-    End If
-    
-    ' Find target columns
+    ' Find target columns in VariablePay sheet
     colIAPaySplit = FindColumnByHeader(ws.Rows(1), "IA Pay Split")
     colMPFRI = FindColumnByHeader(ws.Rows(1), "MPF Relevant Income Rewrite")
     colMPFVCRI = FindColumnByHeader(ws.Rows(1), "MPF VC Relevant Income Rewrite")
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, empIdCol).End(xlUp).row
+    processedCount = 0
     
-    For i = 2 To lastRow
-        empId = Trim(CStr(Nz(srcWs.Cells(i, empIdCol).Value, "")))
+    ' Iterate through all sheets looking for employee report sheets
+    For Each srcWs In wb.Worksheets
+        sheetName = srcWs.Name
         
-        If empId <> "" Then
-            wein = NormalizeEmployeeId(empId)
-            
-            row = GetOrAddRow(ws, wein, empIndex)
-            If row > 0 Then
-                ' Calculate IA Pay Split
-                If netPayCol > 0 And mpfEEMCCol > 0 And mpfEEVCCol > 0 Then
-                    netPay = ToDouble(srcWs.Cells(i, netPayCol).Value)
-                    mpfEEMC = ToDouble(srcWs.Cells(i, mpfEEMCCol).Value)
-                    mpfEEVC = ToDouble(srcWs.Cells(i, mpfEEVCCol).Value)
-                    iaPaySplit = RoundAmount2(netPay + mpfEEMC + mpfEEVC)
-                    
-                    If colIAPaySplit > 0 Then
-                        ws.Cells(row, colIAPaySplit).Value = iaPaySplit
-                    End If
-                End If
-                
-                ' MPF Relevant Income Rewrite
-                If mpfRICol > 0 And colMPFRI > 0 Then
-                    mpfRI = ToDouble(srcWs.Cells(i, mpfRICol).Value)
-                    ws.Cells(row, colMPFRI).Value = RoundAmount2(mpfRI)
-                End If
-                
-                ' MPF VC Relevant Income Rewrite
-                If mpfVCRICol > 0 And colMPFVCRI > 0 Then
-                    mpfVCRI = ToDouble(srcWs.Cells(i, mpfVCRICol).Value)
-                    ws.Cells(row, colMPFVCRI).Value = RoundAmount2(mpfVCRI)
-                End If
-            End If
+        ' Check if sheet name matches pattern "Merck Payroll Summary Report——xxx"
+        empIdFromSheet = ExtractEmployeeIdFromSheetName(sheetName)
+        If empIdFromSheet = "" Then GoTo NextSheet
+        
+        ' Validate Employee ID from "Flexi form:" cell
+        empIdFromCell = FindFlexiFormEmployeeId(srcWs)
+        If empIdFromCell <> "" And empIdFromCell <> empIdFromSheet Then
+            LogWarning "modSP1_VariablePay", "ProcessMerckPayrollSummary", _
+                "Employee ID mismatch: Sheet name has '" & empIdFromSheet & _
+                "' but Flexi form cell has '" & empIdFromCell & "'. Using sheet name value."
         End If
-    Next i
+        
+        wein = NormalizeEmployeeId(empIdFromSheet)
+        
+        row = GetOrAddRow(ws, wein, empIndex)
+        If row > 0 Then
+            ' Extract values from the sheet using adaptive header search
+            netPay = FindMerckPayrollValue(srcWs, "Net Pay (include EAO & leave payment)")
+            mpfEEMC = FindMerckPayrollValue(srcWs, "MPF EE MC")
+            mpfEEVC = FindMerckPayrollValue(srcWs, "MPF EE VC")
+            mpfRI = FindMerckPayrollValue(srcWs, "MPF Relevant Income")
+            mpfVCRI = FindMerckPayrollValue(srcWs, "MPF VC Relevant Income")
+            
+            ' Calculate IA Pay Split = Net Pay + MPF EE MC + MPF EE VC
+            iaPaySplit = RoundAmount2(netPay + mpfEEMC + mpfEEVC)
+            
+            ' Write values to VariablePay sheet
+            If colIAPaySplit > 0 Then
+                ws.Cells(row, colIAPaySplit).Value = iaPaySplit
+            End If
+            
+            If colMPFRI > 0 Then
+                ws.Cells(row, colMPFRI).Value = RoundAmount2(mpfRI)
+            End If
+            
+            If colMPFVCRI > 0 Then
+                ws.Cells(row, colMPFVCRI).Value = RoundAmount2(mpfVCRI)
+            End If
+            
+            processedCount = processedCount + 1
+        End If
+        
+NextSheet:
+    Next srcWs
     
     wb.Close SaveChanges:=False
-    LogInfo "modSP1_VariablePay", "ProcessMerckPayrollSummary", "Processed Merck Payroll Summary"
+    LogInfo "modSP1_VariablePay", "ProcessMerckPayrollSummary", _
+        "Processed Merck Payroll Summary: " & processedCount & " employees"
     Exit Sub
     
 ErrHandler:
@@ -667,6 +669,105 @@ ErrHandler:
     On Error Resume Next
     If Not wb Is Nothing Then wb.Close SaveChanges:=False
 End Sub
+
+'------------------------------------------------------------------------------
+' Function: ExtractEmployeeIdFromSheetName
+' Purpose: Extract Employee ID from sheet name pattern "Merck Payroll Summary Report——xxx"
+' Returns: Employee ID string or empty string if pattern not matched
+'------------------------------------------------------------------------------
+Private Function ExtractEmployeeIdFromSheetName(sheetName As String) As String
+    Dim prefix As String
+    Dim pos As Long
+    
+    ExtractEmployeeIdFromSheetName = ""
+    
+    ' Look for the separator "——" (Chinese em dash) or "--" (double hyphen)
+    pos = InStr(sheetName, "——")
+    If pos > 0 Then
+        ExtractEmployeeIdFromSheetName = Trim(Mid(sheetName, pos + 2))
+        Exit Function
+    End If
+    
+    pos = InStr(sheetName, "--")
+    If pos > 0 Then
+        ExtractEmployeeIdFromSheetName = Trim(Mid(sheetName, pos + 2))
+        Exit Function
+    End If
+    
+    ' Also try single em dash "—"
+    pos = InStr(sheetName, "—")
+    If pos > 0 Then
+        ExtractEmployeeIdFromSheetName = Trim(Mid(sheetName, pos + 1))
+        Exit Function
+    End If
+End Function
+
+'------------------------------------------------------------------------------
+' Function: FindFlexiFormEmployeeId
+' Purpose: Find Employee ID from "Flexi form:" label in the sheet
+' Returns: Employee ID string or empty string if not found
+'------------------------------------------------------------------------------
+Private Function FindFlexiFormEmployeeId(srcWs As Worksheet) As String
+    Dim cell As Range
+    Dim searchRange As Range
+    Dim lastRow As Long, lastCol As Long
+    
+    FindFlexiFormEmployeeId = ""
+    
+    On Error Resume Next
+    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    lastCol = srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
+    If lastRow < 1 Then lastRow = 100
+    If lastCol < 1 Then lastCol = 20
+    
+    Set searchRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
+    
+    ' Search for "Flexi form" label
+    Set cell = searchRange.Find(What:="Flexi form", LookIn:=xlValues, LookAt:=xlPart, MatchCase:=False)
+    
+    If Not cell Is Nothing Then
+        ' Employee ID is in the cell to the right of the label
+        FindFlexiFormEmployeeId = Trim(CStr(Nz(cell.Offset(0, 1).Value, "")))
+    End If
+    
+    On Error GoTo 0
+End Function
+
+'------------------------------------------------------------------------------
+' Function: FindMerckPayrollValue
+' Purpose: Find value by searching for header keyword and reading the value below it
+' Parameters:
+'   srcWs - Source worksheet
+'   headerKeyword - Header text to search for
+' Returns: Double value found below the header, or 0 if not found
+'------------------------------------------------------------------------------
+Private Function FindMerckPayrollValue(srcWs As Worksheet, headerKeyword As String) As Double
+    Dim cell As Range
+    Dim searchRange As Range
+    Dim lastRow As Long, lastCol As Long
+    Dim valueCell As Range
+    
+    FindMerckPayrollValue = 0
+    
+    On Error Resume Next
+    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    lastCol = srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
+    If lastRow < 1 Then lastRow = 100
+    If lastCol < 1 Then lastCol = 20
+    
+    Set searchRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
+    
+    ' Search for header keyword
+    Set cell = searchRange.Find(What:=headerKeyword, LookIn:=xlValues, LookAt:=xlPart, MatchCase:=False)
+    
+    If Not cell Is Nothing Then
+        ' Value is in the cell directly below the header
+        Set valueCell = cell.Offset(1, 0)
+        FindMerckPayrollValue = ToDouble(valueCell.Value)
+    End If
+    
+    On Error GoTo 0
+End Function
 
 '------------------------------------------------------------------------------
 ' Sub: ProcessExtraTable
