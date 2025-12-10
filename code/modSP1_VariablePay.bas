@@ -600,7 +600,7 @@ End Sub
 '------------------------------------------------------------------------------
 ' Sub: ProcessMerckPayrollSummary
 ' Purpose: Process Merck Payroll Summary Report for IA Pay Split
-' Note: Each employee has a separate sheet named "Merck Payroll Summary Report¡ª¡ªxxx"
+' Note: Each employee has a separate sheet named "Merck Payroll Summary Reportï¿½ï¿½ï¿½ï¿½xxx"
 '       where xxx is the Employee ID
 '------------------------------------------------------------------------------
 Private Sub ProcessMerckPayrollSummary(ws As Worksheet, empIndex As Object)
@@ -633,7 +633,7 @@ Private Sub ProcessMerckPayrollSummary(ws As Worksheet, empIndex As Object)
     For Each srcWs In wb.Worksheets
         sheetName = srcWs.Name
         
-        ' Check if sheet name matches pattern "Merck Payroll Summary Report¡ª¡ªxxx"
+        ' Check if sheet name matches pattern "Merck Payroll Summary Reportï¿½ï¿½ï¿½ï¿½xxx"
         empIdFromSheet = ExtractEmployeeIdFromSheetName(sheetName)
         If empIdFromSheet = "" Then GoTo NextSheet
         
@@ -691,7 +691,7 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Function: ExtractEmployeeIdFromSheetName
-' Purpose: Extract Employee ID from sheet name pattern "Merck Payroll Summary Report¡ª¡ªxxx"
+' Purpose: Extract Employee ID from sheet name pattern "Merck Payroll Summary Reportï¿½ï¿½ï¿½ï¿½xxx"
 ' Returns: Employee ID string or empty string if pattern not matched
 '------------------------------------------------------------------------------
 Private Function ExtractEmployeeIdFromSheetName(sheetName As String) As String
@@ -700,8 +700,8 @@ Private Function ExtractEmployeeIdFromSheetName(sheetName As String) As String
     
     ExtractEmployeeIdFromSheetName = ""
     
-    ' Look for the separator "¡ª¡ª" (Chinese em dash) or "--" (double hyphen)
-    pos = InStr(sheetName, "¡ª¡ª")
+    ' Look for the separator "ï¿½ï¿½ï¿½ï¿½" (Chinese em dash) or "--" (double hyphen)
+    pos = InStr(sheetName, "ï¿½ï¿½ï¿½ï¿½")
     If pos > 0 Then
         ExtractEmployeeIdFromSheetName = Trim(Mid(sheetName, pos + 2))
         Exit Function
@@ -713,8 +713,8 @@ Private Function ExtractEmployeeIdFromSheetName(sheetName As String) As String
         Exit Function
     End If
     
-    ' Also try single em dash "¡ª"
-    pos = InStr(sheetName, "¡ª")
+    ' Also try single em dash "ï¿½ï¿½"
+    pos = InStr(sheetName, "ï¿½ï¿½")
     If pos > 0 Then
         ExtractEmployeeIdFromSheetName = Trim(Mid(sheetName, pos + 1))
         Exit Function
@@ -791,12 +791,13 @@ End Function
 '------------------------------------------------------------------------------
 ' Sub: ProcessExtraTable
 ' Purpose: Process Additional table for PPTO EAO Rate input and Flexible benefits
-' Note: Both PPTO EAO Rate input and Flexible benefits come from [ÌØÊâ½±½ð] sheet
+' Note: Both PPTO EAO Rate input and Flexible benefits come from [ç‰¹æ®Šå¥–é‡‘] sheet
+'       Header row is auto-detected (not necessarily row 1)
 '------------------------------------------------------------------------------
 Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     Dim wb As Workbook
     Dim srcWs As Worksheet
-    Dim lastRow As Long, i As Long
+    Dim headerRow As Long, lastRow As Long, i As Long
     Dim wein As String
     Dim pptoRate As Double, flexBenefit As Double
     Dim row As Long
@@ -808,32 +809,40 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     Set wb = OpenExtraTableWorkbook()
     If wb Is Nothing Then Exit Sub
     
-    ' Process [ÌØÊâ½±½ð] sheet for PPTO EAO Rate input and Flexible benefits
+    ' Process [ç‰¹æ®Šå¥–é‡‘] sheet for PPTO EAO Rate input and Flexible benefits
     On Error Resume Next
-    Set srcWs = wb.Worksheets("ÌØÊâ½±½ð")
+    Set srcWs = wb.Worksheets("ç‰¹æ®Šå¥–é‡‘")
     On Error GoTo ErrHandler
     
     If srcWs Is Nothing Then
-        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "Sheet [ÌØÊâ½±½ð] not found in Extra Table"
+        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "Sheet [ç‰¹æ®Šå¥–é‡‘] not found in Extra Table"
         Exit Sub
     End If
     
-    ' Try multiple field name variants for WEIN
-    weinCol = FindColumnByHeader(srcWs.Rows(1), "WEIN,WIN,WEINEmployee ID,Employee CodeWIN,Employee ID,EmployeeID")
-    pptoCol = FindColumnByHeader(srcWs.Rows(1), "PPTO EAO Rate input")
-    flexCol = FindColumnByHeader(srcWs.Rows(1), "Flexible benefits")
+    ' Auto-detect header row by searching for WEIN keyword
+    headerRow = FindHeaderRow(srcWs, "WEIN,WIN,Employee ID,EmployeeID")
+    If headerRow = 0 Then
+        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "Header row with WEIN not found in [ç‰¹æ®Šå¥–é‡‘] sheet"
+        Exit Sub
+    End If
+    
+    ' Find columns in the detected header row
+    weinCol = FindColumnByHeader(srcWs.Rows(headerRow), "WEIN,WIN,WEINEmployee ID,Employee CodeWIN,Employee ID,EmployeeID")
+    pptoCol = FindColumnByHeader(srcWs.Rows(headerRow), "PPTO EAO Rate input")
+    flexCol = FindColumnByHeader(srcWs.Rows(headerRow), "Flexible benefits")
     
     colPPTORate = FindColumnByHeader(ws.Rows(1), "PPTO EAO Rate input")
     colFlexBenefit = FindColumnByHeader(ws.Rows(1), "Flexible benefits")
     
     If weinCol = 0 Then
-        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "WEIN column not found in [ÌØÊâ½±½ð] sheet"
+        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "WEIN column not found in [ç‰¹æ®Šå¥–é‡‘] sheet"
         Exit Sub
     End If
     
     lastRow = srcWs.Cells(srcWs.Rows.count, weinCol).End(xlUp).row
     
-    For i = 2 To lastRow
+    ' Data starts from row after header
+    For i = headerRow + 1 To lastRow
         wein = Trim(CStr(Nz(srcWs.Cells(i, weinCol).Value, "")))
         
         If wein <> "" Then
@@ -858,7 +867,7 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
         End If
     Next i
     
-    LogInfo "modSP1_VariablePay", "ProcessExtraTable", "Processed Extra Table [ÌØÊâ½±½ð] sheet"
+    LogInfo "modSP1_VariablePay", "ProcessExtraTable", "Processed Extra Table [ç‰¹æ®Šå¥–é‡‘] sheet (header at row " & headerRow & ")"
     Exit Sub
     
 ErrHandler:
