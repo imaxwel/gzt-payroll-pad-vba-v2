@@ -720,7 +720,7 @@ Private Function FindFlexiFormEmpId(srcWs As Worksheet) As String
     
     If Not cell Is Nothing Then
         ' Employee ID is in the cell to the right of the label
-        FindFlexiFormEmpId = Trim(CStr(Nz(cell.Offset(0, 1).Value, "")))
+        FindFlexiFormEmpId = Trim(CStr(Nz(cell.offset(0, 1).Value, "")))
     End If
     
     On Error GoTo 0
@@ -755,7 +755,7 @@ Private Function FindMerckValue(srcWs As Worksheet, headerKeyword As String) As 
     
     If Not cell Is Nothing Then
         ' Value is in the cell directly below the header
-        Set valueCell = cell.Offset(1, 0)
+        Set valueCell = cell.offset(1, 0)
         FindMerckValue = ToDouble(valueCell.Value)
     End If
     

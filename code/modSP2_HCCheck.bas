@@ -77,7 +77,7 @@ Private Sub BuildHCDetailTable(ws As Worksheet)
     On Error Resume Next
     
     ' Get month names dynamically
-    prevMonthName = GetMonthShortName(G.Payroll.PrevMonthStart) & "(Previous Month)"
+    prevMonthName = GetMonthShortName(G.Payroll.prevMonthStart) & "(Previous Month)"
     currMonthName = GetMonthShortName(G.Payroll.monthStart) & "(Current Month)"
     
     ' Row 10: Column headers

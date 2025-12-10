@@ -22,11 +22,11 @@ Public Type tPayrollContext
     payrollMonth As String      ' "YYYYMM"
     monthStart As Date          ' First day of payroll month
     monthEnd As Date            ' Last day of payroll month
-    PrevMonthStart As Date      ' First day of previous month
-    PrevMonthEnd As Date        ' Last day of previous month
+    prevMonthStart As Date      ' First day of previous month
+    prevMonthEnd As Date        ' Last day of previous month
     payDate As Date             ' Pay date for this month
     PreviousCutoff As Date      ' Previous month cutoff date
-    CurrentCutoff As Date       ' Current month cutoff date
+    currentCutoff As Date       ' Current month cutoff date
     CalendarDaysCurrentMonth As Long
     CalendarDaysPrevMonth As Long
 End Type

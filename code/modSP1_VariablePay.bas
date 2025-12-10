@@ -600,7 +600,7 @@ End Sub
 '------------------------------------------------------------------------------
 ' Sub: ProcessMerckPayrollSummary
 ' Purpose: Process Merck Payroll Summary Report for IA Pay Split
-' Note: Each employee has a separate sheet named "Merck Payroll Summary Reportï¿½ï¿½ï¿½ï¿½xxx"
+' Note: Each employee has a separate sheet named "Merck Payroll Summary Report????xxx"
 '       where xxx is the Employee ID
 '------------------------------------------------------------------------------
 Private Sub ProcessMerckPayrollSummary(ws As Worksheet, empIndex As Object)
@@ -633,7 +633,7 @@ Private Sub ProcessMerckPayrollSummary(ws As Worksheet, empIndex As Object)
     For Each srcWs In wb.Worksheets
         sheetName = srcWs.Name
         
-        ' Check if sheet name matches pattern "Merck Payroll Summary Reportï¿½ï¿½ï¿½ï¿½xxx"
+        ' Check if sheet name matches pattern "Merck Payroll Summary Report????xxx"
         empIdFromSheet = ExtractEmployeeIdFromSheetName(sheetName)
         If empIdFromSheet = "" Then GoTo NextSheet
         
@@ -691,7 +691,7 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Function: ExtractEmployeeIdFromSheetName
-' Purpose: Extract Employee ID from sheet name pattern "Merck Payroll Summary Reportï¿½ï¿½ï¿½ï¿½xxx"
+' Purpose: Extract Employee ID from sheet name pattern "Merck Payroll Summary Report????xxx"
 ' Returns: Employee ID string or empty string if pattern not matched
 '------------------------------------------------------------------------------
 Private Function ExtractEmployeeIdFromSheetName(sheetName As String) As String
@@ -700,8 +700,8 @@ Private Function ExtractEmployeeIdFromSheetName(sheetName As String) As String
     
     ExtractEmployeeIdFromSheetName = ""
     
-    ' Look for the separator "ï¿½ï¿½ï¿½ï¿½" (Chinese em dash) or "--" (double hyphen)
-    pos = InStr(sheetName, "ï¿½ï¿½ï¿½ï¿½")
+    ' Look for the separator "¡ª¡ª" (Chinese em dash) or "--" (double hyphen)
+    pos = InStr(sheetName, "¡ª¡ª")
     If pos > 0 Then
         ExtractEmployeeIdFromSheetName = Trim(Mid(sheetName, pos + 2))
         Exit Function
@@ -713,8 +713,8 @@ Private Function ExtractEmployeeIdFromSheetName(sheetName As String) As String
         Exit Function
     End If
     
-    ' Also try single em dash "ï¿½ï¿½"
-    pos = InStr(sheetName, "ï¿½ï¿½")
+    ' Also try single em dash "¡ª"
+    pos = InStr(sheetName, "¡ª")
     If pos > 0 Then
         ExtractEmployeeIdFromSheetName = Trim(Mid(sheetName, pos + 1))
         Exit Function
@@ -791,7 +791,7 @@ End Function
 '------------------------------------------------------------------------------
 ' Sub: ProcessExtraTable
 ' Purpose: Process Additional table for PPTO EAO Rate input and Flexible benefits
-' Note: Both PPTO EAO Rate input and Flexible benefits come from [ç‰¹æ®Šå¥–é‡‘] sheet
+' Note: Both PPTO EAO Rate input and Flexible benefits come from [ÌØÊâ½±½ð] sheet
 '       Header row is auto-detected (not necessarily row 1)
 '------------------------------------------------------------------------------
 Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
@@ -809,20 +809,20 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     Set wb = OpenExtraTableWorkbook()
     If wb Is Nothing Then Exit Sub
     
-    ' Process [ç‰¹æ®Šå¥–é‡‘] sheet for PPTO EAO Rate input and Flexible benefits
+    ' Process [ÌØÊâ½±½ð] sheet for PPTO EAO Rate input and Flexible benefits
     On Error Resume Next
-    Set srcWs = wb.Worksheets("ç‰¹æ®Šå¥–é‡‘")
+    Set srcWs = wb.Worksheets("ÌØÊâ½±½ð")
     On Error GoTo ErrHandler
     
     If srcWs Is Nothing Then
-        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "Sheet [ç‰¹æ®Šå¥–é‡‘] not found in Extra Table"
+        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "Sheet [ÌØÊâ½±½ð] not found in Extra Table"
         Exit Sub
     End If
     
     ' Auto-detect header row by searching for WEIN keyword
     headerRow = FindHeaderRow(srcWs, "WEIN,WIN,Employee ID,EmployeeID")
     If headerRow = 0 Then
-        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "Header row with WEIN not found in [ç‰¹æ®Šå¥–é‡‘] sheet"
+        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "Header row with WEIN not found in [ÌØÊâ½±½ð] sheet"
         Exit Sub
     End If
     
@@ -835,7 +835,7 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     colFlexBenefit = FindColumnByHeader(ws.Rows(1), "Flexible benefits")
     
     If weinCol = 0 Then
-        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "WEIN column not found in [ç‰¹æ®Šå¥–é‡‘] sheet"
+        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "WEIN column not found in [ÌØÊâ½±½ð] sheet"
         Exit Sub
     End If
     
@@ -867,7 +867,7 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
         End If
     Next i
     
-    LogInfo "modSP1_VariablePay", "ProcessExtraTable", "Processed Extra Table [ç‰¹æ®Šå¥–é‡‘] sheet (header at row " & headerRow & ")"
+    LogInfo "modSP1_VariablePay", "ProcessExtraTable", "Processed Extra Table [ÌØÊâ½±½ð] sheet (header at row " & headerRow & ")"
     Exit Sub
     
 ErrHandler:

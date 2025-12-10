@@ -292,7 +292,7 @@ Private Sub AddRunSummary(wb As Workbook)
     
     r = r + 1
     ws.Cells(r, 1).Value = "Cutoff Date:"
-    ws.Cells(r, 2).Value = Format(G.Payroll.CurrentCutoff, "yyyy-mm-dd")
+    ws.Cells(r, 2).Value = Format(G.Payroll.currentCutoff, "yyyy-mm-dd")
     
     r = r + 2
     ws.Cells(r, 1).Value = "Sheet"

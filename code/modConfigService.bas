@@ -62,12 +62,12 @@ Public Function GetPayrollContext(payrollMonth As String) As tPayrollContext
     ctx.payrollMonth = payrollMonth
     ctx.monthStart = DateSerial(yr, mo, 1)
     ctx.monthEnd = DateSerial(yr, mo + 1, 0)
-    ctx.PrevMonthStart = DateSerial(yr, mo - 1, 1)
-    ctx.PrevMonthEnd = DateSerial(yr, mo, 0)
+    ctx.prevMonthStart = DateSerial(yr, mo - 1, 1)
+    ctx.prevMonthEnd = DateSerial(yr, mo, 0)
     
     ' Calculate calendar days
     ctx.CalendarDaysCurrentMonth = Day(ctx.monthEnd)
-    ctx.CalendarDaysPrevMonth = Day(ctx.PrevMonthEnd)
+    ctx.CalendarDaysPrevMonth = Day(ctx.prevMonthEnd)
     
     ' Try to load cutoff and pay dates from config
     Dim configWb As Workbook
@@ -85,7 +85,7 @@ Public Function GetPayrollContext(payrollMonth As String) As tPayrollContext
             
             For i = 2 To lastRow
                 If Trim(CStr(ws.Cells(i, 1).Value)) = payrollMonth Then
-                    ctx.CurrentCutoff = CDate(ws.Cells(i, 2).Value)
+                    ctx.currentCutoff = CDate(ws.Cells(i, 2).Value)
                     ctx.payDate = CDate(ws.Cells(i, 3).Value)
                     Exit For
                 End If
@@ -105,8 +105,8 @@ Public Function GetPayrollContext(payrollMonth As String) As tPayrollContext
     
     ' Default values if not found in config
     If ctx.payDate = 0 Then ctx.payDate = ctx.monthEnd
-    If ctx.CurrentCutoff = 0 Then ctx.CurrentCutoff = ctx.monthEnd
-    If ctx.PreviousCutoff = 0 Then ctx.PreviousCutoff = ctx.PrevMonthEnd
+    If ctx.currentCutoff = 0 Then ctx.currentCutoff = ctx.monthEnd
+    If ctx.PreviousCutoff = 0 Then ctx.PreviousCutoff = ctx.prevMonthEnd
     
     GetPayrollContext = ctx
     Exit Function
@@ -115,8 +115,8 @@ ErrHandler:
     LogError "modConfigService", "GetPayrollContext", Err.Number, Err.Description
     ' Return partial context with defaults
     ctx.payDate = ctx.monthEnd
-    ctx.CurrentCutoff = ctx.monthEnd
-    ctx.PreviousCutoff = ctx.PrevMonthEnd
+    ctx.currentCutoff = ctx.monthEnd
+    ctx.PreviousCutoff = ctx.prevMonthEnd
     GetPayrollContext = ctx
 End Function
 

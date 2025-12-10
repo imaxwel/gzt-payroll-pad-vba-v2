@@ -188,7 +188,7 @@ Private Sub ProcessAnnualLeave(ws As Worksheet, leaveRecords As Collection, empI
     On Error GoTo ErrHandler
     
     Set empDays = CreateObject("Scripting.Dictionary")
-    prevYM = Format(G.Payroll.PrevMonthStart, "YYYYMM")
+    prevYM = Format(G.Payroll.prevMonthStart, "YYYYMM")
     
     ' Process each annual leave record
     For Each v In leaveRecords
@@ -276,7 +276,7 @@ Private Sub ProcessSickLeave(ws As Worksheet, leaveRecords As Collection, empInd
     On Error GoTo ErrHandler
     
     Set empDays = CreateObject("Scripting.Dictionary")
-    prevYM = Format(G.Payroll.PrevMonthStart, "YYYYMM")
+    prevYM = Format(G.Payroll.prevMonthStart, "YYYYMM")
     
     For Each v In leaveRecords
         rec = v
@@ -366,7 +366,7 @@ Private Sub ProcessUnpaidLeave(ws As Worksheet, leaveRecords As Collection, empI
     On Error GoTo ErrHandler
     
     Set empDays = CreateObject("Scripting.Dictionary")
-    prevYM = Format(G.Payroll.PrevMonthStart, "YYYYMM")
+    prevYM = Format(G.Payroll.prevMonthStart, "YYYYMM")
     
     For Each v In leaveRecords
         rec = v
@@ -447,7 +447,7 @@ Private Sub ProcessPPTO(ws As Worksheet, leaveRecords As Collection, empIndex As
     On Error GoTo ErrHandler
     
     Set empDays = CreateObject("Scripting.Dictionary")
-    prevYM = Format(G.Payroll.PrevMonthStart, "YYYYMM")
+    prevYM = Format(G.Payroll.prevMonthStart, "YYYYMM")
     
     For Each v In leaveRecords
         rec = v
@@ -544,7 +544,7 @@ Private Sub ProcessMaternityLeave(ws As Worksheet, leaveRecords As Collection, e
     
     Set empDays = CreateObject("Scripting.Dictionary")
     Set mMaternityExcludedRecords = New Collection
-    prevYM = Format(G.Payroll.PrevMonthStart, "YYYYMM")
+    prevYM = Format(G.Payroll.prevMonthStart, "YYYYMM")
     excludedCount = 0
     
     ' Ensure Workforce Hire Dates are loaded
@@ -674,7 +674,7 @@ Private Sub ProcessPaternityLeave(ws As Worksheet, leaveRecords As Collection, e
     On Error GoTo ErrHandler
     
     Set empDays = CreateObject("Scripting.Dictionary")
-    prevYM = Format(G.Payroll.PrevMonthStart, "YYYYMM")
+    prevYM = Format(G.Payroll.prevMonthStart, "YYYYMM")
     
     For Each v In leaveRecords
         rec = v
