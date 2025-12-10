@@ -790,7 +790,8 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Sub: ProcessExtraTable
-' Purpose: Process ����� for PPTO EAO Rate and special bonuses
+' Purpose: Process 额外表 for PPTO EAO Rate input and Flexible benefits
+' Note: Both PPTO EAO Rate input and Flexible benefits come from [特殊奖金] sheet
 '------------------------------------------------------------------------------
 Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     Dim wb As Workbook
@@ -807,65 +808,57 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     Set wb = OpenExtraTableWorkbook()
     If wb Is Nothing Then Exit Sub
     
-    ' Process [��Ҫÿ��ά��] sheet for PPTO EAO Rate
+    ' Process [特殊奖金] sheet for PPTO EAO Rate input and Flexible benefits
     On Error Resume Next
-    Set srcWs = wb.Worksheets("��Ҫÿ��ά��")
+    Set srcWs = wb.Worksheets("特殊奖金")
     On Error GoTo ErrHandler
     
-    If Not srcWs Is Nothing Then
-        ' Try multiple field name variants for WEIN
-        weinCol = FindColumnByHeader(srcWs.Rows(1), "WEIN,WIN,WEINEmployee ID,Employee CodeWIN,Employee ID,EmployeeID")
-        pptoCol = FindColumnByHeader(srcWs.Rows(1), "PPTO EAO Rate input")
+    If srcWs Is Nothing Then
+        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "Sheet [特殊奖金] not found in Extra Table"
+        Exit Sub
+    End If
+    
+    ' Try multiple field name variants for WEIN
+    weinCol = FindColumnByHeader(srcWs.Rows(1), "WEIN,WIN,WEINEmployee ID,Employee CodeWIN,Employee ID,EmployeeID")
+    pptoCol = FindColumnByHeader(srcWs.Rows(1), "PPTO EAO Rate input")
+    flexCol = FindColumnByHeader(srcWs.Rows(1), "Flexible benefits")
+    
+    colPPTORate = FindColumnByHeader(ws.Rows(1), "PPTO EAO Rate input")
+    colFlexBenefit = FindColumnByHeader(ws.Rows(1), "Flexible benefits")
+    
+    If weinCol = 0 Then
+        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "WEIN column not found in [特殊奖金] sheet"
+        Exit Sub
+    End If
+    
+    lastRow = srcWs.Cells(srcWs.Rows.count, weinCol).End(xlUp).row
+    
+    For i = 2 To lastRow
+        wein = Trim(CStr(Nz(srcWs.Cells(i, weinCol).Value, "")))
         
-        colPPTORate = FindColumnByHeader(ws.Rows(1), "PPTO EAO Rate input")
-        
-        If weinCol > 0 And pptoCol > 0 And colPPTORate > 0 Then
-            lastRow = srcWs.Cells(srcWs.Rows.count, weinCol).End(xlUp).row
-            
-            For i = 2 To lastRow
-                wein = Trim(CStr(Nz(srcWs.Cells(i, weinCol).Value, "")))
-                pptoRate = ToDouble(srcWs.Cells(i, pptoCol).Value)
-                
-                If wein <> "" Then
-                    row = GetOrAddRow(ws, wein, empIndex)
-                    If row > 0 Then
+        If wein <> "" Then
+            row = GetOrAddRow(ws, wein, empIndex)
+            If row > 0 Then
+                ' Write PPTO EAO Rate input
+                If pptoCol > 0 And colPPTORate > 0 Then
+                    pptoRate = ToDouble(srcWs.Cells(i, pptoCol).Value)
+                    If pptoRate <> 0 Then
                         ws.Cells(row, colPPTORate).Value = RoundAmount2(pptoRate)
                     End If
                 End If
-            Next i
-        End If
-    End If
-    
-    ' Process [���⽱��] sheet for Flexible benefits
-    On Error Resume Next
-    Set srcWs = wb.Worksheets("���⽱��")
-    On Error GoTo ErrHandler
-    
-    If Not srcWs Is Nothing Then
-        ' Try multiple field name variants for WEIN
-        weinCol = FindColumnByHeader(srcWs.Rows(1), "WEIN,WIN,WEINEmployee ID,Employee CodeWIN,Employee ID,EmployeeID")
-        flexCol = FindColumnByHeader(srcWs.Rows(1), "Flexible benefits")
-        
-        colFlexBenefit = FindColumnByHeader(ws.Rows(1), "Flexible benefits")
-        
-        If weinCol > 0 And flexCol > 0 And colFlexBenefit > 0 Then
-            lastRow = srcWs.Cells(srcWs.Rows.count, weinCol).End(xlUp).row
-            
-            For i = 2 To lastRow
-                wein = Trim(CStr(Nz(srcWs.Cells(i, weinCol).Value, "")))
-                flexBenefit = ToDouble(srcWs.Cells(i, flexCol).Value)
                 
-                If wein <> "" And flexBenefit <> 0 Then
-                    row = GetOrAddRow(ws, wein, empIndex)
-                    If row > 0 Then
+                ' Write Flexible benefits
+                If flexCol > 0 And colFlexBenefit > 0 Then
+                    flexBenefit = ToDouble(srcWs.Cells(i, flexCol).Value)
+                    If flexBenefit <> 0 Then
                         ws.Cells(row, colFlexBenefit).Value = SafeAdd2(ws.Cells(row, colFlexBenefit).Value, flexBenefit)
                     End If
                 End If
-            Next i
+            End If
         End If
-    End If
+    Next i
     
-    LogInfo "modSP1_VariablePay", "ProcessExtraTable", "Processed Extra Table"
+    LogInfo "modSP1_VariablePay", "ProcessExtraTable", "Processed Extra Table [特殊奖金] sheet"
     Exit Sub
     
 ErrHandler:
