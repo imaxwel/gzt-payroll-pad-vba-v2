@@ -2,12 +2,12 @@ Attribute VB_Name = "modConfigService"
 '==============================================================================
 ' Module: modConfigService
 ' Purpose: Configuration and parameter reading services
-' Description: Handles reading from config.xlsx and Extra.xlsx
+' Description: Handles reading from config.xlsx and Additional table.xlsx
 '==============================================================================
 Option Explicit
 
 Private Const CONFIG_FILE As String = "config.xlsx"
-Private Const EXTRA_TABLE_FILE As String = "Extra.xlsx"
+Private Const ADDITIONAL_TABLE_FILE As String = "Additional table.xlsx"
 
 '------------------------------------------------------------------------------
 ' Function: LoadRunParamsFromWorkbook
@@ -151,7 +151,7 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Function: OpenExtraTableWorkbook
-' Purpose: Open the Extra.xlsx workbook
+' Purpose: Open the Additional table.xlsx workbook
 ' Returns: Workbook object or Nothing if not found
 '------------------------------------------------------------------------------
 Public Function OpenExtraTableWorkbook() As Workbook
@@ -164,7 +164,7 @@ Public Function OpenExtraTableWorkbook() As Workbook
         Exit Function
     End If
     
-    filePath = G.RunParams.InputFolder & EXTRA_TABLE_FILE
+    filePath = G.RunParams.InputFolder & ADDITIONAL_TABLE_FILE
     
     If Dir(filePath) <> "" Then
         Set G.ExtraTableWb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
@@ -306,7 +306,7 @@ Public Function GetInputFilePath(logicalName As String) As String
         Case "WORKFORCEDETAIL"
             fileName = "Workforce Detail - Payroll-AP.xlsx"
         Case "MERCKPAYROLL"
-            fileName = "Merck Payroll Summary Report¡ª¡ªxxx.xlsx"
+            fileName = "Merck Payroll Summary Reportï¿½ï¿½ï¿½ï¿½xxx.xlsx"
         Case "SIPQIP"
             fileName = "SIP QIP.xlsx"
         Case "FLEXCLAIM"
@@ -318,7 +318,7 @@ Public Function GetInputFilePath(logicalName As String) As String
         Case "AIPPAYOUTS"
             fileName = "AIP Payouts Payroll Report.xlsx"
         Case "EXTRATABLE"
-            fileName = "Extra.xlsx"
+            fileName = "Additional table.xlsx"
         Case "PAYROLLREPORT"
             fileName = "Payroll Report.xlsx"
         Case "ALLOWANCEPLAN"
