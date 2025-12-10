@@ -51,6 +51,7 @@ Public Type tAppContext
     ' Config workbook reference
     configWb As Workbook
     ExtraTableWb As Workbook    ' 额外表
+    FlexiOutputWb As Workbook   ' Flexi output workbook for SP1
     ' Status flags
     IsInitialised As Boolean
 End Type
@@ -109,6 +110,10 @@ Public Sub ResetAppContext()
     If Not G.ExtraTableWb Is Nothing Then
         G.ExtraTableWb.Close SaveChanges:=False
         Set G.ExtraTableWb = Nothing
+    End If
+    If Not G.FlexiOutputWb Is Nothing Then
+        G.FlexiOutputWb.Close SaveChanges:=False
+        Set G.FlexiOutputWb = Nothing
     End If
     On Error GoTo 0
 End Sub
