@@ -48,6 +48,12 @@ End Sub
 '------------------------------------------------------------------------------
 ' Sub: ProcessOneTimePayment
 ' Purpose: Process One Time Payment report
+' Filter Logic:
+'   1. Exclude records where One-Time Payment Plan is "Inspire Points Value" or "Inspire Cash Award"
+'   2. Keep only records where:
+'      - Completed On > Previous Cutoff AND Completed On <= Current Cutoff
+'      - Scheduled Payment Date is in the previous month
+'   3. Group by Employee ID + One-Time Payment Plan, sum Actual Payment - Amount
 '------------------------------------------------------------------------------
 Private Sub ProcessOneTimePayment(ws As Worksheet, empIndex As Object)
     Dim wb As Workbook
@@ -56,6 +62,7 @@ Private Sub ProcessOneTimePayment(ws As Worksheet, empIndex As Object)
     Dim dataRange As Range
     Dim grouped As Object
     Dim lastRow As Long, lastCol As Long
+    Dim excludeTypes As Variant
     
     On Error GoTo ErrHandler
     
@@ -69,8 +76,24 @@ Private Sub ProcessOneTimePayment(ws As Worksheet, empIndex As Object)
     lastCol = srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
     Set dataRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
     
-    ' Group by Employee ID and One-Time Payment Plan (try multiple field name variants)
-    Set grouped = GroupByEmployeeAndType(dataRange, "Employee ID,EmployeeID,WEIN,WIN,Employee Number ID", "One-Time Payment Plan", "Actual Payment - Amount")
+    ' Types to exclude (Inspire handled separately)
+    excludeTypes = Array("Inspire Points Value", "Inspire Cash Award")
+    
+    ' Group by Employee ID and One-Time Payment Plan with date filtering
+    ' Filter: Completed On between (PreviousCutoff, CurrentCutoff]
+    '         Scheduled Payment Date in previous month
+    Set grouped = GroupByEmployeeAndTypeWithDateFilter( _
+        dataRange, _
+        "Employee ID,EmployeeID,WEIN,WIN,Employee Number ID", _
+        "One-Time Payment Plan", _
+        "Actual Payment - Amount", _
+        "Completed On,CompletedOn,Completed Date", _
+        "Scheduled Payment Date,ScheduledPaymentDate,Scheduled Pay Date", _
+        G.Payroll.PreviousCutoff, _
+        G.Payroll.CurrentCutoff, _
+        G.Payroll.PrevMonthStart, _
+        G.Payroll.PrevMonthEnd, _
+        excludeTypes)
     
     ' Map to VariablePay columns
     Dim planMapping As Object
@@ -99,8 +122,7 @@ Private Sub ProcessOneTimePayment(ws As Worksheet, empIndex As Object)
             empId = parts(0)
             planType = UCase(parts(1))
             
-            ' Skip Inspire (handled separately)
-            If InStr(planType, "INSPIRE") > 0 Then GoTo NextKey
+            ' Note: Inspire types already excluded by GroupByEmployeeAndTypeWithDateFilter
             
             wein = NormalizeEmployeeId(empId)
             
@@ -648,7 +670,7 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Sub: ProcessExtraTable
-' Purpose: Process ¶îÍâ±í for PPTO EAO Rate and special bonuses
+' Purpose: Process ï¿½ï¿½ï¿½ï¿½ï¿½ for PPTO EAO Rate and special bonuses
 '------------------------------------------------------------------------------
 Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     Dim wb As Workbook
@@ -665,9 +687,9 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     Set wb = OpenExtraTableWorkbook()
     If wb Is Nothing Then Exit Sub
     
-    ' Process [ÐèÒªÃ¿ÔÂÎ¬»¤] sheet for PPTO EAO Rate
+    ' Process [ï¿½ï¿½ÒªÃ¿ï¿½ï¿½Î¬ï¿½ï¿½] sheet for PPTO EAO Rate
     On Error Resume Next
-    Set srcWs = wb.Worksheets("ÐèÒªÃ¿ÔÂÎ¬»¤")
+    Set srcWs = wb.Worksheets("ï¿½ï¿½ÒªÃ¿ï¿½ï¿½Î¬ï¿½ï¿½")
     On Error GoTo ErrHandler
     
     If Not srcWs Is Nothing Then
@@ -694,9 +716,9 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
         End If
     End If
     
-    ' Process [ÌØÊâ½±½ð] sheet for Flexible benefits
+    ' Process [ï¿½ï¿½ï¿½â½±ï¿½ï¿½] sheet for Flexible benefits
     On Error Resume Next
-    Set srcWs = wb.Worksheets("ÌØÊâ½±½ð")
+    Set srcWs = wb.Worksheets("ï¿½ï¿½ï¿½â½±ï¿½ï¿½")
     On Error GoTo ErrHandler
     
     If Not srcWs Is Nothing Then

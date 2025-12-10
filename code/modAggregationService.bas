@@ -262,6 +262,160 @@ ErrHandler:
 End Function
 
 '------------------------------------------------------------------------------
+' Function: GroupByEmployeeAndTypeWithDateFilter
+' Purpose: Group data by employee and type with date filtering for One Time Payment
+' Parameters:
+'   dataRange - Range containing data (including header row)
+'   employeeColName - Name of the employee ID column
+'   typeColName - Name of the type/plan column
+'   amountColName - Name of the amount column
+'   completedOnColName - Name of the Completed On date column
+'   scheduledPayDateColName - Name of the Scheduled Payment Date column
+'   prevCutoff - Previous month cutoff date
+'   currentCutoff - Current month cutoff date
+'   prevMonthStart - First day of previous month
+'   prevMonthEnd - Last day of previous month
+'   excludeTypes - Array of type values to exclude (e.g., Inspire types)
+' Returns: Scripting.Dictionary with key = "employeeID|typeValue", value = summed amount
+' Filter Logic:
+'   - Completed On > prevCutoff AND Completed On <= currentCutoff
+'   - Scheduled Payment Date >= prevMonthStart AND <= prevMonthEnd
+'   - Type NOT IN excludeTypes
+'------------------------------------------------------------------------------
+Public Function GroupByEmployeeAndTypeWithDateFilter( _
+    dataRange As Range, _
+    employeeColName As String, _
+    typeColName As String, _
+    amountColName As String, _
+    completedOnColName As String, _
+    scheduledPayDateColName As String, _
+    prevCutoff As Date, _
+    currentCutoff As Date, _
+    prevMonthStart As Date, _
+    prevMonthEnd As Date, _
+    Optional excludeTypes As Variant = Empty _
+) As Object
+    
+    Dim dict As Object
+    Dim empCol As Long, typeCol As Long, amtCol As Long
+    Dim completedOnCol As Long, scheduledPayCol As Long
+    Dim headerRow As Range
+    Dim i As Long, lastRow As Long
+    Dim empId As String, typeVal As String, key As String
+    Dim amt As Double
+    Dim completedOn As Date, scheduledPayDate As Date
+    Dim shouldExclude As Boolean
+    Dim exType As Variant
+    
+    On Error GoTo ErrHandler
+    
+    Set dict = CreateObject("Scripting.Dictionary")
+    
+    If dataRange Is Nothing Then
+        Set GroupByEmployeeAndTypeWithDateFilter = dict
+        Exit Function
+    End If
+    
+    ' Find column indices by header names
+    Set headerRow = dataRange.Rows(1)
+    empCol = FindColumnByHeader(headerRow, employeeColName)
+    typeCol = FindColumnByHeader(headerRow, typeColName)
+    amtCol = FindColumnByHeader(headerRow, amountColName)
+    completedOnCol = FindColumnByHeader(headerRow, completedOnColName)
+    scheduledPayCol = FindColumnByHeader(headerRow, scheduledPayDateColName)
+    
+    If empCol = 0 Or typeCol = 0 Or amtCol = 0 Then
+        LogError "modAggregationService", "GroupByEmployeeAndTypeWithDateFilter", 0, _
+            "Required column not found: Emp=" & employeeColName & ", Type=" & typeColName & ", Amt=" & amountColName
+        Set GroupByEmployeeAndTypeWithDateFilter = dict
+        Exit Function
+    End If
+    
+    If completedOnCol = 0 Or scheduledPayCol = 0 Then
+        LogWarning "modAggregationService", "GroupByEmployeeAndTypeWithDateFilter", _
+            "Date column not found: CompletedOn=" & completedOnColName & ", ScheduledPay=" & scheduledPayDateColName & ". Skipping date filter."
+    End If
+    
+    ' Process data rows
+    lastRow = dataRange.Rows.count
+    
+    For i = 2 To lastRow
+        empId = Trim(CStr(Nz(dataRange.Cells(i, empCol).Value, "")))
+        typeVal = Trim(CStr(Nz(dataRange.Cells(i, typeCol).Value, "")))
+        amt = ToDouble(dataRange.Cells(i, amtCol).Value)
+        
+        If empId = "" Then GoTo NextRow
+        
+        ' Check exclude types
+        If Not IsEmpty(excludeTypes) Then
+            shouldExclude = False
+            If IsArray(excludeTypes) Then
+                For Each exType In excludeTypes
+                    If InStr(1, UCase(typeVal), UCase(CStr(exType)), vbTextCompare) > 0 Then
+                        shouldExclude = True
+                        Exit For
+                    End If
+                Next exType
+            Else
+                If InStr(1, UCase(typeVal), UCase(CStr(excludeTypes)), vbTextCompare) > 0 Then
+                    shouldExclude = True
+                End If
+            End If
+            If shouldExclude Then GoTo NextRow
+        End If
+        
+        ' Apply date filter if columns exist
+        If completedOnCol > 0 And scheduledPayCol > 0 Then
+            ' Get dates
+            On Error Resume Next
+            completedOn = 0
+            scheduledPayDate = 0
+            If IsDate(dataRange.Cells(i, completedOnCol).Value) Then
+                completedOn = CDate(dataRange.Cells(i, completedOnCol).Value)
+            End If
+            If IsDate(dataRange.Cells(i, scheduledPayCol).Value) Then
+                scheduledPayDate = CDate(dataRange.Cells(i, scheduledPayCol).Value)
+            End If
+            On Error GoTo ErrHandler
+            
+            ' Filter: Completed On > prevCutoff AND Completed On <= currentCutoff
+            If completedOn = 0 Or completedOn <= prevCutoff Or completedOn > currentCutoff Then
+                GoTo NextRow
+            End If
+            
+            ' Filter: Scheduled Payment Date in previous month
+            If scheduledPayDate = 0 Or scheduledPayDate < prevMonthStart Or scheduledPayDate > prevMonthEnd Then
+                GoTo NextRow
+            End If
+        End If
+        
+        ' Passed all filters, add to dictionary
+        key = empId & "|" & typeVal
+        
+        If dict.exists(key) Then
+            dict(key) = dict(key) + amt
+        Else
+            dict.Add key, amt
+        End If
+        
+NextRow:
+    Next i
+    
+    ' Round all final values to 2 decimals
+    Dim k As Variant
+    For Each k In dict.Keys
+        dict(k) = RoundAmount2(dict(k))
+    Next k
+    
+    Set GroupByEmployeeAndTypeWithDateFilter = dict
+    Exit Function
+    
+ErrHandler:
+    LogError "modAggregationService", "GroupByEmployeeAndTypeWithDateFilter", Err.Number, Err.Description
+    Set GroupByEmployeeAndTypeWithDateFilter = CreateObject("Scripting.Dictionary")
+End Function
+
+'------------------------------------------------------------------------------
 ' Function: FindColumnByHeader
 ' Purpose: Find column index by header name (case-insensitive)
 ' Parameters:
