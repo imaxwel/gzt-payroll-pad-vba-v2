@@ -54,6 +54,7 @@ Private Sub ProcessOneTimePaymentCheck(ws As Worksheet, weinIndex As Object)
     Dim dataRange As Range
     Dim grouped As Object
     Dim lastRow As Long, lastCol As Long
+    Dim headerRow As Long
     
     On Error GoTo ErrHandler
     
@@ -68,9 +69,13 @@ Private Sub ProcessOneTimePaymentCheck(ws As Worksheet, weinIndex As Object)
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)
     
+    ' Auto-detect header row by searching for "Employee ID" keyword
+    headerRow = FindHeaderRow(srcWs, "Employee ID,EmployeeID,WEIN", 20)
+    If headerRow = 0 Then headerRow = 1  ' Default to row 1 if not found
+    
     lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
-    lastCol = srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
-    Set dataRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
+    lastCol = srcWs.Cells(headerRow, srcWs.Columns.count).End(xlToLeft).Column
+    Set dataRange = srcWs.Range(srcWs.Cells(headerRow, 1), srcWs.Cells(lastRow, lastCol))
     
     ' Try multiple field name variants for Employee ID
     Set grouped = GroupByEmployeeAndType(dataRange, "Employee ID,EmployeeID,WEIN,WIN,Employee Number ID", "One-Time Payment Plan", "Actual Payment - Amount")
@@ -140,6 +145,7 @@ Private Sub ProcessInspireCheck(ws As Worksheet, weinIndex As Object)
     Dim dataRange As Range
     Dim grouped As Object
     Dim lastRow As Long, lastCol As Long
+    Dim headerRow As Long
     
     On Error GoTo ErrHandler
     
@@ -154,9 +160,18 @@ Private Sub ProcessInspireCheck(ws As Worksheet, weinIndex As Object)
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)
     
+    ' Auto-detect header row by searching for "Employee ID" keyword
+    headerRow = FindHeaderRow(srcWs, "Employee ID,EmployeeID,WEIN", 20)
+    If headerRow = 0 Then
+        LogWarning "modSP2_CheckResult_Incentives", "ProcessInspireCheck", _
+            "Could not find header row in Inspire Awards file"
+        wb.Close SaveChanges:=False
+        Exit Sub
+    End If
+    
     lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
-    lastCol = srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
-    Set dataRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
+    lastCol = srcWs.Cells(headerRow, srcWs.Columns.count).End(xlToLeft).Column
+    Set dataRange = srcWs.Range(srcWs.Cells(headerRow, 1), srcWs.Cells(lastRow, lastCol))
     
     ' Try multiple field name variants for Employee ID
     Set grouped = GroupByEmployeeAndType(dataRange, "Employee ID,EmployeeID,WEIN,WIN,Employee Number ID", "One-Time Payment Plan", "Actual Payment - Amount")
