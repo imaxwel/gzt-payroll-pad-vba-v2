@@ -314,7 +314,7 @@ Public Function GetInputFilePath(logicalName As String) As String
         Case "RSUGLOBAL"
             fileName = "RSU Dividend global report.xlsx"
         Case "RSUEY"
-            fileName = "Dividend EY report.xlsx"
+            fileName = "RSU Dividend EY report.xlsx"
         Case "AIPPAYOUTS"
             fileName = "AIP Payouts Payroll Report.xlsx"
         Case "EXTRATABLE"

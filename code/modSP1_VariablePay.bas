@@ -289,22 +289,31 @@ End Sub
 '------------------------------------------------------------------------------
 ' Sub: ProcessRSUDividend
 ' Purpose: Process RSU Dividend reports (Global and EY)
+' Note: RSU Global is processed in May only, RSU EY is processed in June only
 '------------------------------------------------------------------------------
 Private Sub ProcessRSUDividend(ws As Worksheet, empIndex As Object)
+    Dim currentMonth As Integer
+    
     On Error GoTo ErrHandler
     
-    ' Check if this is RSU month
-    If Not IsSpecialMonth("IsRSUDivMonth") Then
-        LogInfo "modSP1_VariablePay", "ProcessRSUDividend", "Not RSU month, skipping"
+    ' Get current payroll month
+    currentMonth = Month(G.Payroll.monthStart)
+    
+    ' May: Process RSU Global only
+    If currentMonth = 5 Then
+        LogInfo "modSP1_VariablePay", "ProcessRSUDividend", "May - Processing RSU Global"
+        ProcessRSUGlobal ws, empIndex
         Exit Sub
     End If
     
-    ' Process RSU Global
-    ProcessRSUGlobal ws, empIndex
+    ' June: Process RSU EY only
+    If currentMonth = 6 Then
+        LogInfo "modSP1_VariablePay", "ProcessRSUDividend", "June - Processing RSU EY"
+        ProcessRSUEY ws, empIndex
+        Exit Sub
+    End If
     
-    ' Process RSU EY
-    ProcessRSUEY ws, empIndex
-    
+    LogInfo "modSP1_VariablePay", "ProcessRSUDividend", "Not RSU month (May/June), skipping"
     Exit Sub
     
 ErrHandler:

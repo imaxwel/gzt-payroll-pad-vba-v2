@@ -276,26 +276,219 @@ End Sub
 '------------------------------------------------------------------------------
 ' Sub: ProcessRSUCheck
 ' Purpose: Process RSU Dividend for Check columns
+' Note: RSU Global is processed in May only, RSU EY is processed in June only
 '------------------------------------------------------------------------------
 Private Sub ProcessRSUCheck(ws As Worksheet, weinIndex As Object)
-    ' Similar implementation to SP1 RSU processing
-    ' Check IsSpecialMonth and process RSU Global/EY
+    Dim currentMonth As Integer
     
     On Error GoTo ErrHandler
     
-    If Not IsSpecialMonth("IsRSUDivMonth") Then Exit Sub
+    ' Get current payroll month
+    currentMonth = Month(G.Payroll.monthStart)
     
-    ' Process RSU Global and EY similar to SP1
-    ' Write to "Shares Dividend 60204001 Check" column
-    Dim col As Long
-    col = GetCheckColIndex("Shares Dividend 60204001")
+    ' May: Process RSU Global only
+    If currentMonth = 5 Then
+        LogInfo "modSP2_CheckResult_Incentives", "ProcessRSUCheck", "May - Processing RSU Global Check"
+        ProcessRSUGlobalCheck ws, weinIndex
+        Exit Sub
+    End If
     
-    ' Placeholder: actual RSU processing logic would go here
+    ' June: Process RSU EY only
+    If currentMonth = 6 Then
+        LogInfo "modSP2_CheckResult_Incentives", "ProcessRSUCheck", "June - Processing RSU EY Check"
+        ProcessRSUEYCheck ws, weinIndex
+        Exit Sub
+    End If
     
+    LogInfo "modSP2_CheckResult_Incentives", "ProcessRSUCheck", "Not RSU month (May/June), skipping"
     Exit Sub
     
 ErrHandler:
     LogError "modSP2_CheckResult_Incentives", "ProcessRSUCheck", Err.Number, Err.Description
+End Sub
+
+'------------------------------------------------------------------------------
+' Sub: ProcessRSUGlobalCheck
+' Purpose: Process RSU Global Dividend for Check columns (May only)
+' Source: RSU Dividend global report - Employee Reference, Gross Award Amount to be Paid
+' Formula: Gross Award Amount to be Paid * Exchange rate
+'------------------------------------------------------------------------------
+Private Sub ProcessRSUGlobalCheck(ws As Worksheet, weinIndex As Object)
+    Dim wb As Workbook
+    Dim srcWs As Worksheet
+    Dim filePath As String
+    Dim lastRow As Long, i As Long
+    Dim empRef As String, wein As String
+    Dim grossAmt As Double, fxRate As Double, calcValue As Double
+    Dim col As Long, row As Long
+    Dim empRefCol As Long, amtCol As Long
+    Dim empValues As Object ' Dictionary to aggregate duplicate Employee References
+    
+    On Error GoTo ErrHandler
+    
+    ' Get Check column index
+    col = GetCheckColIndex("Shares Dividend 60204001")
+    If col = 0 Then
+        LogWarning "modSP2_CheckResult_Incentives", "ProcessRSUGlobalCheck", _
+            "Shares Dividend 60204001 Check column not found"
+        Exit Sub
+    End If
+    
+    ' Get file path
+    filePath = GetInputFilePathAuto("RSUGlobal", poCurrentMonth)
+    If Not FileExistsSafe(filePath) Then
+        LogWarning "modSP2_CheckResult_Incentives", "ProcessRSUGlobalCheck", _
+            "RSU Global file does not exist: " & filePath
+        Exit Sub
+    End If
+    
+    Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
+    Set srcWs = wb.Worksheets(1)
+    
+    ' Get exchange rate from config
+    fxRate = GetExchangeRate("RSU_Global")
+    
+    ' Find columns
+    empRefCol = FindColumnByHeader(srcWs.Rows(1), "Employee Reference,EmployeeNumber,Employee Number,Employee ID,EmployeeID")
+    amtCol = FindColumnByHeader(srcWs.Rows(1), "Gross Award Amount to be Paid")
+    
+    If empRefCol = 0 Or amtCol = 0 Then
+        LogWarning "modSP2_CheckResult_Incentives", "ProcessRSUGlobalCheck", _
+            "Required columns not found in RSU Global file"
+        wb.Close SaveChanges:=False
+        Exit Sub
+    End If
+    
+    ' Aggregate values by Employee Reference (handle duplicates)
+    Set empValues = CreateObject("Scripting.Dictionary")
+    lastRow = srcWs.Cells(srcWs.Rows.count, empRefCol).End(xlUp).row
+    
+    For i = 2 To lastRow
+        empRef = Trim(CStr(Nz(srcWs.Cells(i, empRefCol).Value, "")))
+        grossAmt = ToDouble(srcWs.Cells(i, amtCol).Value)
+        
+        If empRef <> "" And grossAmt <> 0 Then
+            calcValue = grossAmt * fxRate
+            wein = NormalizeEmployeeId(empRef)
+            
+            If empValues.exists(wein) Then
+                empValues(wein) = empValues(wein) + calcValue
+            Else
+                empValues.Add wein, calcValue
+            End If
+        End If
+    Next i
+    
+    ' Write aggregated values to Check column
+    Dim key As Variant
+    For Each key In empValues.Keys
+        If weinIndex.exists(key) Then
+            row = weinIndex(key)
+            ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, empValues(key))
+        End If
+    Next key
+    
+    wb.Close SaveChanges:=False
+    LogInfo "modSP2_CheckResult_Incentives", "ProcessRSUGlobalCheck", _
+        "Processed RSU Global Check: " & empValues.count & " employees"
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP2_CheckResult_Incentives", "ProcessRSUGlobalCheck", Err.Number, Err.Description
+    On Error Resume Next
+    If Not wb Is Nothing Then wb.Close SaveChanges:=False
+End Sub
+
+'------------------------------------------------------------------------------
+' Sub: ProcessRSUEYCheck
+' Purpose: Process RSU EY Dividend for Check columns (June only)
+' Source: RSU Dividend EY report - EmployeeNumber, Dividend To Pay
+' Formula: Dividend To Pay * Exchange rate
+'------------------------------------------------------------------------------
+Private Sub ProcessRSUEYCheck(ws As Worksheet, weinIndex As Object)
+    Dim wb As Workbook
+    Dim srcWs As Worksheet
+    Dim filePath As String
+    Dim lastRow As Long, i As Long
+    Dim empNum As String, wein As String
+    Dim divAmt As Double, fxRate As Double, calcValue As Double
+    Dim col As Long, row As Long
+    Dim empNumCol As Long, amtCol As Long
+    Dim empValues As Object ' Dictionary to aggregate duplicate Employee Numbers
+    
+    On Error GoTo ErrHandler
+    
+    ' Get Check column index
+    col = GetCheckColIndex("Shares Dividend 60204001")
+    If col = 0 Then
+        LogWarning "modSP2_CheckResult_Incentives", "ProcessRSUEYCheck", _
+            "Shares Dividend 60204001 Check column not found"
+        Exit Sub
+    End If
+    
+    ' Get file path
+    filePath = GetInputFilePathAuto("RSUEY", poCurrentMonth)
+    If Not FileExistsSafe(filePath) Then
+        LogWarning "modSP2_CheckResult_Incentives", "ProcessRSUEYCheck", _
+            "RSU EY file does not exist: " & filePath
+        Exit Sub
+    End If
+    
+    Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
+    Set srcWs = wb.Worksheets(1)
+    
+    ' Get exchange rate from config
+    fxRate = GetExchangeRate("RSU_EY")
+    
+    ' Find columns
+    empNumCol = FindColumnByHeader(srcWs.Rows(1), "EmployeeNumber,Employee Number,Employee ID,EmployeeID,Employee Reference")
+    amtCol = FindColumnByHeader(srcWs.Rows(1), "Dividend To Pay")
+    
+    If empNumCol = 0 Or amtCol = 0 Then
+        LogWarning "modSP2_CheckResult_Incentives", "ProcessRSUEYCheck", _
+            "Required columns not found in RSU EY file"
+        wb.Close SaveChanges:=False
+        Exit Sub
+    End If
+    
+    ' Aggregate values by Employee Number (handle duplicates)
+    Set empValues = CreateObject("Scripting.Dictionary")
+    lastRow = srcWs.Cells(srcWs.Rows.count, empNumCol).End(xlUp).row
+    
+    For i = 2 To lastRow
+        empNum = Trim(CStr(Nz(srcWs.Cells(i, empNumCol).Value, "")))
+        divAmt = ToDouble(srcWs.Cells(i, amtCol).Value)
+        
+        If empNum <> "" And divAmt <> 0 Then
+            calcValue = divAmt * fxRate
+            wein = NormalizeEmployeeId(empNum)
+            
+            If empValues.exists(wein) Then
+                empValues(wein) = empValues(wein) + calcValue
+            Else
+                empValues.Add wein, calcValue
+            End If
+        End If
+    Next i
+    
+    ' Write aggregated values to Check column
+    Dim key As Variant
+    For Each key In empValues.Keys
+        If weinIndex.exists(key) Then
+            row = weinIndex(key)
+            ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, empValues(key))
+        End If
+    Next key
+    
+    wb.Close SaveChanges:=False
+    LogInfo "modSP2_CheckResult_Incentives", "ProcessRSUEYCheck", _
+        "Processed RSU EY Check: " & empValues.count & " employees"
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP2_CheckResult_Incentives", "ProcessRSUEYCheck", Err.Number, Err.Description
+    On Error Resume Next
+    If Not wb Is Nothing Then wb.Close SaveChanges:=False
 End Sub
 
 
