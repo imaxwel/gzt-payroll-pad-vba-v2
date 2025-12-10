@@ -249,9 +249,9 @@ Private Sub ProcessSIPCheck(ws As Worksheet, weinIndex As Object)
             If weinIndex.exists(wein) Then
                 row = weinIndex(wein)
                 
-                If InStr(payItem, "QUALITATIVE") > 0 Then
+                If InStr(payItem, "QUALITATIVE INCENTIVE PLAN") > 0 Then
                     col = GetCheckColIndex("Sales Incentive (Qualitative) 21201000")
-                ElseIf InStr(payItem, "SALES INCENTIVE") > 0 Or InStr(payItem, "QUANTITATIVE") > 0 Then
+                ElseIf InStr(payItem, "SALES INCENTIVE PLAN") > 0 Then
                     col = GetCheckColIndex("Sales Incentive (Quantitative)   21201000")
                 Else
                     col = 0

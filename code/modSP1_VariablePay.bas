@@ -265,10 +265,10 @@ Private Sub ProcessSIPQIP(ws As Worksheet, empIndex As Object)
             
             row = GetOrAddRow(ws, wein, empIndex)
             If row > 0 Then
-                If InStr(payItem, "QUALITATIVE") > 0 Then
+                If InStr(payItem, "QUALITATIVE INCENTIVE PLAN") > 0 Then
                     col = FindColumnByHeader(ws.Rows(1), "Sales Incentive (Qualitative)")
                     If col > 0 Then ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, grouped(key))
-                ElseIf InStr(payItem, "SALES INCENTIVE") > 0 Then
+                ElseIf InStr(payItem, "SALES INCENTIVE PLAN") > 0 Then
                     col = FindColumnByHeader(ws.Rows(1), "Sales Incentive (Quantitative)")
                     If col > 0 Then ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, grouped(key))
                 End If
