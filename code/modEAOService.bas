@@ -202,6 +202,24 @@ Public Function CalcNoPayLeaveDeduction(wein As String) As Double
 End Function
 
 '------------------------------------------------------------------------------
+' Function: CalcNoPayLeaveDeductionForOlderPeriod
+' Purpose: Calculate No Pay Leave Deduction for periods before previous month
+' Parameters:
+'   wein - WEIN
+'   days - No Pay Leave days from older periods
+' Returns: Deduction amount
+' Formula: NoPayLeaveCalculationBase * days
+' Note: For Unpaid Leave records dated before the previous month,
+'       retrieve NoPayLeaveCalculationBase from EAO Summary and multiply by days
+'------------------------------------------------------------------------------
+Public Function CalcNoPayLeaveDeductionForOlderPeriod(wein As String, days As Double) As Double
+    Dim rec As Variant
+    
+    rec = GetEAORecord(wein)
+    CalcNoPayLeaveDeductionForOlderPeriod = RoundAmount2(rec(EAO_NPL_BASE) * days)
+End Function
+
+'------------------------------------------------------------------------------
 ' Function: CalcMaternityLeavePayment
 ' Purpose: Calculate Maternity Leave Payment
 ' Parameters:

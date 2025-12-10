@@ -250,6 +250,12 @@ End Sub
 '------------------------------------------------------------------------------
 ' Sub: ProcessSickLeave
 ' Purpose: Process Sick Leave records (requires 4+ consecutive business days)
+' Output columns:
+'   - Days_SickLeave (current month)
+'   - Days_SickLeaveForDeduction (current month)
+'   - Days_SickLeave_LastMonth (previous month)
+'   - Days_SickLeaveForDeduction_LastMonth (previous month)
+'   - Sick Leave EAO Adj_Input (for older periods, written to VariablePay)
 '------------------------------------------------------------------------------
 Private Sub ProcessSickLeave(ws As Worksheet, leaveRecords As Collection, empIndex As Object)
     Dim rec As Variant
@@ -277,38 +283,53 @@ Private Sub ProcessSickLeave(ws As Worksheet, leaveRecords As Collection, empInd
                                 G.Payroll.payrollMonth, prevYM, _
                                 currentDays, prevDays, olderDays
                 
-                ' Aggregate
+                ' Aggregate by employee: arr(0)=currentDays, arr(1)=prevDays, arr(2)=olderDays
                 recWein = CStr(rec(LR_WEIN))
                 If Not empDays.exists(recWein) Then
-                    empDays.Add recWein, Array(0#, 0#)
+                    empDays.Add recWein, Array(0#, 0#, 0#)
                 End If
                 
                 arr = empDays(recWein)
                 arr(0) = arr(0) + currentDays
                 arr(1) = arr(1) + prevDays
+                arr(2) = arr(2) + olderDays
                 empDays(recWein) = arr
             End If
             
             recUniqueKey = CStr(rec(LR_UNIQUEKEY))
-            mLeaveHistory.Add recUniqueKey, True
+            If Not mLeaveHistory.exists(recUniqueKey) Then
+                mLeaveHistory.Add recUniqueKey, True
+            End If
         End If
     Next v
     
-    ' Write to sheet
+    ' Write to Attendance sheet
     Dim wein As Variant
     Dim colCurrent As Long, colPrev As Long
+    Dim colDeduction As Long, colDeductionLast As Long
     
     colCurrent = FindColumnByHeader(ws.Rows(1), "Days_SickLeave")
     colPrev = FindColumnByHeader(ws.Rows(1), "Days_SickLeave_LastMonth")
+    colDeduction = FindColumnByHeader(ws.Rows(1), "Days_SickLeaveForDeduction")
+    colDeductionLast = FindColumnByHeader(ws.Rows(1), "Days_SickLeaveForDeduction_LastMonth")
     
     For Each wein In empDays.Keys
         row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
         If row > 0 Then
             arr = empDays(wein)
+            ' Current month days
             If colCurrent > 0 Then ws.Cells(row, colCurrent).Value = RoundAmount2(arr(0))
+            ' Current month deduction (same as current month days)
+            If colDeduction > 0 Then ws.Cells(row, colDeduction).Value = RoundAmount2(arr(0))
+            ' Previous month days
             If colPrev > 0 Then ws.Cells(row, colPrev).Value = RoundAmount2(arr(1))
+            ' Previous month deduction (same as previous month days)
+            If colDeductionLast > 0 Then ws.Cells(row, colDeductionLast).Value = RoundAmount2(arr(1))
         End If
     Next wein
+    
+    ' Write Sick Leave EAO Adj_Input to VariablePay for older periods (before previous month)
+    WriteSickLeaveEAOAdj empDays
     
     LogInfo "modSP1_Attendance", "ProcessSickLeave", "Processed " & empDays.count & " employees"
     
@@ -321,6 +342,10 @@ End Sub
 '------------------------------------------------------------------------------
 ' Sub: ProcessUnpaidLeave
 ' Purpose: Process Unpaid/No Pay Leave records
+' Output columns:
+'   - Days_NoPayLeave (current month)
+'   - Days_NoPayLeave_LastMonth (previous month)
+'   - Annual Leave EAO Adj_Input (for older periods, written to VariablePay)
 '------------------------------------------------------------------------------
 Private Sub ProcessUnpaidLeave(ws As Worksheet, leaveRecords As Collection, empIndex As Object)
     Dim rec As Variant
@@ -347,22 +372,26 @@ Private Sub ProcessUnpaidLeave(ws As Worksheet, leaveRecords As Collection, empI
                             G.Payroll.payrollMonth, prevYM, _
                             currentDays, prevDays, olderDays
             
+            ' Aggregate by employee: arr(0)=currentDays, arr(1)=prevDays, arr(2)=olderDays
             recWein = CStr(rec(LR_WEIN))
             If Not empDays.exists(recWein) Then
-                empDays.Add recWein, Array(0#, 0#)
+                empDays.Add recWein, Array(0#, 0#, 0#)
             End If
             
             arr = empDays(recWein)
             arr(0) = arr(0) + currentDays
             arr(1) = arr(1) + prevDays
+            arr(2) = arr(2) + olderDays
             empDays(recWein) = arr
             
             recUniqueKey = CStr(rec(LR_UNIQUEKEY))
-            mLeaveHistory.Add recUniqueKey, True
+            If Not mLeaveHistory.exists(recUniqueKey) Then
+                mLeaveHistory.Add recUniqueKey, True
+            End If
         End If
     Next v
     
-    ' Write to sheet
+    ' Write to Attendance sheet
     Dim wein As Variant
     Dim colCurrent As Long, colPrev As Long
     
@@ -377,6 +406,9 @@ Private Sub ProcessUnpaidLeave(ws As Worksheet, leaveRecords As Collection, empI
             If colPrev > 0 Then ws.Cells(row, colPrev).Value = RoundAmount2(arr(1))
         End If
     Next wein
+    
+    ' Write No Pay Leave Deduction to VariablePay for older periods (before previous month)
+    WriteNoPayLeaveDeduction empDays
     
     LogInfo "modSP1_Attendance", "ProcessUnpaidLeave", "Processed " & empDays.count & " employees"
     
@@ -672,4 +704,139 @@ Private Sub WriteAnnualLeaveEAOAdj(empDays As Object)
     
 ErrHandler:
     LogError "modSP1_Attendance", "WriteAnnualLeaveEAOAdj", Err.Number, Err.Description
+End Sub
+
+'------------------------------------------------------------------------------
+' Sub: WriteSickLeaveEAOAdj
+' Purpose: Write Sick Leave EAO Adj_Input to VariablePay for older periods
+' Description: For Sick Leave records dated before the previous month,
+'              calculate EAO adjustment using formula:
+'              (DayWage_Maternity/Paternity/Sick Leave - DailySalary) * Days_SickLeave
+'              and write to VariablePay.Sick Leave EAO Adj_Input
+'------------------------------------------------------------------------------
+Private Sub WriteSickLeaveEAOAdj(empDays As Object)
+    Dim ws As Worksheet
+    Dim empIndex As Object
+    Dim wein As Variant
+    Dim arr As Variant
+    Dim olderDays As Double
+    Dim eaoAdj As Double
+    Dim col As Long, row As Long
+    
+    On Error GoTo ErrHandler
+    
+    ' Get VariablePay sheet from the flexi output workbook
+    On Error Resume Next
+    Set ws = G.FlexiOutputWb.Worksheets("VariablePay")
+    On Error GoTo ErrHandler
+    
+    If ws Is Nothing Then
+        LogWarning "modSP1_Attendance", "WriteSickLeaveEAOAdj", "VariablePay sheet not found"
+        Exit Sub
+    End If
+    
+    ' Build employee index for VariablePay sheet
+    Set empIndex = BuildEmployeeIndex(ws, "Employee Code,EmployeeCode,Employee Reference,EmployeeNumber,Employee Number")
+    
+    ' Find target column
+    col = FindColumnByHeader(ws.Rows(1), "Sick Leave EAO Adj_Input")
+    
+    If col = 0 Then
+        LogWarning "modSP1_Attendance", "WriteSickLeaveEAOAdj", "Sick Leave EAO Adj_Input column not found"
+        Exit Sub
+    End If
+    
+    ' Process each employee with older period days
+    For Each wein In empDays.Keys
+        arr = empDays(wein)
+        olderDays = arr(2)  ' Days from periods before previous month
+        
+        If olderDays > 0 Then
+            ' Calculate EAO adjustment: (DayWage_Maternity/Paternity/Sick Leave - DailySalary) * Days_SickLeave
+            eaoAdj = CalcSickLeaveEAOAdj(CStr(wein), olderDays)
+            
+            If eaoAdj <> 0 Then
+                row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
+                If row > 0 Then
+                    ' Add to existing value (in case there are multiple entries)
+                    ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, eaoAdj)
+                End If
+            End If
+        End If
+    Next wein
+    
+    LogInfo "modSP1_Attendance", "WriteSickLeaveEAOAdj", "Processed Sick Leave EAO adjustments"
+    
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP1_Attendance", "WriteSickLeaveEAOAdj", Err.Number, Err.Description
+End Sub
+
+'------------------------------------------------------------------------------
+' Sub: WriteNoPayLeaveDeduction
+' Purpose: Write No Pay Leave Deduction to VariablePay for older periods
+' Description: For Unpaid Leave records dated before the previous month,
+'              calculate deduction using formula:
+'              NoPayLeaveCalculationBase * Days_NoPayLeave
+'              and write to VariablePay.Annual Leave EAO Adj_Input
+'              (if cell non-empty, add to existing value)
+'------------------------------------------------------------------------------
+Private Sub WriteNoPayLeaveDeduction(empDays As Object)
+    Dim ws As Worksheet
+    Dim empIndex As Object
+    Dim wein As Variant
+    Dim arr As Variant
+    Dim olderDays As Double
+    Dim deduction As Double
+    Dim col As Long, row As Long
+    
+    On Error GoTo ErrHandler
+    
+    ' Get VariablePay sheet from the flexi output workbook
+    On Error Resume Next
+    Set ws = G.FlexiOutputWb.Worksheets("VariablePay")
+    On Error GoTo ErrHandler
+    
+    If ws Is Nothing Then
+        LogWarning "modSP1_Attendance", "WriteNoPayLeaveDeduction", "VariablePay sheet not found"
+        Exit Sub
+    End If
+    
+    ' Build employee index for VariablePay sheet
+    Set empIndex = BuildEmployeeIndex(ws, "Employee Code,EmployeeCode,Employee Reference,EmployeeNumber,Employee Number")
+    
+    ' Find target column (per requirement: No Pay Leave Deduction -> Annual Leave EAO Adj_Input)
+    col = FindColumnByHeader(ws.Rows(1), "Annual Leave EAO Adj_Input")
+    
+    If col = 0 Then
+        LogWarning "modSP1_Attendance", "WriteNoPayLeaveDeduction", "Annual Leave EAO Adj_Input column not found"
+        Exit Sub
+    End If
+    
+    ' Process each employee with older period days
+    For Each wein In empDays.Keys
+        arr = empDays(wein)
+        olderDays = arr(2)  ' Days from periods before previous month
+        
+        If olderDays > 0 Then
+            ' Calculate No Pay Leave Deduction: NoPayLeaveCalculationBase * Days_NoPayLeave
+            deduction = CalcNoPayLeaveDeductionForOlderPeriod(CStr(wein), olderDays)
+            
+            If deduction <> 0 Then
+                row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
+                If row > 0 Then
+                    ' Add to existing value (if cell non-empty, add, not overwrite)
+                    ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, deduction)
+                End If
+            End If
+        End If
+    Next wein
+    
+    LogInfo "modSP1_Attendance", "WriteNoPayLeaveDeduction", "Processed No Pay Leave Deduction adjustments"
+    
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP1_Attendance", "WriteNoPayLeaveDeduction", Err.Number, Err.Description
 End Sub
