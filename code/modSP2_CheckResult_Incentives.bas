@@ -332,7 +332,7 @@ Private Sub ProcessRSUGlobalCheck(ws As Worksheet, weinIndex As Object)
     Dim wb As Workbook
     Dim srcWs As Worksheet
     Dim filePath As String
-    Dim lastRow As Long, i As Long
+    Dim lastRow As Long, i As Long, headerRow As Long
     Dim empRef As String, wein As String
     Dim grossAmt As Double, fxRate As Double, calcValue As Double
     Dim col As Long, row As Long
@@ -363,9 +363,10 @@ Private Sub ProcessRSUGlobalCheck(ws As Worksheet, weinIndex As Object)
     ' Get exchange rate from config
     fxRate = GetExchangeRate("RSU_Global")
     
-    ' Find columns
-    empRefCol = FindColumnByHeader(srcWs.Rows(1), "Employee Reference,EmployeeNumber,Employee Number,Employee ID,EmployeeID")
-    amtCol = FindColumnByHeader(srcWs.Rows(1), "Gross Award Amount to be Paid")
+    ' Detect header row and columns (header may not be on first row)
+    headerRow = FindHeaderRowSafe(srcWs, "Employee Reference,EmployeeNumber,Employee Number,Employee ID,EmployeeID", 1, 50)
+    empRefCol = FindColumnByHeader(srcWs.Rows(headerRow), "Employee Reference,EmployeeNumber,Employee Number,Employee ID,EmployeeID")
+    amtCol = FindColumnByHeader(srcWs.Rows(headerRow), "Gross Award Amount to be Paid")
     
     If empRefCol = 0 Or amtCol = 0 Then
         LogWarning "modSP2_CheckResult_Incentives", "ProcessRSUGlobalCheck", _
@@ -376,9 +377,9 @@ Private Sub ProcessRSUGlobalCheck(ws As Worksheet, weinIndex As Object)
     
     ' Aggregate values by Employee Reference (handle duplicates)
     Set empValues = CreateObject("Scripting.Dictionary")
-    lastRow = srcWs.Cells(srcWs.Rows.count, empRefCol).End(xlUp).row
+    lastRow = srcWs.Cells(srcWs.Rows.count, empRefCol).End(xlUp).Row
     
-    For i = 2 To lastRow
+    For i = headerRow + 1 To lastRow
         empRef = Trim(CStr(Nz(srcWs.Cells(i, empRefCol).Value, "")))
         grossAmt = ToDouble(srcWs.Cells(i, amtCol).Value)
         
@@ -424,7 +425,7 @@ Private Sub ProcessRSUEYCheck(ws As Worksheet, weinIndex As Object)
     Dim wb As Workbook
     Dim srcWs As Worksheet
     Dim filePath As String
-    Dim lastRow As Long, i As Long
+    Dim lastRow As Long, i As Long, headerRow As Long
     Dim empNum As String, wein As String
     Dim divAmt As Double, fxRate As Double, calcValue As Double
     Dim col As Long, row As Long
@@ -455,9 +456,10 @@ Private Sub ProcessRSUEYCheck(ws As Worksheet, weinIndex As Object)
     ' Get exchange rate from config
     fxRate = GetExchangeRate("RSU_EY")
     
-    ' Find columns
-    empNumCol = FindColumnByHeader(srcWs.Rows(1), "EmployeeNumber,Employee Number,Employee ID,EmployeeID,Employee Reference")
-    amtCol = FindColumnByHeader(srcWs.Rows(1), "Dividend To Pay")
+    ' Detect header row and columns (header may not be on first row)
+    headerRow = FindHeaderRowSafe(srcWs, "EmployeeNumber,Employee Number,Employee ID,EmployeeID,Employee Reference", 1, 50)
+    empNumCol = FindColumnByHeader(srcWs.Rows(headerRow), "EmployeeNumber,Employee Number,Employee ID,EmployeeID,Employee Reference")
+    amtCol = FindColumnByHeader(srcWs.Rows(headerRow), "Dividend To Pay")
     
     If empNumCol = 0 Or amtCol = 0 Then
         LogWarning "modSP2_CheckResult_Incentives", "ProcessRSUEYCheck", _
@@ -468,9 +470,9 @@ Private Sub ProcessRSUEYCheck(ws As Worksheet, weinIndex As Object)
     
     ' Aggregate values by Employee Number (handle duplicates)
     Set empValues = CreateObject("Scripting.Dictionary")
-    lastRow = srcWs.Cells(srcWs.Rows.count, empNumCol).End(xlUp).row
+    lastRow = srcWs.Cells(srcWs.Rows.count, empNumCol).End(xlUp).Row
     
-    For i = 2 To lastRow
+    For i = headerRow + 1 To lastRow
         empNum = Trim(CStr(Nz(srcWs.Cells(i, empNumCol).Value, "")))
         divAmt = ToDouble(srcWs.Cells(i, amtCol).Value)
         
@@ -518,6 +520,7 @@ Private Sub ProcessSpecialBonusCheck(ws As Worksheet, weinIndex As Object)
     Dim headers As Object
     Dim wein As String
     Dim row As Long, col As Long
+    Dim headerRow As Long, keyCol As Long
     
     On Error GoTo ErrHandler
     
@@ -530,16 +533,15 @@ Private Sub ProcessSpecialBonusCheck(ws As Worksheet, weinIndex As Object)
     
     If srcWs Is Nothing Then Exit Sub
     
-    ' Build header index
-    Set headers = CreateObject("Scripting.Dictionary")
-    Dim c As Long
-    For c = 1 To srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
-        headers(UCase(Trim(CStr(srcWs.Cells(1, c).Value)))) = c
-    Next c
+    ' Detect header row and build header index
+    headerRow = FindHeaderRowSafe(srcWs, "WEIN,WIN", 1, 50)
+    Set headers = BuildHeaderIndex(srcWs, headerRow)
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    keyCol = GetColumnFromHeaders(headers, "WEIN,WIN")
+    If keyCol = 0 Then keyCol = 1
+    lastRow = srcWs.Cells(srcWs.Rows.count, keyCol).End(xlUp).Row
     
-    For i = 2 To lastRow
+    For i = headerRow + 1 To lastRow
         ' Get WEIN
         wein = GetCellValFromHeaders(srcWs, i, headers, "WEIN")
         If wein = "" Then wein = GetCellValFromHeaders(srcWs, i, headers, "WIN")

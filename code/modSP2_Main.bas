@@ -233,6 +233,7 @@ Private Sub BuildBenchmarkAndIndex(valWb As Workbook)
     Dim destWs As Worksheet
     Dim filePath As String
     Dim lastRow As Long, lastCol As Long
+    Dim startRow As Long, startCol As Long
     Dim srcRange As Range
     Dim weinCol As Long
     Dim i As Long
@@ -259,12 +260,14 @@ Private Sub BuildBenchmarkAndIndex(valWb As Workbook)
     Set srcWb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = srcWb.Worksheets(1)
     
-    ' Find data range
-    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
-    lastCol = srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
+    ' Find data range (header may not be on row 1)
+    startRow = srcWs.UsedRange.Row
+    startCol = srcWs.UsedRange.Column
+    lastRow = srcWs.UsedRange.Rows(srcWs.UsedRange.Rows.count).Row
+    lastCol = srcWs.UsedRange.Columns(srcWs.UsedRange.Columns.count).Column
     
     ' Copy to Check Result (starting at row 4 to leave room for summary)
-    Set srcRange = srcWs.Range(srcWs.Cells(1, 1), srcWs.Cells(lastRow, lastCol))
+    Set srcRange = srcWs.Range(srcWs.Cells(startRow, startCol), srcWs.Cells(lastRow, lastCol))
     srcRange.Copy destWs.Cells(4, 1)
     
     srcWb.Close SaveChanges:=False

@@ -324,7 +324,7 @@ Private Sub ProcessRSUGlobal(ws As Worksheet, empIndex As Object)
     Dim wb As Workbook
     Dim srcWs As Worksheet
     Dim filePath As String
-    Dim lastRow As Long, i As Long
+    Dim lastRow As Long, i As Long, headerRow As Long
     Dim empRef As String, wein As String
     Dim grossAmt As Double, fxRate As Double
     Dim col As Long, row As Long
@@ -340,9 +340,10 @@ Private Sub ProcessRSUGlobal(ws As Worksheet, empIndex As Object)
     
     fxRate = GetExchangeRate("RSU_Global")
     
-    ' Try multiple field name variants for Employee Reference
-    empRefCol = FindColumnByHeader(srcWs.Rows(1), "Employee Reference,EmployeeNumber,Employee Number,Employee ID,EmployeeID")
-    amtCol = FindColumnByHeader(srcWs.Rows(1), "Gross Award Amount to be Paid")
+    ' Detect header row and columns (header may not be on first row)
+    headerRow = FindHeaderRowSafe(srcWs, "Employee Reference,EmployeeNumber,Employee Number,Employee ID,EmployeeID", 1, 50)
+    empRefCol = FindColumnByHeader(srcWs.Rows(headerRow), "Employee Reference,EmployeeNumber,Employee Number,Employee ID,EmployeeID")
+    amtCol = FindColumnByHeader(srcWs.Rows(headerRow), "Gross Award Amount to be Paid")
     
     If empRefCol = 0 Or amtCol = 0 Then
         wb.Close SaveChanges:=False
@@ -355,9 +356,9 @@ Private Sub ProcessRSUGlobal(ws As Worksheet, empIndex As Object)
         Exit Sub
     End If
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, empRefCol).End(xlUp).row
+    lastRow = srcWs.Cells(srcWs.Rows.count, empRefCol).End(xlUp).Row
     
-    For i = 2 To lastRow
+    For i = headerRow + 1 To lastRow
         empRef = Trim(CStr(Nz(srcWs.Cells(i, empRefCol).Value, "")))
         grossAmt = ToDouble(srcWs.Cells(i, amtCol).Value)
         
@@ -385,7 +386,7 @@ Private Sub ProcessRSUEY(ws As Worksheet, empIndex As Object)
     Dim wb As Workbook
     Dim srcWs As Worksheet
     Dim filePath As String
-    Dim lastRow As Long, i As Long
+    Dim lastRow As Long, i As Long, headerRow As Long
     Dim empNum As String, wein As String
     Dim divAmt As Double, fxRate As Double
     Dim col As Long, row As Long
@@ -401,9 +402,10 @@ Private Sub ProcessRSUEY(ws As Worksheet, empIndex As Object)
     
     fxRate = GetExchangeRate("RSU_EY")
     
-    ' Try multiple field name variants for EmployeeNumber
-    empNumCol = FindColumnByHeader(srcWs.Rows(1), "EmployeeNumber,Employee Number,Employee ID,EmployeeID,Employee Reference")
-    amtCol = FindColumnByHeader(srcWs.Rows(1), "Dividend To Pay")
+    ' Detect header row and columns (header may not be on first row)
+    headerRow = FindHeaderRowSafe(srcWs, "EmployeeNumber,Employee Number,Employee ID,EmployeeID,Employee Reference", 1, 50)
+    empNumCol = FindColumnByHeader(srcWs.Rows(headerRow), "EmployeeNumber,Employee Number,Employee ID,EmployeeID,Employee Reference")
+    amtCol = FindColumnByHeader(srcWs.Rows(headerRow), "Dividend To Pay")
     
     If empNumCol = 0 Or amtCol = 0 Then
         wb.Close SaveChanges:=False
@@ -416,9 +418,9 @@ Private Sub ProcessRSUEY(ws As Worksheet, empIndex As Object)
         Exit Sub
     End If
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, empNumCol).End(xlUp).row
+    lastRow = srcWs.Cells(srcWs.Rows.count, empNumCol).End(xlUp).Row
     
-    For i = 2 To lastRow
+    For i = headerRow + 1 To lastRow
         empNum = Trim(CStr(Nz(srcWs.Cells(i, empNumCol).Value, "")))
         divAmt = ToDouble(srcWs.Cells(i, amtCol).Value)
         
@@ -451,7 +453,7 @@ Private Sub ProcessAIPPayouts(ws As Worksheet, empIndex As Object)
     Dim wb As Workbook
     Dim srcWs As Worksheet
     Dim filePath As String
-    Dim lastRow As Long, i As Long
+    Dim lastRow As Long, i As Long, headerRow As Long
     Dim wein As String
     Dim bonusAmt As Double
     Dim col As Long, row As Long
@@ -471,9 +473,10 @@ Private Sub ProcessAIPPayouts(ws As Worksheet, empIndex As Object)
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)
     
-    ' Try multiple field name variants for WEIN
-    weinCol = FindColumnByHeader(srcWs.Rows(1), "WIN,WEIN,WEINEmployee ID,Employee CodeWIN,Employee ID,EmployeeID")
-    amtCol = FindColumnByHeader(srcWs.Rows(1), "Bonus Amount")
+    ' Detect header row and columns (header may not be on first row)
+    headerRow = FindHeaderRowSafe(srcWs, "WIN,WEIN,WEINEmployee ID,Employee CodeWIN,Employee ID,EmployeeID", 1, 50)
+    weinCol = FindColumnByHeader(srcWs.Rows(headerRow), "WIN,WEIN,WEINEmployee ID,Employee CodeWIN,Employee ID,EmployeeID")
+    amtCol = FindColumnByHeader(srcWs.Rows(headerRow), "Bonus Amount")
     
     If weinCol = 0 Or amtCol = 0 Then
         wb.Close SaveChanges:=False
@@ -486,9 +489,9 @@ Private Sub ProcessAIPPayouts(ws As Worksheet, empIndex As Object)
         Exit Sub
     End If
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, weinCol).End(xlUp).row
+    lastRow = srcWs.Cells(srcWs.Rows.count, weinCol).End(xlUp).Row
     
-    For i = 2 To lastRow
+    For i = headerRow + 1 To lastRow
         wein = Trim(CStr(Nz(srcWs.Cells(i, weinCol).Value, "")))
         bonusAmt = ToDouble(srcWs.Cells(i, amtCol).Value)
         
@@ -519,7 +522,7 @@ Private Sub ProcessFlexClaim(ws As Worksheet, empIndex As Object)
     Dim wb As Workbook
     Dim srcWs As Worksheet
     Dim filePath As String
-    Dim lastRow As Long, i As Long
+    Dim lastRow As Long, i As Long, headerRow As Long
     Dim empNumId As String, wein As String
     Dim transAmt As Double, claimStatus As String
     Dim col As Long, row As Long
@@ -548,10 +551,11 @@ Private Sub ProcessFlexClaim(ws As Worksheet, empIndex As Object)
             "Sheet 'Flex Claim Summary' not found, using first sheet"
     End If
     
-    ' Try multiple field name variants for Employee Number ID
-    empNumCol = FindColumnByHeader(srcWs.Rows(1), "Employee Number ID,EmployeeNumber,Employee Number,Employee ID,EmployeeID")
-    amtCol = FindColumnByHeader(srcWs.Rows(1), "Transacted Amount")
-    statusCol = FindColumnByHeader(srcWs.Rows(1), "Claim Status")
+    ' Detect header row and columns (header may not be on first row)
+    headerRow = FindHeaderRowSafe(srcWs, "Employee Number ID,EmployeeNumber,Employee Number,Employee ID,EmployeeID", 1, 50)
+    empNumCol = FindColumnByHeader(srcWs.Rows(headerRow), "Employee Number ID,EmployeeNumber,Employee Number,Employee ID,EmployeeID")
+    amtCol = FindColumnByHeader(srcWs.Rows(headerRow), "Transacted Amount")
+    statusCol = FindColumnByHeader(srcWs.Rows(headerRow), "Claim Status")
     
     If empNumCol = 0 Or amtCol = 0 Then
         wb.Close SaveChanges:=False
@@ -564,9 +568,9 @@ Private Sub ProcessFlexClaim(ws As Worksheet, empIndex As Object)
         Exit Sub
     End If
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, empNumCol).End(xlUp).row
+    lastRow = srcWs.Cells(srcWs.Rows.count, empNumCol).End(xlUp).Row
     
-    For i = 2 To lastRow
+    For i = headerRow + 1 To lastRow
         ' Filter by Approved status
         If statusCol > 0 Then
             claimStatus = UCase(Trim(CStr(Nz(srcWs.Cells(i, statusCol).Value, ""))))

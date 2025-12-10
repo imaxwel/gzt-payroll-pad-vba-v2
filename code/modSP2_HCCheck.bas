@@ -119,7 +119,7 @@ Private Sub CreateHireStatusPivot(valWb As Workbook, ws As Worksheet)
     Dim srcWs As Worksheet
     Dim filePath As String
     Dim lastRow As Long, i As Long
-    Dim hireStatusCol As Long, weinCol As Long
+    Dim hireStatusCol As Long, weinCol As Long, headerRow As Long
     Dim statusCounts As Object
     Dim hireStatus As String
     Dim activeCount As Long
@@ -149,9 +149,11 @@ Private Sub CreateHireStatusPivot(valWb As Workbook, ws As Worksheet)
     Set srcWb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = srcWb.Worksheets(1)
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
-    hireStatusCol = FindColumnByHeader(srcWs.Rows(1), "Hire Status")
-    weinCol = FindColumnByHeader(srcWs.Rows(1), "WEIN")
+    headerRow = FindHeaderRowSafe(srcWs, "Hire Status", 1, 50)
+    hireStatusCol = FindColumnByHeader(srcWs.Rows(headerRow), "Hire Status")
+    weinCol = FindColumnByHeader(srcWs.Rows(headerRow), "WEIN")
+    
+    lastRow = srcWs.Cells(srcWs.Rows.count, IIf(hireStatusCol > 0, hireStatusCol, 1)).End(xlUp).Row
     
     If hireStatusCol = 0 Then
         srcWb.Close SaveChanges:=False
@@ -166,7 +168,7 @@ Private Sub CreateHireStatusPivot(valWb As Workbook, ws As Worksheet)
     Set statusCounts = CreateObject("Scripting.Dictionary")
     grandTotal = 0
     
-    For i = 2 To lastRow
+    For i = headerRow + 1 To lastRow
         hireStatus = Trim(CStr(Nz(srcWs.Cells(i, hireStatusCol).Value, "")))
         If hireStatus <> "" Then
             If Not statusCounts.exists(hireStatus) Then
@@ -213,7 +215,7 @@ Private Sub CalculatePayrollHC(ws As Worksheet, offset As ePeriodOffset)
     Dim srcWs As Worksheet
     Dim filePath As String
     Dim lastRow As Long, i As Long
-    Dim hireStatusCol As Long
+    Dim hireStatusCol As Long, headerRow As Long
     Dim activeCount As Long
     Dim hireStatus As String
     Dim targetCol As Long
@@ -238,8 +240,9 @@ Private Sub CalculatePayrollHC(ws As Worksheet, offset As ePeriodOffset)
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
-    hireStatusCol = FindColumnByHeader(srcWs.Rows(1), "Hire Status")
+    headerRow = FindHeaderRowSafe(srcWs, "Hire Status", 1, 50)
+    hireStatusCol = FindColumnByHeader(srcWs.Rows(headerRow), "Hire Status")
+    lastRow = srcWs.Cells(srcWs.Rows.count, IIf(hireStatusCol > 0, hireStatusCol, 1)).End(xlUp).Row
     
     If hireStatusCol = 0 Then
         wb.Close SaveChanges:=False
@@ -247,7 +250,7 @@ Private Sub CalculatePayrollHC(ws As Worksheet, offset As ePeriodOffset)
     End If
     
     activeCount = 0
-    For i = 2 To lastRow
+    For i = headerRow + 1 To lastRow
         hireStatus = UCase(Trim(CStr(Nz(srcWs.Cells(i, hireStatusCol).Value, ""))))
         If hireStatus = "ACTIVE" Then
             activeCount = activeCount + 1
@@ -285,6 +288,7 @@ Private Sub CalculateTerminatedHC(ws As Worksheet, offset As ePeriodOffset)
     Dim payDate As Date
     Dim includedCount As Long, ocCount As Long
     Dim targetCol As Long
+    Dim headerRow As Long, keyCol As Long
     
     On Error GoTo ErrHandler
     
@@ -306,19 +310,19 @@ Private Sub CalculateTerminatedHC(ws As Worksheet, offset As ePeriodOffset)
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)
     
-    Set headers = CreateObject("Scripting.Dictionary")
-    Dim c As Long
-    For c = 1 To srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
-        headers(UCase(Trim(CStr(srcWs.Cells(1, c).Value)))) = c
-    Next c
+    ' Detect header row and build header index
+    headerRow = FindHeaderRowSafe(srcWs, "TERMINATION DATE,EMPLOYEE CODE,EMPLOYEECODE,EMPLOYEE REFERENCE", 1, 50)
+    Set headers = BuildHeaderIndex(srcWs, headerRow)
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    keyCol = GetColumnFromHeaders(headers, "TERMINATION DATE,EMPLOYEE CODE,EMPLOYEECODE,EMPLOYEE REFERENCE")
+    If keyCol = 0 Then keyCol = 1
+    lastRow = srcWs.Cells(srcWs.Rows.count, keyCol).End(xlUp).Row
     payDate = G.Payroll.payDate
     
     includedCount = 0
     ocCount = 0
     
-    For i = 2 To lastRow
+    For i = headerRow + 1 To lastRow
         Dim termDateStr As String
         termDateStr = GetCellVal(srcWs, i, headers, "TERMINATION DATE")
         
@@ -365,6 +369,7 @@ Private Sub CalculateNewHireHC(ws As Worksheet, offset As ePeriodOffset)
     Dim lastRow As Long
     Dim newHireCount As Long
     Dim targetCol As Long
+    Dim headerRow As Long, headers As Object, keyCol As Long
     
     On Error GoTo ErrHandler
     
@@ -386,8 +391,13 @@ Private Sub CalculateNewHireHC(ws As Worksheet, offset As ePeriodOffset)
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
-    newHireCount = lastRow - 1 ' Exclude header
+    headerRow = FindHeaderRowSafe(srcWs, "Employee Code,EmployeeCode,Employee Reference,EmployeeNumber,Employee Number,Employee ID,EmployeeID", 1, 50)
+    Set headers = BuildHeaderIndex(srcWs, headerRow)
+    keyCol = GetColumnFromHeaders(headers, "Employee Code,EmployeeCode,Employee Reference,EmployeeNumber,Employee Number,Employee ID,EmployeeID")
+    If keyCol = 0 Then keyCol = 1
+    lastRow = srcWs.Cells(srcWs.Rows.count, keyCol).End(xlUp).Row
+    
+    newHireCount = lastRow - headerRow ' Exclude header
     If newHireCount < 0 Then newHireCount = 0
     
     wb.Close SaveChanges:=False
@@ -419,6 +429,7 @@ Private Sub CalculateExtraTableHC(ws As Worksheet, offset As ePeriodOffset)
     Dim extraCount As Long
     Dim targetCol As Long
     Dim needClose As Boolean
+    Dim headerRow As Long, headers As Object, keyCol As Long
     
     On Error GoTo ErrHandler
     
@@ -483,8 +494,14 @@ Private Sub CalculateExtraTableHC(ws As Worksheet, offset As ePeriodOffset)
         Exit Sub
     End If
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
-    extraCount = lastRow - 1 ' Exclude header
+    ' Detect header row and build header index
+    headerRow = FindHeaderRowSafe(srcWs, "WEIN,WIN,EMPLOYEE ID,EMPLOYEE CODE,EMPLOYEECODE", 1, 50)
+    Set headers = BuildHeaderIndex(srcWs, headerRow)
+    keyCol = GetColumnFromHeaders(headers, "WEIN,WIN,EMPLOYEE ID,EMPLOYEE CODE,EMPLOYEECODE")
+    If keyCol = 0 Then keyCol = 1
+    
+    lastRow = srcWs.Cells(srcWs.Rows.count, keyCol).End(xlUp).Row
+    extraCount = lastRow - headerRow ' Exclude header
     If extraCount < 0 Then extraCount = 0
     
     ' 只关闭我们自己打开的工作簿

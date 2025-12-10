@@ -27,10 +27,11 @@ Public Function GroupByEmployeeAndType( _
     
     Dim dict As Object
     Dim empCol As Long, typeCol As Long, amtCol As Long
-    Dim headerRow As Range
+    Dim headerRowNum As Long
     Dim i As Long, lastRow As Long
     Dim empId As String, typeVal As String, key As String
     Dim amt As Double
+    Dim ws As Worksheet
     
     On Error GoTo ErrHandler
     
@@ -41,11 +42,16 @@ Public Function GroupByEmployeeAndType( _
         Exit Function
     End If
     
+    Set ws = dataRange.Worksheet
+    
+    ' Detect header row within the sheet (fallback to dataRange top row)
+    headerRowNum = FindHeaderRow(ws, employeeColName, 50)
+    If headerRowNum = 0 Then headerRowNum = dataRange.Row
+    
     ' Find column indices by header names
-    Set headerRow = dataRange.Rows(1)
-    empCol = FindColumnByHeader(headerRow, employeeColName)
-    typeCol = FindColumnByHeader(headerRow, typeColName)
-    amtCol = FindColumnByHeader(headerRow, amountColName)
+    empCol = FindColumnByHeader(ws.Rows(headerRowNum), employeeColName)
+    typeCol = FindColumnByHeader(ws.Rows(headerRowNum), typeColName)
+    amtCol = FindColumnByHeader(ws.Rows(headerRowNum), amountColName)
     
     If empCol = 0 Or typeCol = 0 Or amtCol = 0 Then
         LogError "modAggregationService", "GroupByEmployeeAndType", 0, _
@@ -55,12 +61,12 @@ Public Function GroupByEmployeeAndType( _
     End If
     
     ' Process data rows
-    lastRow = dataRange.Rows.count
+    lastRow = ws.Cells(ws.Rows.count, empCol).End(xlUp).row
     
-    For i = 2 To lastRow
-        empId = Trim(CStr(Nz(dataRange.Cells(i, empCol).Value, "")))
-        typeVal = Trim(CStr(Nz(dataRange.Cells(i, typeCol).Value, "")))
-        amt = ToDouble(dataRange.Cells(i, amtCol).Value)
+    For i = headerRowNum + 1 To lastRow
+        empId = Trim(CStr(Nz(ws.Cells(i, empCol).Value, "")))
+        typeVal = Trim(CStr(Nz(ws.Cells(i, typeCol).Value, "")))
+        amt = ToDouble(ws.Cells(i, amtCol).Value)
         
         If empId <> "" Then
             key = empId & "|" & typeVal
@@ -104,10 +110,11 @@ Public Function SumPerEmployee( _
     
     Dim dict As Object
     Dim empCol As Long, amtCol As Long
-    Dim headerRow As Range
+    Dim headerRowNum As Long
     Dim i As Long, lastRow As Long
     Dim empId As String
     Dim amt As Double
+    Dim ws As Worksheet
     
     On Error GoTo ErrHandler
     
@@ -118,10 +125,15 @@ Public Function SumPerEmployee( _
         Exit Function
     End If
     
+    Set ws = dataRange.Worksheet
+    
+    ' Detect header row within the sheet (fallback to dataRange top row)
+    headerRowNum = FindHeaderRow(ws, employeeColName, 50)
+    If headerRowNum = 0 Then headerRowNum = dataRange.Row
+    
     ' Find column indices by header names
-    Set headerRow = dataRange.Rows(1)
-    empCol = FindColumnByHeader(headerRow, employeeColName)
-    amtCol = FindColumnByHeader(headerRow, amountColName)
+    empCol = FindColumnByHeader(ws.Rows(headerRowNum), employeeColName)
+    amtCol = FindColumnByHeader(ws.Rows(headerRowNum), amountColName)
     
     If empCol = 0 Or amtCol = 0 Then
         LogError "modAggregationService", "SumPerEmployee", 0, _
@@ -131,11 +143,11 @@ Public Function SumPerEmployee( _
     End If
     
     ' Process data rows
-    lastRow = dataRange.Rows.count
+    lastRow = ws.Cells(ws.Rows.count, empCol).End(xlUp).row
     
-    For i = 2 To lastRow
-        empId = Trim(CStr(Nz(dataRange.Cells(i, empCol).Value, "")))
-        amt = ToDouble(dataRange.Cells(i, amtCol).Value)
+    For i = headerRowNum + 1 To lastRow
+        empId = Trim(CStr(Nz(ws.Cells(i, empCol).Value, "")))
+        amt = ToDouble(ws.Cells(i, amtCol).Value)
         
         If empId <> "" Then
             If dict.exists(empId) Then
@@ -183,12 +195,13 @@ Public Function GroupByEmployeeAndTypeFiltered( _
     
     Dim dict As Object
     Dim empCol As Long, typeCol As Long, amtCol As Long, filterCol As Long
-    Dim headerRow As Range
+    Dim headerRowNum As Long
     Dim i As Long, lastRow As Long
     Dim empId As String, typeVal As String, key As String, filterVal As String
     Dim amt As Double
     Dim includeRow As Boolean
     Dim fv As Variant
+    Dim ws As Worksheet
     
     On Error GoTo ErrHandler
     
@@ -199,12 +212,17 @@ Public Function GroupByEmployeeAndTypeFiltered( _
         Exit Function
     End If
     
+    Set ws = dataRange.Worksheet
+    
+    ' Detect header row within the sheet (fallback to dataRange top row)
+    headerRowNum = FindHeaderRow(ws, employeeColName, 50)
+    If headerRowNum = 0 Then headerRowNum = dataRange.Row
+    
     ' Find column indices by header names
-    Set headerRow = dataRange.Rows(1)
-    empCol = FindColumnByHeader(headerRow, employeeColName)
-    typeCol = FindColumnByHeader(headerRow, typeColName)
-    amtCol = FindColumnByHeader(headerRow, amountColName)
-    filterCol = FindColumnByHeader(headerRow, filterColName)
+    empCol = FindColumnByHeader(ws.Rows(headerRowNum), employeeColName)
+    typeCol = FindColumnByHeader(ws.Rows(headerRowNum), typeColName)
+    amtCol = FindColumnByHeader(ws.Rows(headerRowNum), amountColName)
+    filterCol = FindColumnByHeader(ws.Rows(headerRowNum), filterColName)
     
     If empCol = 0 Or typeCol = 0 Or amtCol = 0 Or filterCol = 0 Then
         Set GroupByEmployeeAndTypeFiltered = dict
@@ -212,10 +230,10 @@ Public Function GroupByEmployeeAndTypeFiltered( _
     End If
     
     ' Process data rows
-    lastRow = dataRange.Rows.count
+    lastRow = ws.Cells(ws.Rows.count, empCol).End(xlUp).row
     
-    For i = 2 To lastRow
-        filterVal = UCase(Trim(CStr(Nz(dataRange.Cells(i, filterCol).Value, ""))))
+    For i = headerRowNum + 1 To lastRow
+        filterVal = UCase(Trim(CStr(Nz(ws.Cells(i, filterCol).Value, ""))))
         
         ' Check if row should be included
         includeRow = False
@@ -231,9 +249,9 @@ Public Function GroupByEmployeeAndTypeFiltered( _
         End If
         
         If includeRow Then
-            empId = Trim(CStr(Nz(dataRange.Cells(i, empCol).Value, "")))
-            typeVal = Trim(CStr(Nz(dataRange.Cells(i, typeCol).Value, "")))
-            amt = ToDouble(dataRange.Cells(i, amtCol).Value)
+            empId = Trim(CStr(Nz(ws.Cells(i, empCol).Value, "")))
+            typeVal = Trim(CStr(Nz(ws.Cells(i, typeCol).Value, "")))
+            amt = ToDouble(ws.Cells(i, amtCol).Value)
             
             If empId <> "" Then
                 key = empId & "|" & typeVal
@@ -299,13 +317,14 @@ Public Function GroupByEmployeeAndTypeWithDateFilter( _
     Dim dict As Object
     Dim empCol As Long, typeCol As Long, amtCol As Long
     Dim completedOnCol As Long, scheduledPayCol As Long
-    Dim headerRow As Range
+    Dim headerRowNum As Long
     Dim i As Long, lastRow As Long
     Dim empId As String, typeVal As String, key As String
     Dim amt As Double
     Dim completedOn As Date, scheduledPayDate As Date
     Dim shouldExclude As Boolean
     Dim exType As Variant
+    Dim ws As Worksheet
     
     On Error GoTo ErrHandler
     
@@ -316,13 +335,18 @@ Public Function GroupByEmployeeAndTypeWithDateFilter( _
         Exit Function
     End If
     
+    Set ws = dataRange.Worksheet
+    
+    ' Detect header row within the sheet (fallback to dataRange top row)
+    headerRowNum = FindHeaderRow(ws, employeeColName, 50)
+    If headerRowNum = 0 Then headerRowNum = dataRange.Row
+    
     ' Find column indices by header names
-    Set headerRow = dataRange.Rows(1)
-    empCol = FindColumnByHeader(headerRow, employeeColName)
-    typeCol = FindColumnByHeader(headerRow, typeColName)
-    amtCol = FindColumnByHeader(headerRow, amountColName)
-    completedOnCol = FindColumnByHeader(headerRow, completedOnColName)
-    scheduledPayCol = FindColumnByHeader(headerRow, scheduledPayDateColName)
+    empCol = FindColumnByHeader(ws.Rows(headerRowNum), employeeColName)
+    typeCol = FindColumnByHeader(ws.Rows(headerRowNum), typeColName)
+    amtCol = FindColumnByHeader(ws.Rows(headerRowNum), amountColName)
+    completedOnCol = FindColumnByHeader(ws.Rows(headerRowNum), completedOnColName)
+    scheduledPayCol = FindColumnByHeader(ws.Rows(headerRowNum), scheduledPayDateColName)
     
     If empCol = 0 Or typeCol = 0 Or amtCol = 0 Then
         LogError "modAggregationService", "GroupByEmployeeAndTypeWithDateFilter", 0, _
@@ -337,12 +361,12 @@ Public Function GroupByEmployeeAndTypeWithDateFilter( _
     End If
     
     ' Process data rows
-    lastRow = dataRange.Rows.count
+    lastRow = ws.Cells(ws.Rows.count, empCol).End(xlUp).row
     
-    For i = 2 To lastRow
-        empId = Trim(CStr(Nz(dataRange.Cells(i, empCol).Value, "")))
-        typeVal = Trim(CStr(Nz(dataRange.Cells(i, typeCol).Value, "")))
-        amt = ToDouble(dataRange.Cells(i, amtCol).Value)
+    For i = headerRowNum + 1 To lastRow
+        empId = Trim(CStr(Nz(ws.Cells(i, empCol).Value, "")))
+        typeVal = Trim(CStr(Nz(ws.Cells(i, typeCol).Value, "")))
+        amt = ToDouble(ws.Cells(i, amtCol).Value)
         
         If empId = "" Then GoTo NextRow
         
@@ -370,11 +394,11 @@ Public Function GroupByEmployeeAndTypeWithDateFilter( _
             On Error Resume Next
             completedOn = 0
             scheduledPayDate = 0
-            If IsDate(dataRange.Cells(i, completedOnCol).Value) Then
-                completedOn = CDate(dataRange.Cells(i, completedOnCol).Value)
+            If IsDate(ws.Cells(i, completedOnCol).Value) Then
+                completedOn = CDate(ws.Cells(i, completedOnCol).Value)
             End If
-            If IsDate(dataRange.Cells(i, scheduledPayCol).Value) Then
-                scheduledPayDate = CDate(dataRange.Cells(i, scheduledPayCol).Value)
+            If IsDate(ws.Cells(i, scheduledPayCol).Value) Then
+                scheduledPayDate = CDate(ws.Cells(i, scheduledPayCol).Value)
             End If
             On Error GoTo ErrHandler
             
@@ -457,7 +481,7 @@ End Function
 '   Optional maxRows - Maximum rows to search (default 20)
 ' Returns: Row number (1-based) or 0 if not found
 '------------------------------------------------------------------------------
-Public Function FindHeaderRow(ws As Worksheet, keyword As String, Optional maxRows As Long = 20) As Long
+Public Function FindHeaderRow(ws As Worksheet, keyword As String, Optional maxRows As Long = 50) As Long
     Dim i As Long, j As Long
     Dim lastCol As Long
     Dim cellValue As String
@@ -468,10 +492,12 @@ Public Function FindHeaderRow(ws As Worksheet, keyword As String, Optional maxRo
     FindHeaderRow = 0
     
     On Error Resume Next
-    lastCol = ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
-    If lastCol < 1 Then lastCol = 50
-    If lastCol > 100 Then lastCol = 100
+    lastCol = ws.UsedRange.Columns(ws.UsedRange.Columns.count).Column
+    If lastCol < 1 Then lastCol = ws.Cells(maxRows, ws.Columns.count).End(xlToLeft).Column
     On Error GoTo 0
+    If lastCol < 1 Then lastCol = 100
+    If lastCol > 200 Then lastCol = 200
+    If maxRows < 1 Then maxRows = 1
     
     ' Support comma-separated variant names
     variants = Split(keyword, ",")
@@ -490,6 +516,70 @@ Public Function FindHeaderRow(ws As Worksheet, keyword As String, Optional maxRo
             Next v
         Next j
     Next i
+End Function
+
+'------------------------------------------------------------------------------
+' Function: FindHeaderRowSafe
+' Purpose: Wrapper around FindHeaderRow with default fallback row
+'------------------------------------------------------------------------------
+Public Function FindHeaderRowSafe(ws As Worksheet, keyword As String, Optional defaultRow As Long = 1, Optional maxRows As Long = 50) As Long
+    Dim rowNum As Long
+    rowNum = FindHeaderRow(ws, keyword, maxRows)
+    If rowNum = 0 Then rowNum = defaultRow
+    FindHeaderRowSafe = rowNum
+End Function
+
+'------------------------------------------------------------------------------
+' Function: BuildHeaderIndex
+' Purpose: Build a dictionary of header name -> column for a given header row
+'------------------------------------------------------------------------------
+Public Function BuildHeaderIndex(ws As Worksheet, headerRow As Long) As Object
+    Dim headers As Object
+    Dim lastCol As Long, c As Long
+    Dim cellVal As String
+    
+    Set headers = CreateObject("Scripting.Dictionary")
+    
+    On Error Resume Next
+    lastCol = ws.Cells(headerRow, ws.Columns.count).End(xlToLeft).Column
+    If lastCol < 1 Then lastCol = ws.UsedRange.Columns(ws.UsedRange.Columns.count).Column
+    On Error GoTo 0
+    
+    If lastCol < 1 Then
+        Set BuildHeaderIndex = headers
+        Exit Function
+    End If
+    
+    For c = 1 To lastCol
+        cellVal = UCase(Trim(CStr(Nz(ws.Cells(headerRow, c).Value, ""))))
+        If cellVal <> "" And Not headers.exists(cellVal) Then
+            headers(cellVal) = c
+        End If
+    Next c
+    
+    Set BuildHeaderIndex = headers
+End Function
+
+'------------------------------------------------------------------------------
+' Function: GetColumnFromHeaders
+' Purpose: Return the first matching column index from a header dictionary
+'------------------------------------------------------------------------------
+Public Function GetColumnFromHeaders(headers As Object, possibleNames As String) As Long
+    Dim variants() As String
+    Dim v As Long
+    Dim key As String
+    
+    GetColumnFromHeaders = 0
+    If headers Is Nothing Then Exit Function
+    
+    variants = Split(possibleNames, ",")
+    For v = LBound(variants) To UBound(variants)
+        key = UCase(Trim(variants(v)))
+        If headers.exists(key) Then
+            GetColumnFromHeaders = headers(key)
+            Exit Function
+        End If
+    Next v
 End Function
 
 '------------------------------------------------------------------------------
@@ -551,6 +641,7 @@ Public Function BuildEmployeeIndex( _
     
     Dim dict As Object
     Dim empCol As Long
+    Dim headerRowNum As Long
     Dim i As Long, lastRow As Long
     Dim empId As String
     
@@ -558,17 +649,24 @@ Public Function BuildEmployeeIndex( _
     
     Set dict = CreateObject("Scripting.Dictionary")
     
-    ' Find employee column
-    empCol = FindColumnByHeader(ws.Rows(headerRow), employeeColName)
+    ' Find employee column (auto-detect header row if needed)
+    headerRowNum = headerRow
+    empCol = FindColumnByHeader(ws.Rows(headerRowNum), employeeColName)
+    
+    If empCol = 0 Then
+        headerRowNum = FindHeaderRow(ws, employeeColName, 50)
+        If headerRowNum = 0 Then headerRowNum = headerRow
+        empCol = FindColumnByHeader(ws.Rows(headerRowNum), employeeColName)
+    End If
     
     If empCol = 0 Then
         Set BuildEmployeeIndex = dict
         Exit Function
     End If
     
-    lastRow = ws.Cells(ws.Rows.count, empCol).End(xlUp).row
+    lastRow = ws.Cells(ws.Rows.count, empCol).End(xlUp).Row
     
-    For i = headerRow + 1 To lastRow
+    For i = headerRowNum + 1 To lastRow
         empId = Trim(CStr(Nz(ws.Cells(i, empCol).Value, "")))
         If empId <> "" And Not dict.exists(empId) Then
             dict.Add empId, i

@@ -95,45 +95,19 @@ Private Sub LoadWorkforceData()
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set ws = wb.Worksheets(1)
     
-    ' Find header row by searching for "Employee ID" column
-    ' Workforce Detail file may have filter criteria rows at the top
-    headerRow = 0
-    For i = 1 To 50 ' Search first 50 rows
-        For c = 1 To 200 ' Search first 200 columns
-            On Error Resume Next
-            cellVal = UCase(Trim(CStr(ws.Cells(i, c).Value)))
-            On Error GoTo ErrHandler
-            If cellVal = "EMPLOYEE ID" Then
-                headerRow = i
-                Exit For
-            End If
-        Next c
-        If headerRow > 0 Then Exit For
-    Next i
-    
+    ' Detect header row and build header index
+    headerRow = FindHeaderRowSafe(ws, "EMPLOYEE ID,EMPLOYEEID", 1, 50)
     If headerRow = 0 Then
         LogError "modSP2_CheckResult_MasterData", "LoadWorkforceData", 0, _
             "Could not find header row with 'Employee ID' column in Workforce Detail file"
         wb.Close SaveChanges:=False
         Exit Sub
     End If
-    
-    ' Build header index from the found header row
-    Set headers = CreateObject("Scripting.Dictionary")
-    lastCol = ws.Cells(headerRow, ws.Columns.count).End(xlToLeft).Column
-    
-    For c = 1 To lastCol
-        cellVal = UCase(Trim(CStr(Nz(ws.Cells(headerRow, c).Value, ""))))
-        If cellVal <> "" And Not headers.exists(cellVal) Then
-            headers(cellVal) = c
-        End If
-    Next c
+    Set headers = BuildHeaderIndex(ws, headerRow)
     
     ' Find last row with data (use Employee ID column)
     Dim empIdCol As Long
-    empIdCol = 0
-    If headers.exists("EMPLOYEE ID") Then empIdCol = headers("EMPLOYEE ID")
-    If empIdCol = 0 And headers.exists("EMPLOYEEID") Then empIdCol = headers("EMPLOYEEID")
+    empIdCol = GetColumnFromHeaders(headers, "EMPLOYEE ID,EMPLOYEEID")
     
     If empIdCol = 0 Then
         LogError "modSP2_CheckResult_MasterData", "LoadWorkforceData", 0, _
@@ -142,7 +116,7 @@ Private Sub LoadWorkforceData()
         Exit Sub
     End If
     
-    lastRow = ws.Cells(ws.Rows.count, empIdCol).End(xlUp).row
+    lastRow = ws.Cells(ws.Rows.count, empIdCol).End(xlUp).Row
     
     ' Load data starting from row after header
     For i = headerRow + 1 To lastRow
@@ -198,6 +172,7 @@ Private Function LoadAllowanceData() As Object
     Dim empId As String, compPlan As String
     Dim amt As Double
     Dim dict As Object
+    Dim headerRow As Long, keyCol As Long
     
     On Error GoTo ErrHandler
     
@@ -215,15 +190,15 @@ Private Function LoadAllowanceData() As Object
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set ws = wb.Worksheets(1)
     
-    Set headers = CreateObject("Scripting.Dictionary")
-    Dim c As Long
-    For c = 1 To ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
-        headers(UCase(Trim(CStr(ws.Cells(1, c).Value)))) = c
-    Next c
+    ' Detect header row and build header index
+    headerRow = FindHeaderRowSafe(ws, "EMPLOYEE ID,EMPLOYEEID,EMPLOYEE NUMBER ID", 1, 50)
+    Set headers = BuildHeaderIndex(ws, headerRow)
     
-    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
+    keyCol = GetColumnFromHeaders(headers, "EMPLOYEE ID,EMPLOYEEID,EMPLOYEE NUMBER ID")
+    If keyCol = 0 Then keyCol = 1
+    lastRow = ws.Cells(ws.Rows.count, keyCol).End(xlUp).Row
     
-    For i = 2 To lastRow
+    For i = headerRow + 1 To lastRow
         compPlan = UCase(GetCellVal(ws, i, headers, "COMPENSATION PLAN"))
         
         If InStr(compPlan, "TRANSPORTATION") > 0 Then
@@ -268,6 +243,7 @@ Private Function LoadTerminationData() As Object
     Dim empCode As String, wein As String
     Dim termDate As String
     Dim dict As Object
+    Dim headerRow As Long, keyCol As Long
     
     On Error GoTo ErrHandler
     
@@ -285,15 +261,15 @@ Private Function LoadTerminationData() As Object
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set ws = wb.Worksheets(1)
     
-    Set headers = CreateObject("Scripting.Dictionary")
-    Dim c As Long
-    For c = 1 To ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
-        headers(UCase(Trim(CStr(ws.Cells(1, c).Value)))) = c
-    Next c
+    ' Detect header row and build header index
+    headerRow = FindHeaderRowSafe(ws, "EMPLOYEE CODE,EMPLOYEECODE,EMPLOYEE REFERENCE,EMPLOYEENUMBER,EMPLOYEE NUMBER", 1, 50)
+    Set headers = BuildHeaderIndex(ws, headerRow)
     
-    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
+    keyCol = GetColumnFromHeaders(headers, "EMPLOYEE CODE,EMPLOYEECODE,EMPLOYEE REFERENCE,EMPLOYEENUMBER,EMPLOYEE NUMBER")
+    If keyCol = 0 Then keyCol = 1
+    lastRow = ws.Cells(ws.Rows.count, keyCol).End(xlUp).Row
     
-    For i = 2 To lastRow
+    For i = headerRow + 1 To lastRow
         ' Try multiple field name variants for Employee Code
         empCode = GetCellVal(ws, i, headers, "EMPLOYEE CODE")
         If empCode = "" Then empCode = GetCellVal(ws, i, headers, "EMPLOYEECODE")

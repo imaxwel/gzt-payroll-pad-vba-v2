@@ -82,6 +82,7 @@ Private Function LoadLeaveTransactions() As Collection
     Dim ws As Worksheet
     Dim filePath As String
     Dim lastRow As Long, i As Long
+    Dim headerRow As Long, keyCol As Long
     Dim rec(0 To 9) As Variant  ' Array to store leave record
     Dim headers As Object
     Dim uniqueKey As String
@@ -100,21 +101,23 @@ Private Function LoadLeaveTransactions() As Collection
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set ws = wb.Worksheets(1)
     
-    ' Build header index
-    Set headers = CreateObject("Scripting.Dictionary")
-    Dim c As Long
-    For c = 1 To ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
-        headers(UCase(Trim(CStr(ws.Cells(1, c).Value)))) = c
-    Next c
+    ' Detect header row and build header index
+    headerRow = FindHeaderRowSafe(ws, _
+        "WIN,WEIN,WEINEmployee ID,EMPLOYEE CODEWIN,EMPLOYEE CODE,EMPLOYEECODE,EMPLOYEE REFERENCE,EMPLOYEE NUMBER,EMPLOYEE NUMBER ID,EMPLOYEE ID,STATUS", _
+        1, 50)
+    Set headers = BuildHeaderIndex(ws, headerRow)
     
-    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
+    ' Determine last row using the first available identifier column
+    keyCol = GetColumnFromHeaders(headers, "WIN,WEIN,EMPLOYEE CODE,EMPLOYEE NUMBER ID,EMPLOYEE ID,EMPLOYEECODE,EMPLOYEE REFERENCE,EMPLOYEE NUMBER")
+    If keyCol = 0 Then keyCol = 1
+    lastRow = ws.Cells(ws.Rows.count, keyCol).End(xlUp).Row
     
     ' Initialize leave history
     If mLeaveHistory Is Nothing Then
         Set mLeaveHistory = CreateObject("Scripting.Dictionary")
     End If
     
-    For i = 2 To lastRow
+    For i = headerRow + 1 To lastRow
         ' Only process approved records
         recStatus = GetCellValue(ws, i, headers, "STATUS")
         If UCase(recStatus) = "APPROVED" Then
@@ -1266,40 +1269,13 @@ Private Sub LoadWorkforceHireDates()
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set ws = wb.Worksheets(1)
     
-    ' Find header row (search for "Employee ID" in first 50 rows)
-    headerRow = 0
-    For i = 1 To 50
-        For c = 1 To 200
-            On Error Resume Next
-            cellVal = UCase(Trim(CStr(ws.Cells(i, c).Value)))
-            On Error GoTo ErrHandler
-            If cellVal = "EMPLOYEE ID" Or cellVal = "WIN" Or cellVal = "WEIN" Then
-                headerRow = i
-                Exit For
-            End If
-        Next c
-        If headerRow > 0 Then Exit For
-    Next i
-    
-    If headerRow = 0 Then headerRow = 1
-    
-    ' Build header index
-    Set headers = CreateObject("Scripting.Dictionary")
-    lastCol = ws.Cells(headerRow, ws.Columns.count).End(xlToLeft).Column
-    
-    For c = 1 To lastCol
-        cellVal = UCase(Trim(CStr(Nz(ws.Cells(headerRow, c).Value, ""))))
-        If cellVal <> "" And Not headers.exists(cellVal) Then
-            headers(cellVal) = c
-        End If
-    Next c
+    ' Detect header row and build header index
+    headerRow = FindHeaderRowSafe(ws, "EMPLOYEE ID,EMPLOYEEID,WIN,WEIN", 1, 50)
+    Set headers = BuildHeaderIndex(ws, headerRow)
     
     ' Find Employee ID column for determining last row
     Dim empIdCol As Long
-    empIdCol = 0
-    If headers.exists("EMPLOYEE ID") Then empIdCol = headers("EMPLOYEE ID")
-    If empIdCol = 0 And headers.exists("WIN") Then empIdCol = headers("WIN")
-    If empIdCol = 0 And headers.exists("WEIN") Then empIdCol = headers("WEIN")
+    empIdCol = GetColumnFromHeaders(headers, "EMPLOYEE ID,EMPLOYEEID,WIN,WEIN")
     
     If empIdCol = 0 Then
         LogWarning "modSP1_Attendance", "LoadWorkforceHireDates", _
@@ -1308,7 +1284,7 @@ Private Sub LoadWorkforceHireDates()
         Exit Sub
     End If
     
-    lastRow = ws.Cells(ws.Rows.count, empIdCol).End(xlUp).row
+    lastRow = ws.Cells(ws.Rows.count, empIdCol).End(xlUp).Row
     
     ' Load data
     For i = headerRow + 1 To lastRow
@@ -1410,7 +1386,7 @@ Private Sub OutputMaternityReport()
     Dim rptWs As Worksheet
     Dim filePath As String
     Dim outputPath As String
-    Dim lastCol As Long, c As Long
+    Dim lastCol As Long, c As Long, headerRow As Long
     Dim rec As Variant
     Dim v As Variant
     Dim rptRow As Long
@@ -1437,10 +1413,11 @@ Private Sub OutputMaternityReport()
     Set rptWs = rptWb.Worksheets(1)
     rptWs.Name = "Maternity Report"
     
-    ' Copy header row
-    lastCol = srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
+    ' Detect header row and copy header
+    headerRow = FindHeaderRowSafe(srcWs, "WIN,WEIN,EMPLOYEE CODE,EMPLOYEE ID,EMPLOYEE NUMBER ID", 1, 50)
+    lastCol = srcWs.Cells(headerRow, srcWs.Columns.count).End(xlToLeft).Column
     For c = 1 To lastCol
-        rptWs.Cells(1, c).Value = srcWs.Cells(1, c).Value
+        rptWs.Cells(1, c).Value = srcWs.Cells(headerRow, c).Value
     Next c
     
     ' Add additional columns for service info
@@ -1450,14 +1427,7 @@ Private Sub OutputMaternityReport()
     
     ' Build header index for source file
     Dim headers As Object
-    Set headers = CreateObject("Scripting.Dictionary")
-    For c = 1 To lastCol
-        Dim hdrName As String
-        hdrName = UCase(Trim(CStr(Nz(srcWs.Cells(1, c).Value, ""))))
-        If hdrName <> "" And Not headers.exists(hdrName) Then
-            headers(hdrName) = c
-        End If
-    Next c
+    Set headers = BuildHeaderIndex(srcWs, headerRow)
     
     srcWb.Close SaveChanges:=False
     Set srcWb = Nothing

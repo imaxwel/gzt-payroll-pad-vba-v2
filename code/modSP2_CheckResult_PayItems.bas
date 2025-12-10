@@ -149,6 +149,7 @@ Private Sub WritePPTOEAORateCheck(ws As Worksheet, weinIndex As Object)
     Dim wein As String
     Dim row As Long, col As Long
     Dim pptoRate As Double
+    Dim headerRow As Long, keyCol As Long
     
     On Error GoTo ErrHandler
     
@@ -164,16 +165,15 @@ Private Sub WritePPTOEAORateCheck(ws As Worksheet, weinIndex As Object)
     
     If srcWs Is Nothing Then Exit Sub
     
-    ' Build header index
-    Set headers = CreateObject("Scripting.Dictionary")
-    Dim c As Long
-    For c = 1 To srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
-        headers(UCase(Trim(CStr(srcWs.Cells(1, c).Value)))) = c
-    Next c
-    
-    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
-    
-    For i = 2 To lastRow
+    ' Detect header row and build header index
+    headerRow = FindHeaderRowSafe(srcWs, "WEIN,WIN", 1, 50)
+    Set headers = BuildHeaderIndex(srcWs, headerRow)
+
+    keyCol = GetColumnFromHeaders(headers, "WEIN,WIN")
+    If keyCol = 0 Then keyCol = 1
+    lastRow = srcWs.Cells(srcWs.Rows.count, keyCol).End(xlUp).Row
+
+    For i = headerRow + 1 To lastRow
         ' Get WEIN
         wein = GetPPTOCellVal(srcWs, i, headers, "WEIN")
         If wein = "" Then wein = GetPPTOCellVal(srcWs, i, headers, "WIN")

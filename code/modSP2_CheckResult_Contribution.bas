@@ -57,6 +57,7 @@ Private Sub LoadMPFParams()
     Dim headers As Object
     Dim wein As String
     Dim rec As Object
+    Dim headerRow As Long, keyCol As Long
     
     On Error GoTo ErrHandler
     
@@ -71,15 +72,15 @@ Private Sub LoadMPFParams()
     
     If ws Is Nothing Then Exit Sub
     
-    Set headers = CreateObject("Scripting.Dictionary")
-    Dim c As Long
-    For c = 1 To ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
-        headers(UCase(Trim(CStr(ws.Cells(1, c).Value)))) = c
-    Next c
+    ' Detect header row and build header index
+    headerRow = FindHeaderRowSafe(ws, "WEIN,WIN,WEINEmployee ID,EMPLOYEE CODEWIN,EMPLOYEE ID,EMPLOYEEID", 1, 50)
+    Set headers = BuildHeaderIndex(ws, headerRow)
     
-    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
+    keyCol = GetColumnFromHeaders(headers, "WEIN,WIN,WEINEmployee ID,EMPLOYEE CODEWIN,EMPLOYEE ID,EMPLOYEEID")
+    If keyCol = 0 Then keyCol = 1
+    lastRow = ws.Cells(ws.Rows.count, keyCol).End(xlUp).Row
     
-    For i = 2 To lastRow
+    For i = headerRow + 1 To lastRow
         ' Try multiple field name variants for WEIN
         wein = GetCellVal(ws, i, headers, "WEIN")
         If wein = "" Then wein = GetCellVal(ws, i, headers, "WIN")
@@ -271,6 +272,7 @@ Private Sub WriteOptionalMedicalCheck(ws As Worksheet, weinIndex As Object)
     Dim empId As String, wein As String
     Dim row As Long, col As Long
     Dim amount As Double
+    Dim headerRow As Long, keyCol As Long
     
     On Error GoTo ErrHandler
     
@@ -288,16 +290,15 @@ Private Sub WriteOptionalMedicalCheck(ws As Worksheet, weinIndex As Object)
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
     Set srcWs = wb.Worksheets(1)
     
-    ' Build header index
-    Set headers = CreateObject("Scripting.Dictionary")
-    Dim c As Long
-    For c = 1 To srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
-        headers(UCase(Trim(CStr(srcWs.Cells(1, c).Value)))) = c
-    Next c
+    ' Detect header row and build header index
+    headerRow = FindHeaderRowSafe(srcWs, "EMPLOYEE ID,EMPLOYEEID,WEIN", 1, 50)
+    Set headers = BuildHeaderIndex(srcWs, headerRow)
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, 1).End(xlUp).row
+    keyCol = GetColumnFromHeaders(headers, "EMPLOYEE ID,EMPLOYEEID,WEIN")
+    If keyCol = 0 Then keyCol = 1
+    lastRow = srcWs.Cells(srcWs.Rows.count, keyCol).End(xlUp).Row
     
-    For i = 2 To lastRow
+    For i = headerRow + 1 To lastRow
         ' Get Employee ID
         empId = GetContribCellVal(srcWs, i, headers, "EMPLOYEE ID")
         If empId = "" Then empId = GetContribCellVal(srcWs, i, headers, "EMPLOYEEID")
