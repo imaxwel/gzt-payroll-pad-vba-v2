@@ -418,6 +418,7 @@ Private Sub CalculateExtraTableHC(ws As Worksheet, offset As ePeriodOffset)
     Dim lastRow As Long
     Dim extraCount As Long
     Dim targetCol As Long
+    Dim needClose As Boolean
     
     On Error GoTo ErrHandler
     
@@ -437,7 +438,16 @@ Private Sub CalculateExtraTableHC(ws As Worksheet, offset As ePeriodOffset)
         Exit Sub
     End If
     
-    Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
+    ' 检查文件是否已经打开，避免重复打开导致错误
+    needClose = False
+    On Error Resume Next
+    Set wb = Workbooks(Dir(filePath))
+    On Error GoTo ErrHandler
+    
+    If wb Is Nothing Then
+        Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=0)
+        needClose = True
+    End If
     
     ' 检查工作簿是否成功打开
     If wb Is Nothing Then
@@ -451,7 +461,7 @@ Private Sub CalculateExtraTableHC(ws As Worksheet, offset As ePeriodOffset)
     If wb.Worksheets.count = 0 Then
         LogError "modSP2_HCCheck", "CalculateExtraTableHC", 0, _
             "Workbook has no worksheets: " & filePath
-        wb.Close SaveChanges:=False
+        If needClose Then wb.Close SaveChanges:=False
         ws.Cells(14, targetCol).Value = 0
         Exit Sub
     End If
@@ -468,7 +478,7 @@ Private Sub CalculateExtraTableHC(ws As Worksheet, offset As ePeriodOffset)
     If srcWs Is Nothing Then
         LogError "modSP2_HCCheck", "CalculateExtraTableHC", 0, _
             "Failed to get worksheet from: " & filePath
-        wb.Close SaveChanges:=False
+        If needClose Then wb.Close SaveChanges:=False
         ws.Cells(14, targetCol).Value = 0
         Exit Sub
     End If
@@ -477,7 +487,10 @@ Private Sub CalculateExtraTableHC(ws As Worksheet, offset As ePeriodOffset)
     extraCount = lastRow - 1 ' Exclude header
     If extraCount < 0 Then extraCount = 0
     
-    wb.Close SaveChanges:=False
+    ' 只关闭我们自己打开的工作簿
+    If needClose And Not wb Is Nothing Then
+        wb.Close SaveChanges:=False
+    End If
     
     ' Write to Row 14 (Previous Month Terminated HC included)
     ws.Cells(14, targetCol).Value = extraCount
@@ -487,7 +500,7 @@ Private Sub CalculateExtraTableHC(ws As Worksheet, offset As ePeriodOffset)
 ErrHandler:
     LogError "modSP2_HCCheck", "CalculateExtraTableHC", Err.Number, Err.Description
     On Error Resume Next
-    If Not wb Is Nothing Then wb.Close SaveChanges:=False
+    If needClose And Not wb Is Nothing Then wb.Close SaveChanges:=False
     ws.Cells(14, targetCol).Value = 0
 End Sub
 
