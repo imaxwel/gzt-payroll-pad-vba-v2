@@ -281,6 +281,26 @@ Public Function CalcPPTOPayment(wein As String) As Double
 End Function
 
 '------------------------------------------------------------------------------
+' Function: CalcPPTOEAOAdj
+' Purpose: Calculate PPTO EAO Adjustment for older periods
+' Parameters:
+'   wein - WEIN
+'   days - PPTO days from periods before previous month
+' Returns: EAO adjustment amount
+' Formula: (Max(DailySalary, AverageDayWage_12Month * 80%) - DailySalary) * days
+' Note: For PPTO records dated before the previous month,
+'       calculate the difference between PPTO rate and daily salary
+'------------------------------------------------------------------------------
+Public Function CalcPPTOEAOAdj(wein As String, days As Double) As Double
+    Dim rec As Variant
+    Dim pptoRate As Double
+    
+    rec = GetEAORecord(wein)
+    pptoRate = WorksheetFunction.Max(rec(EAO_DAILY_SALARY), rec(EAO_AVG_DAY_WAGE) * 0.8)
+    CalcPPTOEAOAdj = RoundAmount2((pptoRate - rec(EAO_DAILY_SALARY)) * days)
+End Function
+
+'------------------------------------------------------------------------------
 ' Function: CalcUntakenAnnualLeavePayment
 ' Purpose: Calculate Untaken Annual Leave Payment
 ' Parameters:

@@ -421,6 +421,12 @@ End Sub
 '------------------------------------------------------------------------------
 ' Sub: ProcessPPTO
 ' Purpose: Process Paid Parental Time Off records
+' Output columns:
+'   - Days_Paid Parental Time Off (current month)
+'   - Days_Paid Parental Time Off ForDeduction (current month)
+'   - Days_Paid Parental Time Off_LastMonth (previous month)
+'   - Days_Paid Parental Time Off ForDeduction_LastMonth (previous month)
+'   - PPTO EAO Adj_Input (for older periods, written to VariablePay)
 '------------------------------------------------------------------------------
 Private Sub ProcessPPTO(ws As Worksheet, leaveRecords As Collection, empIndex As Object)
     Dim rec As Variant
@@ -449,34 +455,50 @@ Private Sub ProcessPPTO(ws As Worksheet, leaveRecords As Collection, empIndex As
             
             recWein = CStr(rec(LR_WEIN))
             If Not empDays.exists(recWein) Then
-                empDays.Add recWein, Array(0#, 0#)
+                empDays.Add recWein, Array(0#, 0#, 0#)
             End If
             
+            ' Aggregate by employee: arr(0)=currentDays, arr(1)=prevDays, arr(2)=olderDays
             arr = empDays(recWein)
             arr(0) = arr(0) + currentDays
             arr(1) = arr(1) + prevDays
+            arr(2) = arr(2) + olderDays
             empDays(recWein) = arr
             
             recUniqueKey = CStr(rec(LR_UNIQUEKEY))
-            mLeaveHistory.Add recUniqueKey, True
+            If Not mLeaveHistory.exists(recUniqueKey) Then
+                mLeaveHistory.Add recUniqueKey, True
+            End If
         End If
     Next v
     
-    ' Write to sheet
+    ' Write to Attendance sheet
     Dim wein As Variant
     Dim colCurrent As Long, colPrev As Long
+    Dim colDeduction As Long, colDeductionLast As Long
     
     colCurrent = FindColumnByHeader(ws.Rows(1), "Days_Paid Parental Time Off")
-    colPrev = FindColumnByHeader(ws.Rows(1), "Days_PPTO_LastMonth")
+    colPrev = FindColumnByHeader(ws.Rows(1), "Days_Paid Parental Time Off_LastMonth")
+    colDeduction = FindColumnByHeader(ws.Rows(1), "Days_Paid Parental Time Off ForDeduction")
+    colDeductionLast = FindColumnByHeader(ws.Rows(1), "Days_Paid Parental Time Off ForDeduction_LastMonth")
     
     For Each wein In empDays.Keys
         row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
         If row > 0 Then
             arr = empDays(wein)
+            ' Current month days
             If colCurrent > 0 Then ws.Cells(row, colCurrent).Value = RoundAmount2(arr(0))
+            ' Current month deduction (same as current month days per requirement)
+            If colDeduction > 0 Then ws.Cells(row, colDeduction).Value = RoundAmount2(arr(0))
+            ' Previous month days
             If colPrev > 0 Then ws.Cells(row, colPrev).Value = RoundAmount2(arr(1))
+            ' Previous month deduction (same as previous month days per requirement)
+            If colDeductionLast > 0 Then ws.Cells(row, colDeductionLast).Value = RoundAmount2(arr(1))
         End If
     Next wein
+    
+    ' Write PPTO EAO Adj_Input to VariablePay for older periods (before previous month)
+    WritePPTOEAOAdj empDays
     
     LogInfo "modSP1_Attendance", "ProcessPPTO", "Processed " & empDays.count & " employees"
     
@@ -839,4 +861,77 @@ Private Sub WriteNoPayLeaveDeduction(empDays As Object)
     
 ErrHandler:
     LogError "modSP1_Attendance", "WriteNoPayLeaveDeduction", Err.Number, Err.Description
+End Sub
+
+'------------------------------------------------------------------------------
+' Sub: WritePPTOEAOAdj
+' Purpose: Write PPTO EAO Adj_Input to VariablePay for older periods
+' Description: For PPTO records dated before the previous month,
+'              calculate EAO adjustment using formula:
+'              (Max(DailySalary, AverageDayWage_12Month*80%) - DailySalary) * Days_PPTO
+'              and write to VariablePay.PPTO EAO Adj_Input
+'------------------------------------------------------------------------------
+Private Sub WritePPTOEAOAdj(empDays As Object)
+    Dim ws As Worksheet
+    Dim empIndex As Object
+    Dim wein As Variant
+    Dim arr As Variant
+    Dim olderDays As Double
+    Dim eaoAdj As Double
+    Dim col As Long, row As Long
+    
+    On Error GoTo ErrHandler
+    
+    ' Get VariablePay sheet from the flexi output workbook
+    On Error Resume Next
+    Set ws = G.FlexiOutputWb.Worksheets("VariablePay")
+    On Error GoTo ErrHandler
+    
+    If ws Is Nothing Then
+        LogWarning "modSP1_Attendance", "WritePPTOEAOAdj", "VariablePay sheet not found"
+        Exit Sub
+    End If
+    
+    ' Build employee index for VariablePay sheet
+    Set empIndex = BuildEmployeeIndex(ws, "Employee Code,EmployeeCode,Employee Reference,EmployeeNumber,Employee Number")
+    
+    ' Find target column
+    col = FindColumnByHeader(ws.Rows(1), "PPTO EAO Adj_Input")
+    
+    If col = 0 Then
+        ' Try alternative column name
+        col = FindColumnByHeader(ws.Rows(1), "Adjustment of Parental Paid Time Off (PPTO) payment")
+    End If
+    
+    If col = 0 Then
+        LogWarning "modSP1_Attendance", "WritePPTOEAOAdj", "PPTO EAO Adj_Input column not found"
+        Exit Sub
+    End If
+    
+    ' Process each employee with older period days
+    For Each wein In empDays.Keys
+        arr = empDays(wein)
+        olderDays = arr(2)  ' Days from periods before previous month
+        
+        If olderDays > 0 Then
+            ' Calculate PPTO EAO adjustment:
+            ' (Max(DailySalary, AverageDayWage_12Month*80%) - DailySalary) * Days_PPTO
+            eaoAdj = CalcPPTOEAOAdj(CStr(wein), olderDays)
+            
+            If eaoAdj <> 0 Then
+                row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
+                If row > 0 Then
+                    ' Add to existing value (in case there are multiple entries)
+                    ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, eaoAdj)
+                End If
+            End If
+        End If
+    Next wein
+    
+    LogInfo "modSP1_Attendance", "WritePPTOEAOAdj", "Processed PPTO EAO adjustments"
+    
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP1_Attendance", "WritePPTOEAOAdj", Err.Number, Err.Description
 End Sub
