@@ -25,7 +25,6 @@
 │       │   ├── 2025QX Payout Summary.xlsx
 │       │   └── ...
 │       └── Adhoc\
-│           ├── Optional medical plan enrollment form.xlsx
 │           └── Special_Bonus_List_2025.xlsx
 └── Output\
     └── 2025\
@@ -137,8 +136,8 @@ CalculatePayrollHC ws, poPreviousMonth
 | AIPPayouts | AIP Payouts Payroll Report.xlsx | Month |
 | ExtraTable | 额外表.xlsx | Month |
 | AllowancePlan | Allowance plan report.xlsx | Month |
+| OptionalMedical | Optional medical plan enrollment form.xlsx | Month |
 | QXPayout | 2025QX Payout Summary.xlsx | Quarter |
-| OptionalMedical | Optional medical plan enrollment form.xlsx | Adhoc |
 
 ## 跨年处理
 

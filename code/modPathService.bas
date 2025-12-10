@@ -272,13 +272,14 @@ Public Function GetPhysicalFileName(logicalName As String, periodInfo As tPeriod
         Case "ALLOWANCEPLAN"
             fileName = "Allowance plan report.xlsx"
             
+        Case "OPTIONALMEDICAL"
+            fileName = "Optional medical plan enrollment form.xlsx"
+            
         ' === Quarterly files - file name contains quarter info ===
         Case "QXPAYOUT"
             fileName = CStr(periodInfo.Year) & "QX Payout Summary.xlsx"
             
         ' === Adhoc files ===
-        Case "OPTIONALMEDICAL"
-            fileName = "Optional medical plan enrollment form.xlsx"
         Case "SPECIALBONUS"
             fileName = "Special_Bonus_List_" & CStr(periodInfo.Year) & ".xlsx"
             
@@ -303,8 +304,11 @@ Public Function GetFilePeriodType(logicalName As String) As ePeriodType
         Case "QXPAYOUT"
             GetFilePeriodType = ptQuarter
         ' Adhoc files
-        Case "OPTIONALMEDICAL", "SPECIALBONUS"
+        Case "SPECIALBONUS"
             GetFilePeriodType = ptAdhoc
+        ' Monthly files (including Optional Medical which should be in current month folder)
+        Case "OPTIONALMEDICAL"
+            GetFilePeriodType = ptMonth
         ' Default to monthly files
         Case Else
             GetFilePeriodType = ptMonth
