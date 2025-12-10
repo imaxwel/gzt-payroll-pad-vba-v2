@@ -23,6 +23,12 @@ Private Const LR_UNIQUEKEY As Long = 9
 ' Leave history for tracking processed records
 Private mLeaveHistory As Object ' Dictionary of processed leave keys
 
+' Workforce data cache for Last Hire Date lookup
+Private mWorkforceHireDates As Object ' Dictionary of WEIN/EmpId -> Last Hire Date
+
+' Maternity Report excluded records
+Private mMaternityExcludedRecords As Collection ' Collection of excluded leave records
+
 '------------------------------------------------------------------------------
 ' Sub: SP1_PopulateAttendance
 ' Purpose: Main routine to populate Attendance sheet with leave data
@@ -511,6 +517,14 @@ End Sub
 '------------------------------------------------------------------------------
 ' Sub: ProcessMaternityLeave
 ' Purpose: Process Maternity Leave records
+' Output columns:
+'   - Days_MaternityLeave (current month)
+'   - Days_MaternityLeaveForDeduction (current month)
+'   - Days_MaternityLeave_LastMonth (previous month)
+'   - Days_MaternityLeaveForDeduction_LastMonth (previous month)
+'   - Maternity Leave EAO Adj_Input (for older periods, written to VariablePay)
+' Note: Requires 40 weeks service before maternity leave start date
+'       If <40 weeks, record is excluded and written to Maternity Report
 '------------------------------------------------------------------------------
 Private Sub ProcessMaternityLeave(ws As Worksheet, leaveRecords As Collection, empIndex As Object)
     Dim rec As Variant
@@ -518,42 +532,118 @@ Private Sub ProcessMaternityLeave(ws As Worksheet, leaveRecords As Collection, e
     Dim row As Long
     Dim empDays As Object
     Dim recWein As String, recUniqueKey As String
+    Dim currentDays As Double, prevDays As Double, olderDays As Double
+    Dim prevYM As String
+    Dim arr As Variant
+    Dim lastHireDate As Date
+    Dim leaveStartDate As Date
+    Dim weeksOfService As Double
+    Dim excludedCount As Long
     
     On Error GoTo ErrHandler
     
     Set empDays = CreateObject("Scripting.Dictionary")
+    Set mMaternityExcludedRecords = New Collection
+    prevYM = Format(G.Payroll.PrevMonthStart, "YYYYMM")
+    excludedCount = 0
+    
+    ' Ensure Workforce Hire Dates are loaded
+    If mWorkforceHireDates Is Nothing Then
+        LoadWorkforceHireDates
+    End If
     
     For Each v In leaveRecords
         rec = v
         
         If UCase(CStr(rec(LR_LEAVETYPE))) Like "*MATERNITY*" Then
-            ' TODO: Check 40 weeks service requirement
-            
             recWein = CStr(rec(LR_WEIN))
-            If Not empDays.exists(recWein) Then
-                empDays.Add recWein, 0#
+            leaveStartDate = CDate(rec(LR_FROMDATE))
+            
+            ' Check 40 weeks service requirement
+            lastHireDate = GetEmployeeLastHireDate(recWein)
+            
+            If lastHireDate > 0 Then
+                ' Calculate weeks of service before maternity leave start
+                weeksOfService = (leaveStartDate - lastHireDate) / 7
+                
+                If weeksOfService < 40 Then
+                    ' Employee has less than 40 weeks service - exclude from payroll
+                    mMaternityExcludedRecords.Add rec
+                    excludedCount = excludedCount + 1
+                    
+                    ' Mark as processed but don't add to empDays
+                    recUniqueKey = CStr(rec(LR_UNIQUEKEY))
+                    If Not mLeaveHistory.exists(recUniqueKey) Then
+                        mLeaveHistory.Add recUniqueKey, True
+                    End If
+                    
+                    LogInfo "modSP1_Attendance", "ProcessMaternityLeave", _
+                        "Excluded WEIN " & recWein & " - only " & Format(weeksOfService, "0.0") & " weeks service (< 40 weeks required)"
+                    
+                    GoTo NextRecord
+                End If
             End If
-            empDays(recWein) = empDays(recWein) + CDbl(rec(LR_TOTALDAYS))
+            
+            ' Employee has 40+ weeks service - process normally
+            ' Calculate calendar days by month
+            CalcDaysByMonth leaveStartDate, CDate(rec(LR_TODATE)), _
+                            G.Payroll.payrollMonth, prevYM, _
+                            currentDays, prevDays, olderDays
+            
+            ' Aggregate by employee: arr(0)=currentDays, arr(1)=prevDays, arr(2)=olderDays
+            If Not empDays.exists(recWein) Then
+                empDays.Add recWein, Array(0#, 0#, 0#)
+            End If
+            
+            arr = empDays(recWein)
+            arr(0) = arr(0) + currentDays
+            arr(1) = arr(1) + prevDays
+            arr(2) = arr(2) + olderDays
+            empDays(recWein) = arr
             
             recUniqueKey = CStr(rec(LR_UNIQUEKEY))
-            mLeaveHistory.Add recUniqueKey, True
+            If Not mLeaveHistory.exists(recUniqueKey) Then
+                mLeaveHistory.Add recUniqueKey, True
+            End If
         End If
+NextRecord:
     Next v
     
-    ' Write to sheet
+    ' Write to Attendance sheet
     Dim wein As Variant
-    Dim colDays As Long
+    Dim colCurrent As Long, colPrev As Long
+    Dim colDeduction As Long, colDeductionLast As Long
     
-    colDays = FindColumnByHeader(ws.Rows(1), "Days_MaternityLeave")
+    colCurrent = FindColumnByHeader(ws.Rows(1), "Days_MaternityLeave")
+    colPrev = FindColumnByHeader(ws.Rows(1), "Days_MaternityLeave_LastMonth")
+    colDeduction = FindColumnByHeader(ws.Rows(1), "Days_MaternityLeaveForDeduction")
+    colDeductionLast = FindColumnByHeader(ws.Rows(1), "Days_MaternityLeaveForDeduction_LastMonth")
     
     For Each wein In empDays.Keys
         row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
-        If row > 0 And colDays > 0 Then
-            ws.Cells(row, colDays).Value = RoundAmount2(empDays(wein))
+        If row > 0 Then
+            arr = empDays(wein)
+            ' Current month days
+            If colCurrent > 0 Then ws.Cells(row, colCurrent).Value = RoundAmount2(arr(0))
+            ' Current month deduction (same as current month days)
+            If colDeduction > 0 Then ws.Cells(row, colDeduction).Value = RoundAmount2(arr(0))
+            ' Previous month days
+            If colPrev > 0 Then ws.Cells(row, colPrev).Value = RoundAmount2(arr(1))
+            ' Previous month deduction (same as previous month days)
+            If colDeductionLast > 0 Then ws.Cells(row, colDeductionLast).Value = RoundAmount2(arr(1))
         End If
     Next wein
     
-    LogInfo "modSP1_Attendance", "ProcessMaternityLeave", "Processed " & empDays.count & " employees"
+    ' Write Maternity Leave EAO Adj_Input to VariablePay for older periods (before previous month)
+    WriteMaternityLeaveEAOAdj empDays
+    
+    ' Output Maternity Report for excluded records
+    If excludedCount > 0 Then
+        OutputMaternityReport
+    End If
+    
+    LogInfo "modSP1_Attendance", "ProcessMaternityLeave", _
+        "Processed " & empDays.count & " employees, excluded " & excludedCount & " records (< 40 weeks service)"
     
     Exit Sub
     
@@ -564,6 +654,12 @@ End Sub
 '------------------------------------------------------------------------------
 ' Sub: ProcessPaternityLeave
 ' Purpose: Process Paternity Leave records
+' Output columns:
+'   - Days_PaternityLeave (current month)
+'   - Days_PaternityLeaveForDeduction (current month)
+'   - Days_PaternityLeave_LastMonth (previous month)
+'   - Days_PaternityLeaveForDeduction_LastMonth (previous month)
+'   - Paternity Leave EAO Adj_Input (for older periods, written to VariablePay)
 '------------------------------------------------------------------------------
 Private Sub ProcessPaternityLeave(ws As Worksheet, leaveRecords As Collection, empIndex As Object)
     Dim rec As Variant
@@ -571,38 +667,70 @@ Private Sub ProcessPaternityLeave(ws As Worksheet, leaveRecords As Collection, e
     Dim row As Long
     Dim empDays As Object
     Dim recWein As String, recUniqueKey As String
+    Dim currentDays As Double, prevDays As Double, olderDays As Double
+    Dim prevYM As String
+    Dim arr As Variant
     
     On Error GoTo ErrHandler
     
     Set empDays = CreateObject("Scripting.Dictionary")
+    prevYM = Format(G.Payroll.PrevMonthStart, "YYYYMM")
     
     For Each v In leaveRecords
         rec = v
         
         If UCase(CStr(rec(LR_LEAVETYPE))) Like "*PATERNITY*" Then
+            ' Calculate calendar days by month
+            CalcDaysByMonth CDate(rec(LR_FROMDATE)), CDate(rec(LR_TODATE)), _
+                            G.Payroll.payrollMonth, prevYM, _
+                            currentDays, prevDays, olderDays
+            
+            ' Aggregate by employee: arr(0)=currentDays, arr(1)=prevDays, arr(2)=olderDays
             recWein = CStr(rec(LR_WEIN))
             If Not empDays.exists(recWein) Then
-                empDays.Add recWein, 0#
+                empDays.Add recWein, Array(0#, 0#, 0#)
             End If
-            empDays(recWein) = empDays(recWein) + CDbl(rec(LR_TOTALDAYS))
+            
+            arr = empDays(recWein)
+            arr(0) = arr(0) + currentDays
+            arr(1) = arr(1) + prevDays
+            arr(2) = arr(2) + olderDays
+            empDays(recWein) = arr
             
             recUniqueKey = CStr(rec(LR_UNIQUEKEY))
-            mLeaveHistory.Add recUniqueKey, True
+            If Not mLeaveHistory.exists(recUniqueKey) Then
+                mLeaveHistory.Add recUniqueKey, True
+            End If
         End If
     Next v
     
-    ' Write to sheet
+    ' Write to Attendance sheet
     Dim wein As Variant
-    Dim colDays As Long
+    Dim colCurrent As Long, colPrev As Long
+    Dim colDeduction As Long, colDeductionLast As Long
     
-    colDays = FindColumnByHeader(ws.Rows(1), "Days_PaternityLeave")
+    colCurrent = FindColumnByHeader(ws.Rows(1), "Days_PaternityLeave")
+    colPrev = FindColumnByHeader(ws.Rows(1), "Days_PaternityLeave_LastMonth")
+    colDeduction = FindColumnByHeader(ws.Rows(1), "Days_PaternityLeaveForDeduction")
+    colDeductionLast = FindColumnByHeader(ws.Rows(1), "Days_PaternityLeaveForDeduction_LastMonth")
     
     For Each wein In empDays.Keys
         row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
-        If row > 0 And colDays > 0 Then
-            ws.Cells(row, colDays).Value = RoundAmount2(empDays(wein))
+        If row > 0 Then
+            arr = empDays(wein)
+            ' Current month days
+            If colCurrent > 0 Then ws.Cells(row, colCurrent).Value = RoundAmount2(arr(0))
+            ' Current month deduction (same as current month days)
+            If colDeduction > 0 Then ws.Cells(row, colDeduction).Value = RoundAmount2(arr(0))
+            ' Previous month days
+            If colPrev > 0 Then ws.Cells(row, colPrev).Value = RoundAmount2(arr(1))
+            ' Previous month deduction (same as previous month days)
+            If colDeductionLast > 0 Then ws.Cells(row, colDeductionLast).Value = RoundAmount2(arr(1))
         End If
     Next wein
+    
+    ' Write Paternity Leave EAO Adj_Input to VariablePay for older periods (before previous month)
+    WritePaternityLeaveEAOAdj empDays
     
     LogInfo "modSP1_Attendance", "ProcessPaternityLeave", "Processed " & empDays.count & " employees"
     
@@ -934,4 +1062,444 @@ Private Sub WritePPTOEAOAdj(empDays As Object)
     
 ErrHandler:
     LogError "modSP1_Attendance", "WritePPTOEAOAdj", Err.Number, Err.Description
+End Sub
+
+'------------------------------------------------------------------------------
+' Sub: WriteMaternityLeaveEAOAdj
+' Purpose: Write Maternity Leave EAO Adj_Input to VariablePay for older periods
+' Description: For Maternity Leave records dated before the previous month,
+'              calculate EAO adjustment using formula:
+'              (DayWage_Maternity/Paternity/Sick Leave - DailySalary) * Days_MaternityLeave
+'              and write to VariablePay.Maternity Leave EAO Adj_Input
+'------------------------------------------------------------------------------
+Private Sub WriteMaternityLeaveEAOAdj(empDays As Object)
+    Dim ws As Worksheet
+    Dim empIndex As Object
+    Dim wein As Variant
+    Dim arr As Variant
+    Dim olderDays As Double
+    Dim eaoAdj As Double
+    Dim col As Long, row As Long
+    
+    On Error GoTo ErrHandler
+    
+    ' Get VariablePay sheet from the flexi output workbook
+    On Error Resume Next
+    Set ws = G.FlexiOutputWb.Worksheets("VariablePay")
+    On Error GoTo ErrHandler
+    
+    If ws Is Nothing Then
+        LogWarning "modSP1_Attendance", "WriteMaternityLeaveEAOAdj", "VariablePay sheet not found"
+        Exit Sub
+    End If
+    
+    ' Build employee index for VariablePay sheet
+    Set empIndex = BuildEmployeeIndex(ws, "Employee Code,EmployeeCode,Employee Reference,EmployeeNumber,Employee Number")
+    
+    ' Find target column
+    col = FindColumnByHeader(ws.Rows(1), "Maternity Leave EAO Adj_Input")
+    
+    If col = 0 Then
+        LogWarning "modSP1_Attendance", "WriteMaternityLeaveEAOAdj", "Maternity Leave EAO Adj_Input column not found"
+        Exit Sub
+    End If
+    
+    ' Process each employee with older period days
+    For Each wein In empDays.Keys
+        arr = empDays(wein)
+        olderDays = arr(2)  ' Days from periods before previous month
+        
+        If olderDays > 0 Then
+            ' Calculate Maternity Leave EAO adjustment:
+            ' (DayWage_Maternity/Paternity/Sick Leave - DailySalary) * Days_MaternityLeave
+            eaoAdj = CalcMaternityLeaveEAOAdj(CStr(wein), olderDays)
+            
+            If eaoAdj <> 0 Then
+                row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
+                If row > 0 Then
+                    ' Add to existing value (in case there are multiple entries)
+                    ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, eaoAdj)
+                End If
+            End If
+        End If
+    Next wein
+    
+    LogInfo "modSP1_Attendance", "WriteMaternityLeaveEAOAdj", "Processed Maternity Leave EAO adjustments"
+    
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP1_Attendance", "WriteMaternityLeaveEAOAdj", Err.Number, Err.Description
+End Sub
+
+'------------------------------------------------------------------------------
+' Sub: WritePaternityLeaveEAOAdj
+' Purpose: Write Paternity Leave EAO Adj_Input to VariablePay for older periods
+' Description: For Paternity Leave records dated before the previous month,
+'              calculate EAO adjustment using formula:
+'              (DayWage_Maternity/Paternity/Sick Leave - DailySalary) * Days_PaternityLeave
+'              and write to VariablePay.Paternity Leave EAO Adj_Input
+'------------------------------------------------------------------------------
+Private Sub WritePaternityLeaveEAOAdj(empDays As Object)
+    Dim ws As Worksheet
+    Dim empIndex As Object
+    Dim wein As Variant
+    Dim arr As Variant
+    Dim olderDays As Double
+    Dim eaoAdj As Double
+    Dim col As Long, row As Long
+    
+    On Error GoTo ErrHandler
+    
+    ' Get VariablePay sheet from the flexi output workbook
+    On Error Resume Next
+    Set ws = G.FlexiOutputWb.Worksheets("VariablePay")
+    On Error GoTo ErrHandler
+    
+    If ws Is Nothing Then
+        LogWarning "modSP1_Attendance", "WritePaternityLeaveEAOAdj", "VariablePay sheet not found"
+        Exit Sub
+    End If
+    
+    ' Build employee index for VariablePay sheet
+    Set empIndex = BuildEmployeeIndex(ws, "Employee Code,EmployeeCode,Employee Reference,EmployeeNumber,Employee Number")
+    
+    ' Find target column
+    col = FindColumnByHeader(ws.Rows(1), "Paternity Leave EAO Adj_Input")
+    
+    If col = 0 Then
+        ' Try alternative column name
+        col = FindColumnByHeader(ws.Rows(1), "Paternity Leave payment adjustment")
+    End If
+    
+    If col = 0 Then
+        LogWarning "modSP1_Attendance", "WritePaternityLeaveEAOAdj", "Paternity Leave EAO Adj_Input column not found"
+        Exit Sub
+    End If
+    
+    ' Process each employee with older period days
+    For Each wein In empDays.Keys
+        arr = empDays(wein)
+        olderDays = arr(2)  ' Days from periods before previous month
+        
+        If olderDays > 0 Then
+            ' Calculate Paternity Leave EAO adjustment:
+            ' (DayWage_Maternity/Paternity/Sick Leave - DailySalary) * Days_PaternityLeave
+            eaoAdj = CalcPaternityLeaveEAOAdj(CStr(wein), olderDays)
+            
+            If eaoAdj <> 0 Then
+                row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
+                If row > 0 Then
+                    ' Add to existing value (in case there are multiple entries)
+                    ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, eaoAdj)
+                End If
+            End If
+        End If
+    Next wein
+    
+    LogInfo "modSP1_Attendance", "WritePaternityLeaveEAOAdj", "Processed Paternity Leave EAO adjustments"
+    
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP1_Attendance", "WritePaternityLeaveEAOAdj", Err.Number, Err.Description
+End Sub
+
+
+'------------------------------------------------------------------------------
+' Sub: LoadWorkforceHireDates
+' Purpose: Load Last Hire Date from Workforce Detail for 40-week service check
+'------------------------------------------------------------------------------
+Private Sub LoadWorkforceHireDates()
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim filePath As String
+    Dim lastRow As Long, lastCol As Long, i As Long, c As Long
+    Dim headers As Object
+    Dim empId As String, wein As String
+    Dim hireDate As Variant
+    Dim headerRow As Long
+    Dim cellVal As String
+    
+    On Error GoTo ErrHandler
+    
+    Set mWorkforceHireDates = CreateObject("Scripting.Dictionary")
+    
+    filePath = GetInputFilePath("WorkforceDetail")
+    
+    If Dir(filePath) = "" Then
+        LogWarning "modSP1_Attendance", "LoadWorkforceHireDates", _
+            "Workforce Detail file not found: " & filePath
+        Exit Sub
+    End If
+    
+    Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
+    Set ws = wb.Worksheets(1)
+    
+    ' Find header row (search for "Employee ID" in first 50 rows)
+    headerRow = 0
+    For i = 1 To 50
+        For c = 1 To 200
+            On Error Resume Next
+            cellVal = UCase(Trim(CStr(ws.Cells(i, c).Value)))
+            On Error GoTo ErrHandler
+            If cellVal = "EMPLOYEE ID" Or cellVal = "WIN" Or cellVal = "WEIN" Then
+                headerRow = i
+                Exit For
+            End If
+        Next c
+        If headerRow > 0 Then Exit For
+    Next i
+    
+    If headerRow = 0 Then headerRow = 1
+    
+    ' Build header index
+    Set headers = CreateObject("Scripting.Dictionary")
+    lastCol = ws.Cells(headerRow, ws.Columns.count).End(xlToLeft).Column
+    
+    For c = 1 To lastCol
+        cellVal = UCase(Trim(CStr(Nz(ws.Cells(headerRow, c).Value, ""))))
+        If cellVal <> "" And Not headers.exists(cellVal) Then
+            headers(cellVal) = c
+        End If
+    Next c
+    
+    ' Find Employee ID column for determining last row
+    Dim empIdCol As Long
+    empIdCol = 0
+    If headers.exists("EMPLOYEE ID") Then empIdCol = headers("EMPLOYEE ID")
+    If empIdCol = 0 And headers.exists("WIN") Then empIdCol = headers("WIN")
+    If empIdCol = 0 And headers.exists("WEIN") Then empIdCol = headers("WEIN")
+    
+    If empIdCol = 0 Then
+        LogWarning "modSP1_Attendance", "LoadWorkforceHireDates", _
+            "Cannot find Employee ID column in Workforce Detail"
+        wb.Close SaveChanges:=False
+        Exit Sub
+    End If
+    
+    lastRow = ws.Cells(ws.Rows.count, empIdCol).End(xlUp).row
+    
+    ' Load data
+    For i = headerRow + 1 To lastRow
+        ' Get Employee ID / WEIN
+        empId = ""
+        wein = ""
+        
+        If headers.exists("EMPLOYEE ID") Then
+            empId = Trim(CStr(Nz(ws.Cells(i, headers("EMPLOYEE ID")).Value, "")))
+        End If
+        If headers.exists("WIN") Then
+            wein = Trim(CStr(Nz(ws.Cells(i, headers("WIN")).Value, "")))
+        End If
+        If wein = "" And headers.exists("WEIN") Then
+            wein = Trim(CStr(Nz(ws.Cells(i, headers("WEIN")).Value, "")))
+        End If
+        
+        ' Get Last Hire Date
+        hireDate = Empty
+        If headers.exists("LAST HIRE DATE") Then
+            On Error Resume Next
+            hireDate = ws.Cells(i, headers("LAST HIRE DATE")).Value
+            On Error GoTo ErrHandler
+        End If
+        
+        ' Store by both WEIN and Employee ID for flexible lookup
+        If IsDate(hireDate) Then
+            If wein <> "" And Not mWorkforceHireDates.exists(wein) Then
+                mWorkforceHireDates.Add wein, CDate(hireDate)
+            End If
+            If empId <> "" And Not mWorkforceHireDates.exists(empId) Then
+                mWorkforceHireDates.Add empId, CDate(hireDate)
+            End If
+        End If
+    Next i
+    
+    wb.Close SaveChanges:=False
+    
+    LogInfo "modSP1_Attendance", "LoadWorkforceHireDates", _
+        "Loaded " & mWorkforceHireDates.count & " hire date records"
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP1_Attendance", "LoadWorkforceHireDates", Err.Number, Err.Description
+    On Error Resume Next
+    If Not wb Is Nothing Then wb.Close SaveChanges:=False
+End Sub
+
+'------------------------------------------------------------------------------
+' Function: GetEmployeeLastHireDate
+' Purpose: Get Last Hire Date for an employee
+' Parameters:
+'   empIdOrWein - Employee ID or WEIN
+' Returns: Last Hire Date or 0 if not found
+'------------------------------------------------------------------------------
+Private Function GetEmployeeLastHireDate(empIdOrWein As String) As Date
+    Dim empCode As String
+    Dim empId As String
+    
+    GetEmployeeLastHireDate = 0
+    
+    If mWorkforceHireDates Is Nothing Then
+        LoadWorkforceHireDates
+    End If
+    
+    If mWorkforceHireDates Is Nothing Then Exit Function
+    
+    ' Try direct lookup
+    If mWorkforceHireDates.exists(empIdOrWein) Then
+        GetEmployeeLastHireDate = mWorkforceHireDates(empIdOrWein)
+        Exit Function
+    End If
+    
+    ' Try Employee Code -> WEIN mapping
+    empCode = EmpCodeFromWein(empIdOrWein)
+    If empCode <> "" And mWorkforceHireDates.exists(empCode) Then
+        GetEmployeeLastHireDate = mWorkforceHireDates(empCode)
+        Exit Function
+    End If
+    
+    ' Try WEIN -> Employee ID mapping
+    empId = EmpIdFromWein(empIdOrWein)
+    If empId <> "" And mWorkforceHireDates.exists(empId) Then
+        GetEmployeeLastHireDate = mWorkforceHireDates(empId)
+        Exit Function
+    End If
+End Function
+
+'------------------------------------------------------------------------------
+' Sub: OutputMaternityReport
+' Purpose: Output Maternity Report for excluded records (< 40 weeks service)
+' Description: Creates a new workbook with the same header structure as
+'              Employee_Leave_Transactions_Report, containing excluded records
+'------------------------------------------------------------------------------
+Private Sub OutputMaternityReport()
+    Dim srcWb As Workbook
+    Dim srcWs As Worksheet
+    Dim rptWb As Workbook
+    Dim rptWs As Worksheet
+    Dim filePath As String
+    Dim outputPath As String
+    Dim lastCol As Long, c As Long
+    Dim rec As Variant
+    Dim v As Variant
+    Dim rptRow As Long
+    
+    On Error GoTo ErrHandler
+    
+    If mMaternityExcludedRecords Is Nothing Then Exit Sub
+    If mMaternityExcludedRecords.count = 0 Then Exit Sub
+    
+    ' Open source file to get header structure
+    filePath = GetInputFilePath("EmployeeLeave")
+    
+    If Dir(filePath) = "" Then
+        LogWarning "modSP1_Attendance", "OutputMaternityReport", _
+            "Employee Leave file not found, cannot create Maternity Report"
+        Exit Sub
+    End If
+    
+    Set srcWb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
+    Set srcWs = srcWb.Worksheets(1)
+    
+    ' Create new workbook for Maternity Report
+    Set rptWb = Workbooks.Add
+    Set rptWs = rptWb.Worksheets(1)
+    rptWs.Name = "Maternity Report"
+    
+    ' Copy header row
+    lastCol = srcWs.Cells(1, srcWs.Columns.count).End(xlToLeft).Column
+    For c = 1 To lastCol
+        rptWs.Cells(1, c).Value = srcWs.Cells(1, c).Value
+    Next c
+    
+    ' Add additional columns for service info
+    rptWs.Cells(1, lastCol + 1).Value = "Last Hire Date"
+    rptWs.Cells(1, lastCol + 2).Value = "Weeks of Service"
+    rptWs.Cells(1, lastCol + 3).Value = "Exclusion Reason"
+    
+    ' Build header index for source file
+    Dim headers As Object
+    Set headers = CreateObject("Scripting.Dictionary")
+    For c = 1 To lastCol
+        Dim hdrName As String
+        hdrName = UCase(Trim(CStr(Nz(srcWs.Cells(1, c).Value, ""))))
+        If hdrName <> "" And Not headers.exists(hdrName) Then
+            headers(hdrName) = c
+        End If
+    Next c
+    
+    srcWb.Close SaveChanges:=False
+    Set srcWb = Nothing
+    
+    ' Write excluded records
+    rptRow = 2
+    For Each v In mMaternityExcludedRecords
+        rec = v
+        
+        Dim recWein As String
+        Dim lastHireDate As Date
+        Dim leaveStartDate As Date
+        Dim weeksOfService As Double
+        
+        recWein = CStr(rec(LR_WEIN))
+        leaveStartDate = CDate(rec(LR_FROMDATE))
+        lastHireDate = GetEmployeeLastHireDate(recWein)
+        
+        If lastHireDate > 0 Then
+            weeksOfService = (leaveStartDate - lastHireDate) / 7
+        Else
+            weeksOfService = 0
+        End If
+        
+        ' Write record data
+        If headers.exists("WIN") Then rptWs.Cells(rptRow, headers("WIN")).Value = rec(LR_WEIN)
+        If headers.exists("WEIN") Then rptWs.Cells(rptRow, headers("WEIN")).Value = rec(LR_WEIN)
+        If headers.exists("EMPLOYEE CODE") Then rptWs.Cells(rptRow, headers("EMPLOYEE CODE")).Value = rec(LR_EMPCODE)
+        If headers.exists("LEAVE TYPE") Then rptWs.Cells(rptRow, headers("LEAVE TYPE")).Value = rec(LR_LEAVETYPE)
+        If headers.exists("FROM_DATE") Then rptWs.Cells(rptRow, headers("FROM_DATE")).Value = rec(LR_FROMDATE)
+        If headers.exists("TO_DATE") Then rptWs.Cells(rptRow, headers("TO_DATE")).Value = rec(LR_TODATE)
+        If headers.exists("APPLY_DATE") Then rptWs.Cells(rptRow, headers("APPLY_DATE")).Value = rec(LR_APPLYDATE)
+        If headers.exists("APPROVAL_DATE") Then rptWs.Cells(rptRow, headers("APPROVAL_DATE")).Value = rec(LR_APPROVALDATE)
+        If headers.exists("STATUS") Then rptWs.Cells(rptRow, headers("STATUS")).Value = rec(LR_STATUS)
+        If headers.exists("TOTAL_DAYS") Then rptWs.Cells(rptRow, headers("TOTAL_DAYS")).Value = rec(LR_TOTALDAYS)
+        
+        ' Write additional service info
+        rptWs.Cells(rptRow, lastCol + 1).Value = lastHireDate
+        rptWs.Cells(rptRow, lastCol + 2).Value = Round(weeksOfService, 1)
+        rptWs.Cells(rptRow, lastCol + 3).Value = "Less than 40 weeks service before maternity leave"
+        
+        rptRow = rptRow + 1
+    Next v
+    
+    ' Format and save
+    rptWs.Columns.AutoFit
+    
+    ' Build output path
+    outputPath = G.RunParams.OutputFolder
+    If Right(outputPath, 1) <> "\" Then outputPath = outputPath & "\"
+    outputPath = outputPath & "Maternity Report_" & Format(G.Payroll.payrollMonth, "YYYYMM") & ".xlsx"
+    
+    ' Save workbook
+    On Error Resume Next
+    rptWb.SaveAs outputPath, xlOpenXMLWorkbook
+    If Err.Number <> 0 Then
+        LogError "modSP1_Attendance", "OutputMaternityReport", Err.Number, _
+            "Failed to save Maternity Report: " & Err.Description
+        Err.Clear
+    Else
+        LogInfo "modSP1_Attendance", "OutputMaternityReport", _
+            "Maternity Report saved: " & outputPath & " (" & (rptRow - 2) & " records)"
+    End If
+    On Error GoTo ErrHandler
+    
+    rptWb.Close SaveChanges:=False
+    
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP1_Attendance", "OutputMaternityReport", Err.Number, Err.Description
+    On Error Resume Next
+    If Not srcWb Is Nothing Then srcWb.Close SaveChanges:=False
+    If Not rptWb Is Nothing Then rptWb.Close SaveChanges:=False
 End Sub

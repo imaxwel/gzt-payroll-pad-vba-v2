@@ -235,6 +235,42 @@ Public Function CalcMaternityLeavePayment(wein As String) As Double
 End Function
 
 '------------------------------------------------------------------------------
+' Function: CalcMaternityLeaveEAOAdj
+' Purpose: Calculate Maternity Leave EAO Adjustment for older periods
+' Parameters:
+'   wein - WEIN
+'   days - Maternity leave days from periods before previous month
+' Returns: EAO adjustment amount
+' Formula: (DayWage_Maternity/Paternity/Sick Leave - DailySalary) * days
+' Note: For Maternity Leave records dated before the previous month,
+'       calculate the difference between maternity day wage and daily salary
+'------------------------------------------------------------------------------
+Public Function CalcMaternityLeaveEAOAdj(wein As String, days As Double) As Double
+    Dim rec As Variant
+    
+    rec = GetEAORecord(wein)
+    CalcMaternityLeaveEAOAdj = RoundAmount2((rec(EAO_DAY_WAGE_MAT) - rec(EAO_DAILY_SALARY)) * days)
+End Function
+
+'------------------------------------------------------------------------------
+' Function: CalcPaternityLeaveEAOAdj
+' Purpose: Calculate Paternity Leave EAO Adjustment for older periods
+' Parameters:
+'   wein - WEIN
+'   days - Paternity leave days from periods before previous month
+' Returns: EAO adjustment amount
+' Formula: (DayWage_Maternity/Paternity/Sick Leave - DailySalary) * days
+' Note: For Paternity Leave records dated before the previous month,
+'       calculate the difference between paternity day wage and daily salary
+'------------------------------------------------------------------------------
+Public Function CalcPaternityLeaveEAOAdj(wein As String, days As Double) As Double
+    Dim rec As Variant
+    
+    rec = GetEAORecord(wein)
+    CalcPaternityLeaveEAOAdj = RoundAmount2((rec(EAO_DAY_WAGE_MAT) - rec(EAO_DAILY_SALARY)) * days)
+End Function
+
+'------------------------------------------------------------------------------
 ' Function: CalcPaternityLeavePayment
 ' Purpose: Calculate Paternity Leave Payment
 ' Parameters:
