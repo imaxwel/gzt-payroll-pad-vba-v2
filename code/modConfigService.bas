@@ -306,7 +306,7 @@ Public Function GetInputFilePath(logicalName As String) As String
         Case "WORKFORCEDETAIL"
             fileName = "Workforce Detail - Payroll-AP.xlsx"
         Case "MERCKPAYROLL"
-            fileName = "Merck Payroll Summary Report����xxx.xlsx"
+            fileName = "Merck Payroll Summary Report--xxx.xlsx"
         Case "SIPQIP"
             fileName = "SIP QIP.xlsx"
         Case "FLEXCLAIM"

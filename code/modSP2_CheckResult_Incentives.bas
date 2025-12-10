@@ -29,7 +29,7 @@ Public Sub SP2_Check_Incentives(valWb As Workbook, weinIndex As Object)
     ' Load and process RSU Dividend
     ProcessRSUCheck ws, weinIndex
     
-    ' Load and process Special Bonuses from ¶îÍâ±í
+    ' Load and process Special Bonuses from ï¿½ï¿½ï¿½ï¿½ï¿½
     ProcessSpecialBonusCheck ws, weinIndex
     
     ' Load and process IA Pay Split from Merck Payroll Summary
@@ -494,7 +494,7 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Sub: ProcessSpecialBonusCheck
-' Purpose: Process special bonuses from ¶îÍâ±í.[ÌØÊâ½±½ð] for Check columns
+' Purpose: Process special bonuses from ï¿½ï¿½ï¿½ï¿½ï¿½.[ï¿½ï¿½ï¿½â½±ï¿½ï¿½] for Check columns
 '------------------------------------------------------------------------------
 Private Sub ProcessSpecialBonusCheck(ws As Worksheet, weinIndex As Object)
     Dim wb As Workbook
@@ -510,7 +510,7 @@ Private Sub ProcessSpecialBonusCheck(ws As Worksheet, weinIndex As Object)
     If wb Is Nothing Then Exit Sub
     
     On Error Resume Next
-    Set srcWs = wb.Worksheets("ÌØÊâ½±½ð")
+    Set srcWs = wb.Worksheets("ï¿½ï¿½ï¿½â½±ï¿½ï¿½")
     On Error GoTo ErrHandler
     
     If srcWs Is Nothing Then Exit Sub
@@ -583,7 +583,7 @@ End Function
 ' Sub: ProcessIAPaySplitCheck
 ' Purpose: Process IA Pay Split Check from Merck Payroll Summary Report
 ' Formula: IA Pay Split = Net Pay (include EAO & leave payment) + MPF EE MC + MPF EE VC
-' Note: Each employee has a separate sheet named "Merck Payroll Summary Report¡ª¡ªxxx"
+' Note: Each employee has a separate sheet named "Merck Payroll Summary Report--xxx"
 '       where xxx is the Employee ID
 '------------------------------------------------------------------------------
 Private Sub ProcessIAPaySplitCheck(ws As Worksheet, weinIndex As Object)
@@ -618,7 +618,7 @@ Private Sub ProcessIAPaySplitCheck(ws As Worksheet, weinIndex As Object)
     For Each srcWs In wb.Worksheets
         sheetName = srcWs.Name
         
-        ' Check if sheet name matches pattern "Merck Payroll Summary Report¡ª¡ªxxx"
+        ' Check if sheet name matches pattern "Merck Payroll Summary Report--xxx"
         empIdFromSheet = ExtractEmpIdFromSheetName(sheetName)
         If empIdFromSheet = "" Then GoTo NextSheet
         
@@ -666,7 +666,7 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Function: ExtractEmpIdFromSheetName
-' Purpose: Extract Employee ID from sheet name pattern "Merck Payroll Summary Report¡ª¡ªxxx"
+' Purpose: Extract Employee ID from sheet name pattern "Merck Payroll Summary Report--xxx"
 ' Returns: Employee ID string or empty string if pattern not matched
 '------------------------------------------------------------------------------
 Private Function ExtractEmpIdFromSheetName(sheetName As String) As String
@@ -674,8 +674,8 @@ Private Function ExtractEmpIdFromSheetName(sheetName As String) As String
     
     ExtractEmpIdFromSheetName = ""
     
-    ' Look for the separator "¡ª¡ª" (Chinese em dash) or "--" (double hyphen)
-    pos = InStr(sheetName, "¡ª¡ª")
+    ' Look for the separator "ï¿½ï¿½ï¿½ï¿½" (Chinese em dash) or "--" (double hyphen)
+    pos = InStr(sheetName, "ï¿½ï¿½ï¿½ï¿½")
     If pos > 0 Then
         ExtractEmpIdFromSheetName = Trim(Mid(sheetName, pos + 2))
         Exit Function
@@ -687,8 +687,8 @@ Private Function ExtractEmpIdFromSheetName(sheetName As String) As String
         Exit Function
     End If
     
-    ' Also try single em dash "¡ª"
-    pos = InStr(sheetName, "¡ª")
+    ' Also try single em dash "ï¿½ï¿½"
+    pos = InStr(sheetName, "ï¿½ï¿½")
     If pos > 0 Then
         ExtractEmpIdFromSheetName = Trim(Mid(sheetName, pos + 1))
         Exit Function

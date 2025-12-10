@@ -12,7 +12,7 @@
 
 Per the PDD, Subprocess 2: 
 
-* Reads multiple input tables (current & previous Payroll Report, Workforce Detail – Payroll‑AP, flexiform NewHire & Termination, Employee_Leave_Transactions_Report, EAO Summary Report_YYYYMM, Allowance plan report, 2025QX Payout Summary, Inspire Awards payroll report, RSU Dividend reports, One time payment report, Merck Payroll Summary Report——xxx, Optional medical plan enrollment form, 额外表, etc.).
+* Reads multiple input tables (current & previous Payroll Report, Workforce Detail – Payroll‑AP, flexiform NewHire & Termination, Employee_Leave_Transactions_Report, EAO Summary Report_YYYYMM, Allowance plan report, 2025QX Payout Summary, Inspire Awards payroll report, RSU Dividend reports, One time payment report, Merck Payroll Summary Report--xxx, Optional medical plan enrollment form, 额外表, etc.).
 * Creates **`HK Payroll Validation Output YYYYMMDD.xlsx`** with:
 
   * **`Check Result`** sheet:

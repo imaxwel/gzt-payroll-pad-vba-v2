@@ -198,7 +198,7 @@ LogFolder    C:\HK_Payroll\log\
 | Employee_Leave_Transactions_Report.xlsx | 请假记录 |
 | EAO Summary Report_YYYYMM.xlsx | EAO 汇总 |
 | Workforce Detail - Payroll-AP.xlsx | 员工详情 |
-| Merck Payroll Summary Report——xxx.xlsx | 薪资汇总 |
+| Merck Payroll Summary Report--xxx.xlsx | 薪资汇总 |
 | SIP QIP.xlsx | 销售激励 |
 | MSD HK Flex_Claim_Summary_Report.xlsx | 弹性福利 |
 | RSU Dividend global report.xlsx | RSU 股息(全球) |

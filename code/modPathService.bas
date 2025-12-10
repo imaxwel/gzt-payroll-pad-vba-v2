@@ -254,7 +254,7 @@ Public Function GetPhysicalFileName(logicalName As String, periodInfo As tPeriod
         Case "EAOSUMMARY"
             fileName = "EAO Summary Report_YYYYMM.xlsx"
         Case "MERCKPAYROLL"
-            fileName = "Merck Payroll Summary Report����xxx.xlsx"
+            fileName = "Merck Payroll Summary Report--xxx.xlsx"
         Case "SIPQIP"
             fileName = "SIP QIP.xlsx"
         Case "FLEXCLAIM"

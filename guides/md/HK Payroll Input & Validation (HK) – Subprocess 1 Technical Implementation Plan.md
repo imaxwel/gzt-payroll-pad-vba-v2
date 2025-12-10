@@ -647,7 +647,7 @@ Use results from `mLeaveServices`:
 
 All formulas & rates taken from `EAO Summary Report_YYYYMM` and config.
 
-#### 6.5.4 Merck Payroll Summary Report——xxx
+#### 6.5.4 Merck Payroll Summary Report--xxx
 
 * For each employee’s report:
 

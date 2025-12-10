@@ -127,7 +127,7 @@ CalculatePayrollHC ws, poPreviousMonth
 | OneTimePayment | One time payment report.xlsx | Month |
 | InspireAwards | Inspire Awards payroll report.xlsx | Month |
 | EAOSummary | EAO Summary Report_YYYYMM.xlsx | Month |
-| MerckPayroll | Merck Payroll Summary Report——xxx.xlsx | Month |
+| MerckPayroll | Merck Payroll Summary Report--xxx.xlsx | Month |
 | SIPQIP | SIP QIP.xlsx | Month |
 | FlexClaim | MSD HK Flex_Claim_Summary_Report.xlsx | Month |
 | RSUGlobal | RSU Dividend global report.xlsx | Month |
