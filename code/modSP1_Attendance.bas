@@ -135,12 +135,41 @@ Private Function LoadLeaveTransactions() As Collection
             rec(LR_STATUS) = recStatus
             
             ' Parse dates
+            Dim fromDateVal As Variant, toDateVal As Variant
+            Dim applyDateVal As Variant, approvalDateVal As Variant
+            
+            fromDateVal = GetCellValue(ws, i, headers, "FROM_DATE")
+            toDateVal = GetCellValue(ws, i, headers, "TO_DATE")
+            applyDateVal = GetCellValue(ws, i, headers, "APPLY_DATE")
+            approvalDateVal = GetCellValue(ws, i, headers, "APPROVAL_DATE")
+            
+            ' Skip records with missing required dates (FROM_DATE and TO_DATE are mandatory)
+            If IsEmpty(fromDateVal) Or IsNull(fromDateVal) Or Trim(CStr(fromDateVal)) = "" Then
+                GoTo NextRow
+            End If
+            If IsEmpty(toDateVal) Or IsNull(toDateVal) Or Trim(CStr(toDateVal)) = "" Then
+                GoTo NextRow
+            End If
+            
             On Error Resume Next
-            rec(LR_FROMDATE) = CDate(GetCellValue(ws, i, headers, "FROM_DATE"))
-            rec(LR_TODATE) = CDate(GetCellValue(ws, i, headers, "TO_DATE"))
-            rec(LR_APPLYDATE) = CDate(GetCellValue(ws, i, headers, "APPLY_DATE"))
-            rec(LR_APPROVALDATE) = CDate(GetCellValue(ws, i, headers, "APPROVAL_DATE"))
+            rec(LR_FROMDATE) = CDate(fromDateVal)
+            rec(LR_TODATE) = CDate(toDateVal)
+            If Not IsEmpty(applyDateVal) And Not IsNull(applyDateVal) And Trim(CStr(applyDateVal)) <> "" Then
+                rec(LR_APPLYDATE) = CDate(applyDateVal)
+            Else
+                rec(LR_APPLYDATE) = #1/1/1900#
+            End If
+            If Not IsEmpty(approvalDateVal) And Not IsNull(approvalDateVal) And Trim(CStr(approvalDateVal)) <> "" Then
+                rec(LR_APPROVALDATE) = CDate(approvalDateVal)
+            Else
+                rec(LR_APPROVALDATE) = #1/1/1900#
+            End If
             On Error GoTo ErrHandler
+            
+            ' Validate dates were parsed successfully
+            If rec(LR_FROMDATE) = 0 Or rec(LR_TODATE) = 0 Then
+                GoTo NextRow
+            End If
             
             rec(LR_TOTALDAYS) = ToDouble(GetCellValue(ws, i, headers, "TOTAL_DAYS"))
             
@@ -154,6 +183,7 @@ Private Function LoadLeaveTransactions() As Collection
             If Not mLeaveHistory.exists(uniqueKey) Then
                 col.Add rec
             End If
+NextRow:
         End If
     Next i
     
