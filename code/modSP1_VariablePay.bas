@@ -527,7 +527,16 @@ Private Sub ProcessFlexClaim(ws As Worksheet, empIndex As Object)
     If Dir(filePath) = "" Then Exit Sub
     
     Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
-    Set srcWs = wb.Worksheets(1)
+    
+    ' Try to get "Flex Claim Summary" sheet by name, fallback to first sheet
+    On Error Resume Next
+    Set srcWs = wb.Worksheets("Flex Claim Summary")
+    On Error GoTo ErrHandler
+    If srcWs Is Nothing Then
+        Set srcWs = wb.Worksheets(1)
+        LogWarning "modSP1_VariablePay", "ProcessFlexClaim", _
+            "Sheet 'Flex Claim Summary' not found, using first sheet"
+    End If
     
     ' Try multiple field name variants for Employee Number ID
     empNumCol = FindColumnByHeader(srcWs.Rows(1), "Employee Number ID,EmployeeNumber,Employee Number,Employee ID,EmployeeID")
