@@ -8,6 +8,8 @@ Option Explicit
 
 ' MPF/ORSO parameters from 额外表
 Private mMPFParams As Object
+' Goods & Services Differential from 额外表[特殊奖金]
+Private mGoodsServicesDiff As Object
 
 '------------------------------------------------------------------------------
 ' Sub: SP2_Check_Contribution
@@ -22,6 +24,8 @@ Public Sub SP2_Check_Contribution(valWb As Workbook, weinIndex As Object)
     
     ' Load MPF/ORSO parameters
     LoadMPFParams
+    ' Load Goods & Services Differential from 额外表
+    LoadGoodsServicesDiff
     
     ' Process each WEIN
     Dim wein As Variant
@@ -112,6 +116,62 @@ ErrHandler:
 End Sub
 
 '------------------------------------------------------------------------------
+' Sub: LoadGoodsServicesDiff
+' Purpose: Load Goods & Services Differential from 额外表[特殊奖金]
+'------------------------------------------------------------------------------
+Private Sub LoadGoodsServicesDiff()
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim headers As Object
+    Dim headerRow As Long, lastRow As Long, i As Long
+    Dim keyCol As Long
+    Dim wein As String
+    Dim amt As Double
+    
+    On Error GoTo ErrHandler
+    
+    Set mGoodsServicesDiff = CreateObject("Scripting.Dictionary")
+    
+    Set wb = OpenExtraTableWorkbook()
+    If wb Is Nothing Then Exit Sub
+    
+    On Error Resume Next
+    Set ws = wb.Worksheets("特殊奖金")
+    On Error GoTo ErrHandler
+    
+    If ws Is Nothing Then Exit Sub
+    
+    headerRow = FindHeaderRowSafe(ws, "WEIN,WIN,WEINEmployee ID,EMPLOYEE CODEWIN,EMPLOYEE ID,EMPLOYEEID", 1, 50)
+    Set headers = BuildHeaderIndex(ws, headerRow)
+    
+    keyCol = GetColumnFromHeaders(headers, "WEIN,WIN,WEINEmployee ID,EMPLOYEE CODEWIN,EMPLOYEE ID,EMPLOYEEID")
+    If keyCol = 0 Then keyCol = 1
+    lastRow = ws.Cells(ws.Rows.count, keyCol).End(xlUp).row
+    
+    For i = headerRow + 1 To lastRow
+        wein = GetCellVal(ws, i, headers, "WEIN")
+        If wein = "" Then wein = GetCellVal(ws, i, headers, "WIN")
+        If wein = "" Then wein = GetCellVal(ws, i, headers, "WEINEMPLOYEE ID")
+        If wein = "" Then wein = GetCellVal(ws, i, headers, "EMPLOYEE CODEWIN")
+        If wein = "" Then wein = GetCellVal(ws, i, headers, "EMPLOYEE ID")
+        If wein = "" Then wein = GetCellVal(ws, i, headers, "EMPLOYEEID")
+        
+        If wein <> "" Then
+            amt = ToDouble(GetCellVal(ws, i, headers, "Goods & Services Differential"))
+            If Not mGoodsServicesDiff.exists(wein) Then
+                mGoodsServicesDiff.Add wein, amt
+            Else
+                mGoodsServicesDiff(wein) = amt
+            End If
+        End If
+    Next i
+    
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP2_CheckResult_Contribution", "LoadGoodsServicesDiff", Err.Number, Err.Description
+End Sub
+'------------------------------------------------------------------------------
 ' Sub: WriteMPFChecks
 ' Purpose: Write MPF Check columns
 '------------------------------------------------------------------------------
@@ -124,19 +184,9 @@ Private Sub WriteMPFChecks(ws As Worksheet, row As Long, wein As String)
     
     On Error Resume Next
     
-    ' Get MPF Relevant Income from Check Result (already calculated)
-    Dim colRI As Long
-    colRI = GetCheckColIndex("MPF Relevant Income")
-    If colRI > 0 Then
-        mpfRI = ToDouble(ws.Cells(row, colRI).value)
-    End If
-    
-    ' Get MPF VC Relevant Income
-    Dim colVCRI As Long
-    colVCRI = GetCheckColIndex("MPF VC Relevant Income")
-    If colVCRI > 0 Then
-        mpfVCRI = ToDouble(ws.Cells(row, colVCRI).value)
-    End If
+    ' Compute and write MPF Relevant Income (and VC) Check
+    mpfRI = ComputeAndWriteMPFRelevantIncome(ws, row, wein)
+    mpfVCRI = mpfRI
     
     ' Get percentages from params
     If mMPFParams.exists(wein) Then
@@ -185,6 +235,111 @@ Private Sub WriteMPFChecks(ws As Worksheet, row As Long, wein As String)
         ws.Cells(row, col).value = RoundAmount2(mpfERVC)
     End If
 End Sub
+
+'------------------------------------------------------------------------------
+' Helper: Compute and write MPF Relevant Income Check (and VC Relevant Income)
+'------------------------------------------------------------------------------
+Private Function ComputeAndWriteMPFRelevantIncome(ws As Worksheet, row As Long, wein As String) As Double
+    Const HEADER_ROW As Long = 4
+    
+    Dim total As Double
+    Dim goodsVal As Double
+    Dim col As Long
+    
+    ' Goods & Services Differential: prefer 额外表 value, fallback to Payroll Report
+    goodsVal = GetGoodsServicesVal(wein)
+    If goodsVal = 0 Then
+        goodsVal = GetBenchmarkVal(ws, row, HEADER_ROW, "Goods & Services Differential,Goods & Services Differential 60601000")
+    End If
+    total = total + goodsVal
+    
+    ' Variance / incentive pay items
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Gratuity Bonus 60208000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Lump Sum Bonus 60409960")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Sign On Bonus 60409960")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Retention Bonus 60409960")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Referral Bonus 69001000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Annual Incentive 60201000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Sales Incentive (Quantitative)   21201000,Sales Incentive (Quantitative) 21201000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Sales Incentive (Qualitative) 21201000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "AP President Club 60208000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Manager of the Year Award 60208000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "MD Award 60208000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Employee Award 60208000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Inspire Points (Gross Up) 60701000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Inspire Cash 60702000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Year End Bonus 60208000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Shares Dividend 60204001")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Red Packet 69001000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Other Allowance 60409960")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Other Bonus 99999999")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Other Rewards 99999999")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Education Benefits 99999999")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Pensions 99999999")
+    
+    ' Attendance-related pay
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Maternity Leave Payment 60001000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Paternity Leave Payment 60001000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Sick Leave Payment 60001000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Salary Adj 60001000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Salary Adj (Temp) 60101000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Transport Allowance Adj 60409960")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Housing Allowance Adj 60409960")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Rental Reimbursement Adj 60001000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Total EAO Adj 60409960")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "No Pay Leave Deduction 60001000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Overtime Payment 99999999")
+    
+    ' Fixed pay
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Base Pay 60001000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Base Pay(Temp) 60101000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Housing Allowance 60409960")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Transport Allowance 60409960")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Rental Reimbursement 60001000")
+    
+    ' Termination-related pay
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Payroll_HK_UntakenAnnualLeavePayment,Untaken Annual Leave Payment 60409960")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Payroll_HK_OvertakenAnnualLeaveDeduct,Overtaken Annual Leave Deduct 60001000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Payroll_HK_BackPay,Back Pay 99999999")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Payroll_HK_Gratuities,Gratuities 99999999")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Payroll_HK_TerminationPayment,Termination Payment 99999999")
+    
+    ComputeAndWriteMPFRelevantIncome = RoundAmount2(total)
+    
+    ' Write Check columns
+    col = GetCheckColIndex("MPF Relevant Income")
+    If col > 0 Then ws.Cells(row, col).value = ComputeAndWriteMPFRelevantIncome
+    
+    col = GetCheckColIndex("MPF VC Relevant Income")
+    If col > 0 Then ws.Cells(row, col).value = ComputeAndWriteMPFRelevantIncome
+End Function
+
+'------------------------------------------------------------------------------
+' Helper: Get benchmark value from Payroll Report row by header (comma variants)
+'------------------------------------------------------------------------------
+Private Function GetBenchmarkVal(ws As Worksheet, row As Long, headerRow As Long, headerVariants As String) As Double
+    Dim col As Long
+    col = FindColumnByHeader(ws.Rows(headerRow), headerVariants)
+    If col > 0 Then
+        GetBenchmarkVal = ToDouble(ws.Cells(row, col).value)
+    Else
+        GetBenchmarkVal = 0
+    End If
+End Function
+
+'------------------------------------------------------------------------------
+' Helper: Get Goods & Services Differential value for a WEIN from 额外表
+'------------------------------------------------------------------------------
+Private Function GetGoodsServicesVal(wein As String) As Double
+    On Error Resume Next
+    If Not mGoodsServicesDiff Is Nothing Then
+        If mGoodsServicesDiff.exists(wein) Then
+            GetGoodsServicesVal = mGoodsServicesDiff(wein)
+        Else
+            GetGoodsServicesVal = 0
+        End If
+    End If
+End Function
 
 '------------------------------------------------------------------------------
 ' Sub: WriteORSOChecks
