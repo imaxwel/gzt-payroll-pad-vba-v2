@@ -64,9 +64,9 @@ Public Function GroupByEmployeeAndType( _
     lastRow = ws.Cells(ws.Rows.count, empCol).End(xlUp).row
     
     For i = headerRowNum + 1 To lastRow
-        empId = Trim(CStr(Nz(ws.Cells(i, empCol).Value, "")))
-        typeVal = Trim(CStr(Nz(ws.Cells(i, typeCol).Value, "")))
-        amt = ToDouble(ws.Cells(i, amtCol).Value)
+        empId = Trim(CStr(Nz(ws.Cells(i, empCol).value, "")))
+        typeVal = Trim(CStr(Nz(ws.Cells(i, typeCol).value, "")))
+        amt = ToDouble(ws.Cells(i, amtCol).value)
         
         If empId <> "" Then
             key = empId & "|" & typeVal
@@ -146,8 +146,8 @@ Public Function SumPerEmployee( _
     lastRow = ws.Cells(ws.Rows.count, empCol).End(xlUp).row
     
     For i = headerRowNum + 1 To lastRow
-        empId = Trim(CStr(Nz(ws.Cells(i, empCol).Value, "")))
-        amt = ToDouble(ws.Cells(i, amtCol).Value)
+        empId = Trim(CStr(Nz(ws.Cells(i, empCol).value, "")))
+        amt = ToDouble(ws.Cells(i, amtCol).value)
         
         If empId <> "" Then
             If dict.exists(empId) Then
@@ -233,7 +233,7 @@ Public Function GroupByEmployeeAndTypeFiltered( _
     lastRow = ws.Cells(ws.Rows.count, empCol).End(xlUp).row
     
     For i = headerRowNum + 1 To lastRow
-        filterVal = UCase(Trim(CStr(Nz(ws.Cells(i, filterCol).Value, ""))))
+        filterVal = UCase(Trim(CStr(Nz(ws.Cells(i, filterCol).value, ""))))
         
         ' Check if row should be included
         includeRow = False
@@ -249,9 +249,9 @@ Public Function GroupByEmployeeAndTypeFiltered( _
         End If
         
         If includeRow Then
-            empId = Trim(CStr(Nz(ws.Cells(i, empCol).Value, "")))
-            typeVal = Trim(CStr(Nz(ws.Cells(i, typeCol).Value, "")))
-            amt = ToDouble(ws.Cells(i, amtCol).Value)
+            empId = Trim(CStr(Nz(ws.Cells(i, empCol).value, "")))
+            typeVal = Trim(CStr(Nz(ws.Cells(i, typeCol).value, "")))
+            amt = ToDouble(ws.Cells(i, amtCol).value)
             
             If empId <> "" Then
                 key = empId & "|" & typeVal
@@ -364,9 +364,9 @@ Public Function GroupByEmployeeAndTypeWithDateFilter( _
     lastRow = ws.Cells(ws.Rows.count, empCol).End(xlUp).row
     
     For i = headerRowNum + 1 To lastRow
-        empId = Trim(CStr(Nz(ws.Cells(i, empCol).Value, "")))
-        typeVal = Trim(CStr(Nz(ws.Cells(i, typeCol).Value, "")))
-        amt = ToDouble(ws.Cells(i, amtCol).Value)
+        empId = Trim(CStr(Nz(ws.Cells(i, empCol).value, "")))
+        typeVal = Trim(CStr(Nz(ws.Cells(i, typeCol).value, "")))
+        amt = ToDouble(ws.Cells(i, amtCol).value)
         
         If empId = "" Then GoTo NextRow
         
@@ -394,11 +394,11 @@ Public Function GroupByEmployeeAndTypeWithDateFilter( _
             On Error Resume Next
             completedOn = 0
             scheduledPayDate = 0
-            If IsDate(ws.Cells(i, completedOnCol).Value) Then
-                completedOn = CDate(ws.Cells(i, completedOnCol).Value)
+            If IsDate(ws.Cells(i, completedOnCol).value) Then
+                completedOn = CDate(ws.Cells(i, completedOnCol).value)
             End If
-            If IsDate(ws.Cells(i, scheduledPayCol).Value) Then
-                scheduledPayDate = CDate(ws.Cells(i, scheduledPayCol).Value)
+            If IsDate(ws.Cells(i, scheduledPayCol).value) Then
+                scheduledPayDate = CDate(ws.Cells(i, scheduledPayCol).value)
             End If
             On Error GoTo ErrHandler
             
@@ -460,7 +460,7 @@ Public Function FindColumnByHeader(headerRow As Range, headerName As String) As 
     variants = Split(headerName, ",")
     
     For i = 1 To headerRow.Columns.count
-        cellValue = UCase(Trim(CStr(Nz(headerRow.Cells(1, i).Value, ""))))
+        cellValue = UCase(Trim(CStr(Nz(headerRow.Cells(1, i).value, ""))))
         
         For v = LBound(variants) To UBound(variants)
             searchName = UCase(Trim(variants(v)))
@@ -505,7 +505,7 @@ Public Function FindHeaderRow(ws As Worksheet, keyword As String, Optional maxRo
     ' Search each row
     For i = 1 To maxRows
         For j = 1 To lastCol
-            cellValue = UCase(Trim(CStr(Nz(ws.Cells(i, j).Value, ""))))
+            cellValue = UCase(Trim(CStr(Nz(ws.Cells(i, j).value, ""))))
             
             For v = LBound(variants) To UBound(variants)
                 searchName = UCase(Trim(variants(v)))
@@ -551,7 +551,7 @@ Public Function BuildHeaderIndex(ws As Worksheet, headerRow As Long) As Object
     End If
     
     For c = 1 To lastCol
-        cellVal = UCase(Trim(CStr(Nz(ws.Cells(headerRow, c).Value, ""))))
+        cellVal = UCase(Trim(CStr(Nz(ws.Cells(headerRow, c).value, ""))))
         If cellVal <> "" And Not headers.exists(cellVal) Then
             headers(cellVal) = c
         End If
@@ -667,7 +667,7 @@ Public Function BuildEmployeeIndex( _
     lastRow = ws.Cells(ws.Rows.count, empCol).End(xlUp).row
     
     For i = headerRowNum + 1 To lastRow
-        empId = Trim(CStr(Nz(ws.Cells(i, empCol).Value, "")))
+        empId = Trim(CStr(Nz(ws.Cells(i, empCol).value, "")))
         If empId <> "" And Not dict.exists(empId) Then
             dict.Add empId, i
         End If

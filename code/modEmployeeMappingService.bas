@@ -70,9 +70,9 @@ Public Sub BuildEmployeeMappings()
     lastRow = ws.Cells(ws.Rows.count, IIf(empIdCol > 0, empIdCol, weinCol)).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
-        If empIdCol > 0 Then empId = Trim(CStr(Nz(ws.Cells(i, empIdCol).Value, "")))
-        If weinCol > 0 Then wein = Trim(CStr(Nz(ws.Cells(i, weinCol).Value, "")))
-        If empCodeCol > 0 Then empCode = Trim(CStr(Nz(ws.Cells(i, empCodeCol).Value, "")))
+        If empIdCol > 0 Then empId = Trim(CStr(Nz(ws.Cells(i, empIdCol).value, "")))
+        If weinCol > 0 Then wein = Trim(CStr(Nz(ws.Cells(i, weinCol).value, "")))
+        If empCodeCol > 0 Then empCode = Trim(CStr(Nz(ws.Cells(i, empCodeCol).value, "")))
         
         ' Build WEIN <-> Employee ID mappings
         If wein <> "" And empId <> "" Then
@@ -213,7 +213,7 @@ Public Function MapOrAppendByWein( _
     
     ' Append new row
     newRow = ws.Cells(ws.Rows.count, weinCol).End(xlUp).row + 1
-    ws.Cells(newRow, weinCol).Value = wein
+    ws.Cells(newRow, weinCol).value = wein
     
     ' Update index
     weinIndex.Add wein, newRow
@@ -389,7 +389,7 @@ Private Function FindHeaderRow(ws As Worksheet, keyColumnName As String) As Long
         ' Search across columns
         For j = 1 To 100
             On Error Resume Next
-            cellValue = Trim(CStr(ws.Cells(i, j).Value))
+            cellValue = Trim(CStr(ws.Cells(i, j).value))
             On Error GoTo 0
             
             If UCase(cellValue) = UCase(keyColumnName) Then

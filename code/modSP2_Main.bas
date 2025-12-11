@@ -284,7 +284,7 @@ Private Sub BuildBenchmarkAndIndex(valWb As Workbook)
         dataLastRow = destWs.Cells(destWs.Rows.count, weinCol).End(xlUp).row
         For i = 5 To dataLastRow
             Dim wein As String
-            wein = Trim(CStr(Nz(destWs.Cells(i, weinCol).Value, "")))
+            wein = Trim(CStr(Nz(destWs.Cells(i, weinCol).value, "")))
             If wein <> "" And Not mWeinIndex.exists(wein) Then
                 mWeinIndex.Add wein, i
             End If
@@ -295,15 +295,15 @@ Private Sub BuildBenchmarkAndIndex(valWb As Workbook)
     UpdateTemplateColumnIndices destWs, 4
     
     ' Add summary header row
-    destWs.Cells(1, 1).Value = "HK Payroll Validation - Check Result"
+    destWs.Cells(1, 1).value = "HK Payroll Validation - Check Result"
     destWs.Cells(1, 1).Font.Bold = True
     destWs.Cells(1, 1).Font.Size = 14
     
-    destWs.Cells(2, 1).Value = "Payroll Month: " & G.Payroll.payrollMonth
-    destWs.Cells(2, 2).Value = "Run Date: " & Format(G.RunParams.RunDate, "yyyy-mm-dd")
+    destWs.Cells(2, 1).value = "Payroll Month: " & G.Payroll.payrollMonth
+    destWs.Cells(2, 2).value = "Run Date: " & Format(G.RunParams.RunDate, "yyyy-mm-dd")
     
     ' Row 3 will be used for FALSE counts
-    destWs.Cells(3, 1).Value = "FALSE Count:"
+    destWs.Cells(3, 1).value = "FALSE Count:"
     destWs.Cells(3, 1).Font.Bold = True
     
     LogInfo "modSP2_Main", "BuildBenchmarkAndIndex", "Built index with " & mWeinIndex.count & " WEINs"
@@ -341,21 +341,21 @@ Private Sub InsertCheckDiffColumns(ws As Worksheet, headerRow As Long)
     insertCount = 0
     
     For col = lastCol To 1 Step -1
-        headerValue = Trim(CStr(Nz(ws.Cells(headerRow, col).Value, "")))
+        headerValue = Trim(CStr(Nz(ws.Cells(headerRow, col).value, "")))
         
         ' Special handling for Legal First Name: insert Legal Full Name, Check, and Diff columns
         If UCase(headerValue) = "LEGAL FIRST NAME" Then
             ' Insert in reverse order: Diff, Check, Legal Full Name
             ws.Columns(col + 1).Insert Shift:=xlToRight
-            ws.Cells(headerRow, col + 1).Value = "Legal Full Name Diff"
+            ws.Cells(headerRow, col + 1).value = "Legal Full Name Diff"
             insertCount = insertCount + 1
             
             ws.Columns(col + 1).Insert Shift:=xlToRight
-            ws.Cells(headerRow, col + 1).Value = "Legal Full Name Check"
+            ws.Cells(headerRow, col + 1).value = "Legal Full Name Check"
             insertCount = insertCount + 1
             
             ws.Columns(col + 1).Insert Shift:=xlToRight
-            ws.Cells(headerRow, col + 1).Value = "Legal Full Name"
+            ws.Cells(headerRow, col + 1).value = "Legal Full Name"
             insertCount = insertCount + 1
             
             LogInfo "modSP2_Main", "InsertCheckDiffColumns", _
@@ -370,14 +370,14 @@ Private Sub InsertCheckDiffColumns(ws As Worksheet, headerRow As Long)
                 ' Insert Diff column first (will be after Check column)
                 If field.HasDiff Then
                     ws.Columns(col + 1).Insert Shift:=xlToRight
-                    ws.Cells(headerRow, col + 1).Value = headerValue & " Diff"
+                    ws.Cells(headerRow, col + 1).value = headerValue & " Diff"
                     insertCount = insertCount + 1
                 End If
                 
                 ' Insert Check column (will be right after benchmark)
                 If field.HasCheck Then
                     ws.Columns(col + 1).Insert Shift:=xlToRight
-                    ws.Cells(headerRow, col + 1).Value = headerValue & " Check"
+                    ws.Cells(headerRow, col + 1).value = headerValue & " Check"
                     insertCount = insertCount + 1
                 End If
             End If
@@ -595,7 +595,7 @@ Private Sub ApplyDiffFormatting(ws As Worksheet)
     
     ' Find Diff columns and apply conditional formatting
     For col = 1 To lastCol
-        headerValue = Trim(CStr(Nz(ws.Cells(4, col).Value, "")))
+        headerValue = Trim(CStr(Nz(ws.Cells(4, col).value, "")))
         If Right(UCase(headerValue), 4) = "DIFF" Then
             ' Apply conditional formatting for TRUE/FALSE values
             ApplyConditionalFormatting ws.Range(ws.Cells(5, col), ws.Cells(lastRow, col))

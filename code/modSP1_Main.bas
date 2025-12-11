@@ -217,7 +217,7 @@ Private Sub AddVariablePayColumns(ws As Worksheet)
     ' Insert columns
     For i = 0 To UBound(newHeaders)
         ws.Columns(insertCol + i).Insert Shift:=xlToRight
-        ws.Cells(1, insertCol + i).Value = newHeaders(i)
+        ws.Cells(1, insertCol + i).value = newHeaders(i)
     Next i
     
     LogInfo "modSP1_Main", "AddVariablePayColumns", "Added " & (UBound(newHeaders) + 1) & " columns to VariablePay"
@@ -274,37 +274,37 @@ Private Sub AddRunSummary(wb As Workbook)
     ws.Name = "RunSummary"
     
     r = 1
-    ws.Cells(r, 1).Value = "HK Payroll Subprocess 1 - Run Summary"
+    ws.Cells(r, 1).value = "HK Payroll Subprocess 1 - Run Summary"
     ws.Cells(r, 1).Font.Bold = True
     ws.Cells(r, 1).Font.Size = 14
     
     r = r + 2
-    ws.Cells(r, 1).Value = "Payroll Month:"
-    ws.Cells(r, 2).Value = G.Payroll.payrollMonth
+    ws.Cells(r, 1).value = "Payroll Month:"
+    ws.Cells(r, 2).value = G.Payroll.payrollMonth
     
     r = r + 1
-    ws.Cells(r, 1).Value = "Run Date:"
-    ws.Cells(r, 2).Value = Format(G.RunParams.RunDate, "yyyy-mm-dd")
+    ws.Cells(r, 1).value = "Run Date:"
+    ws.Cells(r, 2).value = Format(G.RunParams.RunDate, "yyyy-mm-dd")
     
     r = r + 1
-    ws.Cells(r, 1).Value = "Pay Date:"
-    ws.Cells(r, 2).Value = Format(G.Payroll.payDate, "yyyy-mm-dd")
+    ws.Cells(r, 1).value = "Pay Date:"
+    ws.Cells(r, 2).value = Format(G.Payroll.payDate, "yyyy-mm-dd")
     
     r = r + 1
-    ws.Cells(r, 1).Value = "Cutoff Date:"
-    ws.Cells(r, 2).Value = Format(G.Payroll.currentCutoff, "yyyy-mm-dd")
+    ws.Cells(r, 1).value = "Cutoff Date:"
+    ws.Cells(r, 2).value = Format(G.Payroll.currentCutoff, "yyyy-mm-dd")
     
     r = r + 2
-    ws.Cells(r, 1).Value = "Sheet"
-    ws.Cells(r, 2).Value = "Record Count"
+    ws.Cells(r, 1).value = "Sheet"
+    ws.Cells(r, 2).value = "Record Count"
     ws.Range(ws.Cells(r, 1), ws.Cells(r, 2)).Font.Bold = True
     
     ' Count records in each sheet
     For Each sheetWs In wb.Worksheets
         If sheetWs.Name <> "RunSummary" Then
             r = r + 1
-            ws.Cells(r, 1).Value = sheetWs.Name
-            ws.Cells(r, 2).Value = GetLastDataRow(sheetWs) - 1
+            ws.Cells(r, 1).value = sheetWs.Name
+            ws.Cells(r, 2).value = GetLastDataRow(sheetWs) - 1
         End If
     Next sheetWs
     

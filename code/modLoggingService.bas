@@ -92,9 +92,9 @@ Private Sub WriteToLogSheet(timestamp As String, logLevel As String, message As 
         ws.Name = LOG_SHEET_NAME
         
         ' Add headers
-        ws.Cells(1, 1).Value = "Timestamp"
-        ws.Cells(1, 2).Value = "Level"
-        ws.Cells(1, 3).Value = "Message"
+        ws.Cells(1, 1).value = "Timestamp"
+        ws.Cells(1, 2).value = "Level"
+        ws.Cells(1, 3).value = "Message"
         ws.Rows(1).Font.Bold = True
     End If
     
@@ -102,9 +102,9 @@ Private Sub WriteToLogSheet(timestamp As String, logLevel As String, message As 
     NextRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row + 1
     
     ' Write log entry
-    ws.Cells(NextRow, 1).Value = timestamp
-    ws.Cells(NextRow, 2).Value = logLevel
-    ws.Cells(NextRow, 3).Value = message
+    ws.Cells(NextRow, 1).value = timestamp
+    ws.Cells(NextRow, 2).value = logLevel
+    ws.Cells(NextRow, 3).value = message
     
     ' Color code by level
     Select Case logLevel
@@ -191,7 +191,7 @@ Public Sub ExportLogToCSV(filePath As String)
         line = ""
         For j = 1 To lastCol
             If j > 1 Then line = line & ","
-            line = line & """" & Replace(CStr(ws.Cells(i, j).Value), """", """""") & """"
+            line = line & """" & Replace(CStr(ws.Cells(i, j).value), """", """""") & """"
         Next j
         Print #fileNum, line
     Next i
@@ -227,9 +227,9 @@ Public Sub SetStatus(Status As String, Optional message As String = "")
     Set ws = ThisWorkbook.Worksheets("Runtime")
     
     If Not ws Is Nothing Then
-        ws.Range("SP_Status").Value = Status
+        ws.Range("SP_Status").value = Status
         If message <> "" Then
-            ws.Range("SP_Message").Value = message
+            ws.Range("SP_Message").value = message
         End If
     End If
     

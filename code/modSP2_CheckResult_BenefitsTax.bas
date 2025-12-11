@@ -89,7 +89,7 @@ Private Sub ProcessInspireGrossUp(ws As Worksheet, weinIndex As Object)
                 ' Gross-up formula: ROUNDUP(Amount / (1 - 0.17) * 0.17, 0)
                 If inspireAmt > 0 Then
                     grossUp = RoundUpInteger(inspireAmt / (1 - 0.17) * 0.17)
-                    ws.Cells(row, col).Value = grossUp
+                    ws.Cells(row, col).value = grossUp
                 End If
             End If
         End If

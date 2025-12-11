@@ -100,7 +100,7 @@ Public Sub Run_Both()
     Run_Subprocess1
     
     ' Check if Subprocess 1 succeeded
-    If ThisWorkbook.Worksheets("Runtime").Range("SP_Status").Value = "OK" Then
+    If ThisWorkbook.Worksheets("Runtime").Range("SP_Status").value = "OK" Then
         ' Run Subprocess 2
         Run_Subprocess2
     Else

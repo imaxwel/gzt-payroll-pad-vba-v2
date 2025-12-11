@@ -163,11 +163,11 @@ End Function
 ' Returns: EAO adjustment amount
 ' Formula: (AverageDayWage_12Month - DailySalary) * totalDays
 '------------------------------------------------------------------------------
-Public Function CalcAnnualLeaveEAOAdj(wein As String, TotalDays As Double) As Double
+Public Function CalcAnnualLeaveEAOAdj(wein As String, totalDays As Double) As Double
     Dim rec As Variant
     
     rec = GetEAORecord(wein)
-    CalcAnnualLeaveEAOAdj = RoundAmount2((rec(EAO_AVG_DAY_WAGE) - rec(EAO_DAILY_SALARY)) * TotalDays)
+    CalcAnnualLeaveEAOAdj = RoundAmount2((rec(EAO_AVG_DAY_WAGE) - rec(EAO_DAILY_SALARY)) * totalDays)
 End Function
 
 '------------------------------------------------------------------------------
@@ -366,7 +366,7 @@ Private Function BuildHeaderIndex(headerRow As Range) As Object
     Set dict = CreateObject("Scripting.Dictionary")
     
     For i = 1 To headerRow.Columns.count
-        headerName = Trim(CStr(Nz(headerRow.Cells(1, i).Value, "")))
+        headerName = Trim(CStr(Nz(headerRow.Cells(1, i).value, "")))
         If headerName <> "" And Not dict.exists(headerName) Then
             dict.Add headerName, i
         End If
@@ -382,7 +382,7 @@ Private Function GetCellValueByHeader(ws As Worksheet, rowNum As Long, headers A
     
     If headers.exists(headerName) Then
         col = headers(headerName)
-        GetCellValueByHeader = Trim(CStr(Nz(ws.Cells(rowNum, col).Value, "")))
+        GetCellValueByHeader = Trim(CStr(Nz(ws.Cells(rowNum, col).value, "")))
     End If
 End Function
 

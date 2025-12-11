@@ -152,7 +152,7 @@ Private Sub WriteSeveranceLongServiceCheck(ws As Worksheet, row As Long, wein As
     Dim colSalary As Long
     colSalary = FindColumnByHeader(ws.Rows(4), "Monthly Base Pay Check")
     If colSalary > 0 Then
-        monthlySalary = ToDouble(ws.Cells(row, colSalary).Value)
+        monthlySalary = ToDouble(ws.Cells(row, colSalary).value)
     End If
     
     ' Get dates (would need to be loaded from Workforce Detail and Termination)
@@ -225,13 +225,13 @@ Private Sub WriteGratuitiesBackPayCheck(ws As Worksheet, row As Long, wein As St
     ' Gratuities Check
     col = GetCheckColIndex("Gratuities 99999999")
     If col > 0 Then
-        ws.Cells(row, col).Value = RoundAmount2(params("Gratuities"))
+        ws.Cells(row, col).value = RoundAmount2(params("Gratuities"))
     End If
     
     ' Back Pay Check
     col = GetCheckColIndex("Back Pay 99999999")
     If col > 0 Then
-        ws.Cells(row, col).Value = RoundAmount2(params("BackPay"))
+        ws.Cells(row, col).value = RoundAmount2(params("BackPay"))
     End If
 End Sub
 
@@ -256,10 +256,10 @@ Private Sub WriteYearEndBonusCheck(ws As Worksheet, row As Long, wein As String)
     If monthlySalary = 0 Then
         Dim colSalary As Long
         colSalary = GetCheckColIndex("Monthly Base Pay")
-        If colSalary > 0 Then monthlySalary = ToDouble(ws.Cells(row, colSalary).Value)
+        If colSalary > 0 Then monthlySalary = ToDouble(ws.Cells(row, colSalary).value)
         If monthlySalary = 0 Then
             colSalary = GetCheckColIndex("Monthly Base Pay(Temp)")
-            If colSalary > 0 Then monthlySalary = ToDouble(ws.Cells(row, colSalary).Value)
+            If colSalary > 0 Then monthlySalary = ToDouble(ws.Cells(row, colSalary).value)
         End If
     End If
     
@@ -267,8 +267,8 @@ Private Sub WriteYearEndBonusCheck(ws As Worksheet, row As Long, wein As String)
     
     ' If termination in current month, pay monthly salary
     If Not mTerminationWeins Is Nothing Then
-        If mTerminationWeins.Exists(wein) Then
-            ws.Cells(row, col).Value = RoundAmount2(monthlySalary)
+        If mTerminationWeins.exists(wein) Then
+            ws.Cells(row, col).value = RoundAmount2(monthlySalary)
             Exit Sub
         End If
     End If
@@ -277,7 +277,7 @@ Private Sub WriteYearEndBonusCheck(ws As Worksheet, row As Long, wein As String)
     If Month(G.Payroll.monthEnd) = 12 Then
         hireDate = GetWorkforceHireDate(wein)
         payment = CalcYearEndBonus(monthlySalary, hireDate)
-        If payment <> 0 Then ws.Cells(row, col).Value = payment
+        If payment <> 0 Then ws.Cells(row, col).value = payment
     End If
 End Sub
 
@@ -306,7 +306,7 @@ Private Function CalcYearEndBonus(monthlySalary As Double, hireDate As Date) As 
     Else
         CalcYearEndBonus = RoundAmount2(SafeDivide2(monthlySalary, annualDays) * serviceDays)
     End If
-End Sub
+End Function
 
 '------------------------------------------------------------------------------
 ' Helper: GetCellVal
@@ -317,7 +317,7 @@ Private Function GetCellVal(ws As Worksheet, row As Long, headers As Object, hea
     
     If headers.exists(UCase(headerName)) Then
         col = headers(UCase(headerName))
-        GetCellVal = Trim(CStr(Nz(ws.Cells(row, col).Value, "")))
+        GetCellVal = Trim(CStr(Nz(ws.Cells(row, col).value, "")))
     End If
 End Function
 
@@ -351,7 +351,7 @@ Private Sub LoadYearEndWorkforceData()
     
     headerRow = FindHeaderRowSafe(ws, "EMPLOYEE ID,EMPLOYEEID", 1, 50)
     Set headers = BuildHeaderIndex(ws, headerRow)
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
         wein = NormalizeEmployeeId(Trim(CStr(Nz(GetCellVal(ws, i, headers, "WEIN"), ""))))
@@ -368,7 +368,7 @@ Private Sub LoadYearEndWorkforceData()
             Else
                 rec("HireDate") = 0
             End If
-            If Not mYearEndWorkforce.Exists(wein) Then
+            If Not mYearEndWorkforce.exists(wein) Then
                 mYearEndWorkforce.Add wein, rec
             End If
         End If
@@ -407,7 +407,7 @@ Private Sub LoadTerminationWeins()
     
     headerRow = FindHeaderRowSafe(ws, "EMPLOYEE CODE,EMPLOYEECODE,EMPLOYEE REFERENCE,EMPLOYEENUMBER,EMPLOYEE NUMBER", 1, 50)
     Set headers = BuildHeaderIndex(ws, headerRow)
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
         empCode = GetCellVal(ws, i, headers, "EMPLOYEE CODE")
@@ -417,7 +417,7 @@ Private Sub LoadTerminationWeins()
         If empCode = "" Then empCode = GetCellVal(ws, i, headers, "EMPLOYEE NUMBER")
         If empCode <> "" Then
             wein = NormalizeEmployeeId(empCode)
-            If wein <> "" And Not mTerminationWeins.Exists(wein) Then
+            If wein <> "" And Not mTerminationWeins.exists(wein) Then
                 mTerminationWeins.Add wein, True
             End If
         End If
@@ -434,7 +434,7 @@ End Sub
 
 Private Function GetWorkforceMonthlySalary(wein As String) As Double
     If Not mYearEndWorkforce Is Nothing Then
-        If mYearEndWorkforce.Exists(wein) Then
+        If mYearEndWorkforce.exists(wein) Then
             GetWorkforceMonthlySalary = Nz(mYearEndWorkforce(wein)("MonthlySalary"), 0)
             Exit Function
         End If
@@ -444,7 +444,7 @@ End Function
 
 Private Function GetWorkforceHireDate(wein As String) As Date
     If Not mYearEndWorkforce Is Nothing Then
-        If mYearEndWorkforce.Exists(wein) Then
+        If mYearEndWorkforce.exists(wein) Then
             If IsDate(Nz(mYearEndWorkforce(wein)("HireDate"), 0)) Then
                 GetWorkforceHireDate = CDate(mYearEndWorkforce(wein)("HireDate"))
                 Exit Function
@@ -474,11 +474,11 @@ Private Sub WriteUntakenALPaymentCheck(ws As Worksheet, row As Long, wein As Str
     ' Get Monthly Salary from Check Result (regular or temp)
     colSalary = GetCheckColIndex("Monthly Base Pay")
     If colSalary > 0 Then
-        monthlySalary = ToDouble(ws.Cells(row, colSalary).Value)
+        monthlySalary = ToDouble(ws.Cells(row, colSalary).value)
     End If
     If monthlySalary = 0 Then
         colSalary = GetCheckColIndex("Monthly Base Pay(Temp)")
-        If colSalary > 0 Then monthlySalary = ToDouble(ws.Cells(row, colSalary).Value)
+        If colSalary > 0 Then monthlySalary = ToDouble(ws.Cells(row, colSalary).value)
     End If
     
     If monthlySalary = 0 Then Exit Sub
@@ -486,6 +486,6 @@ Private Sub WriteUntakenALPaymentCheck(ws As Worksheet, row As Long, wein As Str
     ' Calculate payment from EAO summary
     payment = CalcUntakenAnnualLeavePayment(wein, monthlySalary)
     If payment <> 0 Then
-        ws.Cells(row, col).Value = payment
+        ws.Cells(row, col).value = payment
     End If
 End Sub

@@ -141,7 +141,7 @@ Private Sub ProcessOneTimePayment(ws As Worksheet, empIndex As Object)
                 If col > 0 Then
                     row = GetOrAddRow(ws, wein, empIndex)
                     If row > 0 Then
-                        ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, grouped(key))
+                        ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, grouped(key))
                     End If
                 End If
             End If
@@ -203,10 +203,10 @@ Private Sub ProcessInspireAwards(ws As Worksheet, empIndex As Object)
             If row > 0 Then
                 If InStr(planType, "INSPIRE POINTS") > 0 Then
                     col = FindColumnByHeader(ws.Rows(1), "Inspire Points")
-                    If col > 0 Then ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, grouped(key))
+                    If col > 0 Then ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, grouped(key))
                 ElseIf InStr(planType, "INSPIRE CASH") > 0 Then
                     col = FindColumnByHeader(ws.Rows(1), "Inspire Cash")
-                    If col > 0 Then ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, grouped(key))
+                    If col > 0 Then ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, grouped(key))
                 End If
             End If
         End If
@@ -267,10 +267,10 @@ Private Sub ProcessSIPQIP(ws As Worksheet, empIndex As Object)
             If row > 0 Then
                 If InStr(payItem, "QUALITATIVE INCENTIVE PLAN") > 0 Then
                     col = FindColumnByHeader(ws.Rows(1), "Sales Incentive (Qualitative)")
-                    If col > 0 Then ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, grouped(key))
+                    If col > 0 Then ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, grouped(key))
                 ElseIf InStr(payItem, "SALES INCENTIVE PLAN") > 0 Then
                     col = FindColumnByHeader(ws.Rows(1), "Sales Incentive (Quantitative)")
-                    If col > 0 Then ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, grouped(key))
+                    If col > 0 Then ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, grouped(key))
                 End If
             End If
         End If
@@ -359,15 +359,15 @@ Private Sub ProcessRSUGlobal(ws As Worksheet, empIndex As Object)
     lastRow = srcWs.Cells(srcWs.Rows.count, empRefCol).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
-        empRef = Trim(CStr(Nz(srcWs.Cells(i, empRefCol).Value, "")))
-        grossAmt = ToDouble(srcWs.Cells(i, amtCol).Value)
+        empRef = Trim(CStr(Nz(srcWs.Cells(i, empRefCol).value, "")))
+        grossAmt = ToDouble(srcWs.Cells(i, amtCol).value)
         
         If empRef <> "" And grossAmt <> 0 Then
             wein = NormalizeEmployeeId(empRef)
             
             row = GetOrAddRow(ws, wein, empIndex)
             If row > 0 Then
-                ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, grossAmt * fxRate)
+                ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, grossAmt * fxRate)
             End If
         End If
     Next i
@@ -421,15 +421,15 @@ Private Sub ProcessRSUEY(ws As Worksheet, empIndex As Object)
     lastRow = srcWs.Cells(srcWs.Rows.count, empNumCol).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
-        empNum = Trim(CStr(Nz(srcWs.Cells(i, empNumCol).Value, "")))
-        divAmt = ToDouble(srcWs.Cells(i, amtCol).Value)
+        empNum = Trim(CStr(Nz(srcWs.Cells(i, empNumCol).value, "")))
+        divAmt = ToDouble(srcWs.Cells(i, amtCol).value)
         
         If empNum <> "" And divAmt <> 0 Then
             wein = NormalizeEmployeeId(empNum)
             
             row = GetOrAddRow(ws, wein, empIndex)
             If row > 0 Then
-                ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, divAmt * fxRate)
+                ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, divAmt * fxRate)
             End If
         End If
     Next i
@@ -492,14 +492,14 @@ Private Sub ProcessAIPPayouts(ws As Worksheet, empIndex As Object)
     lastRow = srcWs.Cells(srcWs.Rows.count, weinCol).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
-        wein = Trim(CStr(Nz(srcWs.Cells(i, weinCol).Value, "")))
-        bonusAmt = ToDouble(srcWs.Cells(i, amtCol).Value)
+        wein = Trim(CStr(Nz(srcWs.Cells(i, weinCol).value, "")))
+        bonusAmt = ToDouble(srcWs.Cells(i, amtCol).value)
         
         If wein <> "" And bonusAmt <> 0 Then
             wein = NormalizeEmployeeId(wein)
             row = GetOrAddRow(ws, wein, empIndex)
             If row > 0 Then
-                ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, bonusAmt)
+                ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, bonusAmt)
             End If
         End If
     Next i
@@ -573,19 +573,19 @@ Private Sub ProcessFlexClaim(ws As Worksheet, empIndex As Object)
     For i = headerRow + 1 To lastRow
         ' Filter by Approved status
         If statusCol > 0 Then
-            claimStatus = UCase(Trim(CStr(Nz(srcWs.Cells(i, statusCol).Value, ""))))
+            claimStatus = UCase(Trim(CStr(Nz(srcWs.Cells(i, statusCol).value, ""))))
             If claimStatus <> "APPROVED" Then GoTo NextRow
         End If
         
-        empNumId = Trim(CStr(Nz(srcWs.Cells(i, empNumCol).Value, "")))
-        transAmt = ToDouble(srcWs.Cells(i, amtCol).Value)
+        empNumId = Trim(CStr(Nz(srcWs.Cells(i, empNumCol).value, "")))
+        transAmt = ToDouble(srcWs.Cells(i, amtCol).value)
         
         If empNumId <> "" And transAmt <> 0 Then
             wein = NormalizeEmployeeId(empNumId)
             
             row = GetOrAddRow(ws, wein, empIndex)
             If row > 0 Then
-                ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, transAmt)
+                ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, transAmt)
             End If
         End If
 NextRow:
@@ -665,15 +665,15 @@ Private Sub ProcessMerckPayrollSummary(ws As Worksheet, empIndex As Object)
             
             ' Write values to VariablePay sheet
             If colIAPaySplit > 0 Then
-                ws.Cells(row, colIAPaySplit).Value = iaPaySplit
+                ws.Cells(row, colIAPaySplit).value = iaPaySplit
             End If
             
             If colMPFRI > 0 Then
-                ws.Cells(row, colMPFRI).Value = RoundAmount2(mpfRI)
+                ws.Cells(row, colMPFRI).value = RoundAmount2(mpfRI)
             End If
             
             If colMPFVCRI > 0 Then
-                ws.Cells(row, colMPFVCRI).Value = RoundAmount2(mpfVCRI)
+                ws.Cells(row, colMPFVCRI).value = RoundAmount2(mpfVCRI)
             End If
             
             processedCount = processedCount + 1
@@ -750,7 +750,7 @@ Private Function FindFlexiFormEmployeeId(srcWs As Worksheet) As String
     
     If Not cell Is Nothing Then
         ' Employee ID is in the cell to the right of the label
-        FindFlexiFormEmployeeId = Trim(CStr(Nz(cell.offset(0, 1).Value, "")))
+        FindFlexiFormEmployeeId = Trim(CStr(Nz(cell.offset(0, 1).value, "")))
     End If
     
     On Error GoTo 0
@@ -786,7 +786,7 @@ Private Function FindMerckPayrollValue(srcWs As Worksheet, headerKeyword As Stri
     If Not cell Is Nothing Then
         ' Value is in the cell directly below the header
         Set valueCell = cell.offset(1, 0)
-        FindMerckPayrollValue = ToDouble(valueCell.Value)
+        FindMerckPayrollValue = ToDouble(valueCell.value)
     End If
     
     On Error GoTo 0
@@ -847,24 +847,24 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     
     ' Data starts from row after header
     For i = headerRow + 1 To lastRow
-        wein = Trim(CStr(Nz(srcWs.Cells(i, weinCol).Value, "")))
+        wein = Trim(CStr(Nz(srcWs.Cells(i, weinCol).value, "")))
         
         If wein <> "" Then
             row = GetOrAddRow(ws, wein, empIndex)
             If row > 0 Then
                 ' Write PPTO EAO Rate input
                 If pptoCol > 0 And colPPTORate > 0 Then
-                    pptoRate = ToDouble(srcWs.Cells(i, pptoCol).Value)
+                    pptoRate = ToDouble(srcWs.Cells(i, pptoCol).value)
                     If pptoRate <> 0 Then
-                        ws.Cells(row, colPPTORate).Value = RoundAmount2(pptoRate)
+                        ws.Cells(row, colPPTORate).value = RoundAmount2(pptoRate)
                     End If
                 End If
                 
                 ' Write Flexible benefits
                 If flexCol > 0 And colFlexBenefit > 0 Then
-                    flexBenefit = ToDouble(srcWs.Cells(i, flexCol).Value)
+                    flexBenefit = ToDouble(srcWs.Cells(i, flexCol).value)
                     If flexBenefit <> 0 Then
-                        ws.Cells(row, colFlexBenefit).Value = SafeAdd2(ws.Cells(row, colFlexBenefit).Value, flexBenefit)
+                        ws.Cells(row, colFlexBenefit).value = SafeAdd2(ws.Cells(row, colFlexBenefit).value, flexBenefit)
                     End If
                 End If
             End If
@@ -906,10 +906,10 @@ Private Function GetOrAddRow(ws As Worksheet, wein As String, empIndex As Object
     newRow = ws.Cells(ws.Rows.count, empCodeCol).End(xlUp).row + 1
     
     If empCode <> "" Then
-        ws.Cells(newRow, empCodeCol).Value = empCode
+        ws.Cells(newRow, empCodeCol).value = empCode
         empIndex.Add empCode, newRow
     Else
-        ws.Cells(newRow, empCodeCol).Value = wein
+        ws.Cells(newRow, empCodeCol).value = wein
         empIndex.Add wein, newRow
     End If
     

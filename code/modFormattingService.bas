@@ -37,7 +37,7 @@ Public Sub SummarizeDiffColumns( _
         falseCount = WorksheetFunction.CountIf(rng, "FALSE")
         
         With ws.Cells(headerRow, col)
-            .Value = falseCount
+            .value = falseCount
             If falseCount > 0 Then
                 .Interior.Color = vbRed
                 .Font.Color = vbWhite

@@ -73,10 +73,10 @@ Private Sub LoadHolidayCache()
     lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     For i = 2 To lastRow
-        If IsDate(ws.Cells(i, 1).Value) Then
+        If IsDate(ws.Cells(i, 1).value) Then
             ' Check if IsHKHoliday column (column 2) is True
-            If CBool(Nz(ws.Cells(i, 2).Value, False)) Then
-                holidayDate = CDate(ws.Cells(i, 1).Value)
+            If CBool(Nz(ws.Cells(i, 2).value, False)) Then
+                holidayDate = CDate(ws.Cells(i, 1).value)
                 If Not mHolidayCache.exists(CLng(holidayDate)) Then
                     mHolidayCache.Add CLng(holidayDate), True
                 End If

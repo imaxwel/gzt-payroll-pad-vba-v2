@@ -90,7 +90,7 @@ Private Sub ComputeFalseCountsAndHighlight(ws As Worksheet, headerRow As Long, _
     lastCol = ws.Cells(headerRow, ws.Columns.count).End(xlToLeft).Column
     
     For col = 1 To lastCol
-        headerValue = Trim(CStr(Nz(ws.Cells(headerRow, col).Value, "")))
+        headerValue = Trim(CStr(Nz(ws.Cells(headerRow, col).value, "")))
         
         ' Check if this is a Diff column
         If Right(UCase(headerValue), 4) = "DIFF" Then
@@ -100,7 +100,7 @@ Private Sub ComputeFalseCountsAndHighlight(ws As Worksheet, headerRow As Long, _
             
             ' Write count to count row
             With ws.Cells(countRow, col)
-                .Value = falseCount
+                .value = falseCount
                 
                 ' Highlight red if FALSE count > 0
                 If falseCount > 0 Then
@@ -136,17 +136,17 @@ Private Sub ComputeDiffColumn(ws As Worksheet, benchmarkCol As Long, checkCol As
     On Error GoTo ErrHandler
     
     For row = firstRow To lastRow
-        benchVal = ws.Cells(row, benchmarkCol).Value
-        checkVal = ws.Cells(row, checkCol).Value
+        benchVal = ws.Cells(row, benchmarkCol).value
+        checkVal = ws.Cells(row, checkCol).value
         
         ' Compute diff
         diffResult = CompareCellValues(benchVal, checkVal, fieldName)
         
         ' Write result
         If diffResult Then
-            ws.Cells(row, diffCol).Value = "TRUE"
+            ws.Cells(row, diffCol).value = "TRUE"
         Else
-            ws.Cells(row, diffCol).Value = "FALSE"
+            ws.Cells(row, diffCol).value = "FALSE"
         End If
     Next row
     
@@ -238,7 +238,7 @@ Public Sub AddDiffColumns(ws As Worksheet)
     
     ' Process from right to left to avoid column shift issues
     For col = lastCol To 1 Step -1
-        headerValue = Trim(CStr(Nz(ws.Cells(4, col).Value, "")))
+        headerValue = Trim(CStr(Nz(ws.Cells(4, col).value, "")))
         
         ' Check if this is a Check column
         If Right(UCase(headerValue), 5) = "CHECK" Then
@@ -251,7 +251,7 @@ Public Sub AddDiffColumns(ws As Worksheet)
             If diffCol = 0 Then
                 ' Insert Diff column after Check column
                 ws.Columns(col + 1).Insert Shift:=xlToRight
-                ws.Cells(4, col + 1).Value = diffColName
+                ws.Cells(4, col + 1).value = diffColName
             End If
         End If
     Next col

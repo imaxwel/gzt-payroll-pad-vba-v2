@@ -265,13 +265,13 @@ Private Sub ProcessAnnualLeave(ws As Worksheet, leaveRecords As Collection, empI
         If row > 0 Then
             arr = empDays(wein)
             ' Current month days
-            If colCurrent > 0 Then ws.Cells(row, colCurrent).Value = RoundAmount2(arr(0))
+            If colCurrent > 0 Then ws.Cells(row, colCurrent).value = RoundAmount2(arr(0))
             ' Previous month days
-            If colPrev > 0 Then ws.Cells(row, colPrev).Value = RoundAmount2(arr(1))
+            If colPrev > 0 Then ws.Cells(row, colPrev).value = RoundAmount2(arr(1))
             ' Current month deduction (same as current month days per requirement)
-            If colDeduction > 0 Then ws.Cells(row, colDeduction).Value = RoundAmount2(arr(0))
+            If colDeduction > 0 Then ws.Cells(row, colDeduction).value = RoundAmount2(arr(0))
             ' Previous month deduction (same as previous month days per requirement)
-            If colDeductionLast > 0 Then ws.Cells(row, colDeductionLast).Value = RoundAmount2(arr(1))
+            If colDeductionLast > 0 Then ws.Cells(row, colDeductionLast).value = RoundAmount2(arr(1))
         End If
     Next wein
     
@@ -357,13 +357,13 @@ Private Sub ProcessSickLeave(ws As Worksheet, leaveRecords As Collection, empInd
         If row > 0 Then
             arr = empDays(wein)
             ' Current month days
-            If colCurrent > 0 Then ws.Cells(row, colCurrent).Value = RoundAmount2(arr(0))
+            If colCurrent > 0 Then ws.Cells(row, colCurrent).value = RoundAmount2(arr(0))
             ' Current month deduction (same as current month days)
-            If colDeduction > 0 Then ws.Cells(row, colDeduction).Value = RoundAmount2(arr(0))
+            If colDeduction > 0 Then ws.Cells(row, colDeduction).value = RoundAmount2(arr(0))
             ' Previous month days
-            If colPrev > 0 Then ws.Cells(row, colPrev).Value = RoundAmount2(arr(1))
+            If colPrev > 0 Then ws.Cells(row, colPrev).value = RoundAmount2(arr(1))
             ' Previous month deduction (same as previous month days)
-            If colDeductionLast > 0 Then ws.Cells(row, colDeductionLast).Value = RoundAmount2(arr(1))
+            If colDeductionLast > 0 Then ws.Cells(row, colDeductionLast).value = RoundAmount2(arr(1))
         End If
     Next wein
     
@@ -441,8 +441,8 @@ Private Sub ProcessUnpaidLeave(ws As Worksheet, leaveRecords As Collection, empI
         row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
         If row > 0 Then
             arr = empDays(wein)
-            If colCurrent > 0 Then ws.Cells(row, colCurrent).Value = RoundAmount2(arr(0))
-            If colPrev > 0 Then ws.Cells(row, colPrev).Value = RoundAmount2(arr(1))
+            If colCurrent > 0 Then ws.Cells(row, colCurrent).value = RoundAmount2(arr(0))
+            If colPrev > 0 Then ws.Cells(row, colPrev).value = RoundAmount2(arr(1))
         End If
     Next wein
     
@@ -526,13 +526,13 @@ Private Sub ProcessPPTO(ws As Worksheet, leaveRecords As Collection, empIndex As
         If row > 0 Then
             arr = empDays(wein)
             ' Current month days
-            If colCurrent > 0 Then ws.Cells(row, colCurrent).Value = RoundAmount2(arr(0))
+            If colCurrent > 0 Then ws.Cells(row, colCurrent).value = RoundAmount2(arr(0))
             ' Current month deduction (same as current month days per requirement)
-            If colDeduction > 0 Then ws.Cells(row, colDeduction).Value = RoundAmount2(arr(0))
+            If colDeduction > 0 Then ws.Cells(row, colDeduction).value = RoundAmount2(arr(0))
             ' Previous month days
-            If colPrev > 0 Then ws.Cells(row, colPrev).Value = RoundAmount2(arr(1))
+            If colPrev > 0 Then ws.Cells(row, colPrev).value = RoundAmount2(arr(1))
             ' Previous month deduction (same as previous month days per requirement)
-            If colDeductionLast > 0 Then ws.Cells(row, colDeductionLast).Value = RoundAmount2(arr(1))
+            If colDeductionLast > 0 Then ws.Cells(row, colDeductionLast).value = RoundAmount2(arr(1))
         End If
     Next wein
     
@@ -657,13 +657,13 @@ NextRecord:
         If row > 0 Then
             arr = empDays(wein)
             ' Current month days
-            If colCurrent > 0 Then ws.Cells(row, colCurrent).Value = RoundAmount2(arr(0))
+            If colCurrent > 0 Then ws.Cells(row, colCurrent).value = RoundAmount2(arr(0))
             ' Current month deduction (same as current month days)
-            If colDeduction > 0 Then ws.Cells(row, colDeduction).Value = RoundAmount2(arr(0))
+            If colDeduction > 0 Then ws.Cells(row, colDeduction).value = RoundAmount2(arr(0))
             ' Previous month days
-            If colPrev > 0 Then ws.Cells(row, colPrev).Value = RoundAmount2(arr(1))
+            If colPrev > 0 Then ws.Cells(row, colPrev).value = RoundAmount2(arr(1))
             ' Previous month deduction (same as previous month days)
-            If colDeductionLast > 0 Then ws.Cells(row, colDeductionLast).Value = RoundAmount2(arr(1))
+            If colDeductionLast > 0 Then ws.Cells(row, colDeductionLast).value = RoundAmount2(arr(1))
         End If
     Next wein
     
@@ -752,13 +752,13 @@ Private Sub ProcessPaternityLeave(ws As Worksheet, leaveRecords As Collection, e
         If row > 0 Then
             arr = empDays(wein)
             ' Current month days
-            If colCurrent > 0 Then ws.Cells(row, colCurrent).Value = RoundAmount2(arr(0))
+            If colCurrent > 0 Then ws.Cells(row, colCurrent).value = RoundAmount2(arr(0))
             ' Current month deduction (same as current month days)
-            If colDeduction > 0 Then ws.Cells(row, colDeduction).Value = RoundAmount2(arr(0))
+            If colDeduction > 0 Then ws.Cells(row, colDeduction).value = RoundAmount2(arr(0))
             ' Previous month days
-            If colPrev > 0 Then ws.Cells(row, colPrev).Value = RoundAmount2(arr(1))
+            If colPrev > 0 Then ws.Cells(row, colPrev).value = RoundAmount2(arr(1))
             ' Previous month deduction (same as previous month days)
-            If colDeductionLast > 0 Then ws.Cells(row, colDeductionLast).Value = RoundAmount2(arr(1))
+            If colDeductionLast > 0 Then ws.Cells(row, colDeductionLast).value = RoundAmount2(arr(1))
         End If
     Next wein
     
@@ -783,7 +783,7 @@ Private Function GetCellValue(ws As Worksheet, row As Long, headers As Object, h
     
     If headers.exists(UCase(headerName)) Then
         col = headers(UCase(headerName))
-        GetCellValue = Trim(CStr(Nz(ws.Cells(row, col).Value, "")))
+        GetCellValue = Trim(CStr(Nz(ws.Cells(row, col).value, "")))
     End If
 End Function
 
@@ -812,10 +812,10 @@ Private Function GetOrAddEmployeeRow(ws As Worksheet, wein As String, empIndex A
     newRow = ws.Cells(ws.Rows.count, empCodeCol).End(xlUp).row + 1
     
     If empCode <> "" Then
-        ws.Cells(newRow, empCodeCol).Value = empCode
+        ws.Cells(newRow, empCodeCol).value = empCode
         empIndex.Add empCode, newRow
     Else
-        ws.Cells(newRow, empCodeCol).Value = wein
+        ws.Cells(newRow, empCodeCol).value = wein
         empIndex.Add wein, newRow
     End If
     
@@ -875,7 +875,7 @@ Private Sub WriteAnnualLeaveEAOAdj(empDays As Object)
                 row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
                 If row > 0 Then
                     ' Add to existing value (in case there are multiple entries)
-                    ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, eaoAdj)
+                    ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, eaoAdj)
                 End If
             End If
         End If
@@ -942,7 +942,7 @@ Private Sub WriteSickLeaveEAOAdj(empDays As Object)
                 row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
                 If row > 0 Then
                     ' Add to existing value (in case there are multiple entries)
-                    ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, eaoAdj)
+                    ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, eaoAdj)
                 End If
             End If
         End If
@@ -1010,7 +1010,7 @@ Private Sub WriteNoPayLeaveDeduction(empDays As Object)
                 row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
                 If row > 0 Then
                     ' Add to existing value (if cell non-empty, add, not overwrite)
-                    ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, deduction)
+                    ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, deduction)
                 End If
             End If
         End If
@@ -1083,7 +1083,7 @@ Private Sub WritePPTOEAOAdj(empDays As Object)
                 row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
                 If row > 0 Then
                     ' Add to existing value (in case there are multiple entries)
-                    ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, eaoAdj)
+                    ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, eaoAdj)
                 End If
             End If
         End If
@@ -1151,7 +1151,7 @@ Private Sub WriteMaternityLeaveEAOAdj(empDays As Object)
                 row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
                 If row > 0 Then
                     ' Add to existing value (in case there are multiple entries)
-                    ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, eaoAdj)
+                    ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, eaoAdj)
                 End If
             End If
         End If
@@ -1224,7 +1224,7 @@ Private Sub WritePaternityLeaveEAOAdj(empDays As Object)
                 row = GetOrAddEmployeeRow(ws, CStr(wein), empIndex)
                 If row > 0 Then
                     ' Add to existing value (in case there are multiple entries)
-                    ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, eaoAdj)
+                    ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, eaoAdj)
                 End If
             End If
         End If
@@ -1293,20 +1293,20 @@ Private Sub LoadWorkforceHireDates()
         wein = ""
         
         If headers.exists("EMPLOYEE ID") Then
-            empId = Trim(CStr(Nz(ws.Cells(i, headers("EMPLOYEE ID")).Value, "")))
+            empId = Trim(CStr(Nz(ws.Cells(i, headers("EMPLOYEE ID")).value, "")))
         End If
         If headers.exists("WIN") Then
-            wein = Trim(CStr(Nz(ws.Cells(i, headers("WIN")).Value, "")))
+            wein = Trim(CStr(Nz(ws.Cells(i, headers("WIN")).value, "")))
         End If
         If wein = "" And headers.exists("WEIN") Then
-            wein = Trim(CStr(Nz(ws.Cells(i, headers("WEIN")).Value, "")))
+            wein = Trim(CStr(Nz(ws.Cells(i, headers("WEIN")).value, "")))
         End If
         
         ' Get Last Hire Date
         hireDate = Empty
         If headers.exists("LAST HIRE DATE") Then
             On Error Resume Next
-            hireDate = ws.Cells(i, headers("LAST HIRE DATE")).Value
+            hireDate = ws.Cells(i, headers("LAST HIRE DATE")).value
             On Error GoTo ErrHandler
         End If
         
@@ -1417,13 +1417,13 @@ Private Sub OutputMaternityReport()
     headerRow = FindHeaderRowSafe(srcWs, "WIN,WEIN,EMPLOYEE CODE,EMPLOYEE ID,EMPLOYEE NUMBER ID", 1, 50)
     lastCol = srcWs.Cells(headerRow, srcWs.Columns.count).End(xlToLeft).Column
     For c = 1 To lastCol
-        rptWs.Cells(1, c).Value = srcWs.Cells(headerRow, c).Value
+        rptWs.Cells(1, c).value = srcWs.Cells(headerRow, c).value
     Next c
     
     ' Add additional columns for service info
-    rptWs.Cells(1, lastCol + 1).Value = "Last Hire Date"
-    rptWs.Cells(1, lastCol + 2).Value = "Weeks of Service"
-    rptWs.Cells(1, lastCol + 3).Value = "Exclusion Reason"
+    rptWs.Cells(1, lastCol + 1).value = "Last Hire Date"
+    rptWs.Cells(1, lastCol + 2).value = "Weeks of Service"
+    rptWs.Cells(1, lastCol + 3).value = "Exclusion Reason"
     
     ' Build header index for source file
     Dim headers As Object
@@ -1453,21 +1453,21 @@ Private Sub OutputMaternityReport()
         End If
         
         ' Write record data
-        If headers.exists("WIN") Then rptWs.Cells(rptRow, headers("WIN")).Value = rec(LR_WEIN)
-        If headers.exists("WEIN") Then rptWs.Cells(rptRow, headers("WEIN")).Value = rec(LR_WEIN)
-        If headers.exists("EMPLOYEE CODE") Then rptWs.Cells(rptRow, headers("EMPLOYEE CODE")).Value = rec(LR_EMPCODE)
-        If headers.exists("LEAVE TYPE") Then rptWs.Cells(rptRow, headers("LEAVE TYPE")).Value = rec(LR_LEAVETYPE)
-        If headers.exists("FROM_DATE") Then rptWs.Cells(rptRow, headers("FROM_DATE")).Value = rec(LR_FROMDATE)
-        If headers.exists("TO_DATE") Then rptWs.Cells(rptRow, headers("TO_DATE")).Value = rec(LR_TODATE)
-        If headers.exists("APPLY_DATE") Then rptWs.Cells(rptRow, headers("APPLY_DATE")).Value = rec(LR_APPLYDATE)
-        If headers.exists("APPROVAL_DATE") Then rptWs.Cells(rptRow, headers("APPROVAL_DATE")).Value = rec(LR_APPROVALDATE)
-        If headers.exists("STATUS") Then rptWs.Cells(rptRow, headers("STATUS")).Value = rec(LR_STATUS)
-        If headers.exists("TOTAL_DAYS") Then rptWs.Cells(rptRow, headers("TOTAL_DAYS")).Value = rec(LR_TOTALDAYS)
+        If headers.exists("WIN") Then rptWs.Cells(rptRow, headers("WIN")).value = rec(LR_WEIN)
+        If headers.exists("WEIN") Then rptWs.Cells(rptRow, headers("WEIN")).value = rec(LR_WEIN)
+        If headers.exists("EMPLOYEE CODE") Then rptWs.Cells(rptRow, headers("EMPLOYEE CODE")).value = rec(LR_EMPCODE)
+        If headers.exists("LEAVE TYPE") Then rptWs.Cells(rptRow, headers("LEAVE TYPE")).value = rec(LR_LEAVETYPE)
+        If headers.exists("FROM_DATE") Then rptWs.Cells(rptRow, headers("FROM_DATE")).value = rec(LR_FROMDATE)
+        If headers.exists("TO_DATE") Then rptWs.Cells(rptRow, headers("TO_DATE")).value = rec(LR_TODATE)
+        If headers.exists("APPLY_DATE") Then rptWs.Cells(rptRow, headers("APPLY_DATE")).value = rec(LR_APPLYDATE)
+        If headers.exists("APPROVAL_DATE") Then rptWs.Cells(rptRow, headers("APPROVAL_DATE")).value = rec(LR_APPROVALDATE)
+        If headers.exists("STATUS") Then rptWs.Cells(rptRow, headers("STATUS")).value = rec(LR_STATUS)
+        If headers.exists("TOTAL_DAYS") Then rptWs.Cells(rptRow, headers("TOTAL_DAYS")).value = rec(LR_TOTALDAYS)
         
         ' Write additional service info
-        rptWs.Cells(rptRow, lastCol + 1).Value = lastHireDate
-        rptWs.Cells(rptRow, lastCol + 2).Value = Round(weeksOfService, 1)
-        rptWs.Cells(rptRow, lastCol + 3).Value = "Less than 40 weeks service before maternity leave"
+        rptWs.Cells(rptRow, lastCol + 1).value = lastHireDate
+        rptWs.Cells(rptRow, lastCol + 2).value = Round(weeksOfService, 1)
+        rptWs.Cells(rptRow, lastCol + 3).value = "Less than 40 weeks service before maternity leave"
         
         rptRow = rptRow + 1
     Next v

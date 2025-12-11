@@ -20,12 +20,12 @@ Public Function LoadRunParamsFromWorkbook() As tRunParams
     On Error GoTo ErrHandler
     
     With ThisWorkbook.Worksheets("Runtime")
-        p.InputFolder = Trim(CStr(.Range("InputFolder").Value))
-        p.OutputFolder = Trim(CStr(.Range("OutputFolder").Value))
-        p.ConfigFolder = Trim(CStr(.Range("ConfigFolder").Value))
-        p.payrollMonth = Trim(CStr(.Range("PayrollMonth").Value))
-        p.RunDate = CDate(.Range("RunDate").Value)
-        p.LogFolder = Trim(CStr(.Range("LogFolder").Value))
+        p.InputFolder = Trim(CStr(.Range("InputFolder").value))
+        p.OutputFolder = Trim(CStr(.Range("OutputFolder").value))
+        p.ConfigFolder = Trim(CStr(.Range("ConfigFolder").value))
+        p.payrollMonth = Trim(CStr(.Range("PayrollMonth").value))
+        p.RunDate = CDate(.Range("RunDate").value)
+        p.LogFolder = Trim(CStr(.Range("LogFolder").value))
     End With
     
     ' Ensure folders end with backslash
@@ -84,9 +84,9 @@ Public Function GetPayrollContext(payrollMonth As String) As tPayrollContext
             lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
             
             For i = 2 To lastRow
-                If Trim(CStr(ws.Cells(i, 1).Value)) = payrollMonth Then
-                    ctx.currentCutoff = CDate(ws.Cells(i, 2).Value)
-                    ctx.payDate = CDate(ws.Cells(i, 3).Value)
+                If Trim(CStr(ws.Cells(i, 1).value)) = payrollMonth Then
+                    ctx.currentCutoff = CDate(ws.Cells(i, 2).value)
+                    ctx.payDate = CDate(ws.Cells(i, 3).value)
                     Exit For
                 End If
             Next i
@@ -95,8 +95,8 @@ Public Function GetPayrollContext(payrollMonth As String) As tPayrollContext
             Dim prevMonth As String
             prevMonth = Format(DateAdd("m", -1, ctx.monthStart), "YYYYMM")
             For i = 2 To lastRow
-                If Trim(CStr(ws.Cells(i, 1).Value)) = prevMonth Then
-                    ctx.PreviousCutoff = CDate(ws.Cells(i, 2).Value)
+                If Trim(CStr(ws.Cells(i, 1).value)) = prevMonth Then
+                    ctx.PreviousCutoff = CDate(ws.Cells(i, 2).value)
                     Exit For
                 End If
             Next i
@@ -205,8 +205,8 @@ Public Function GetExchangeRate(rateName As String) As Double
     
     lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     For i = 2 To lastRow
-        If UCase(Trim(CStr(ws.Cells(i, 1).Value))) = UCase(rateName) Then
-            GetExchangeRate = CDbl(ws.Cells(i, 2).Value)
+        If UCase(Trim(CStr(ws.Cells(i, 1).value))) = UCase(rateName) Then
+            GetExchangeRate = CDbl(ws.Cells(i, 2).value)
             Exit For
         End If
     Next i
@@ -248,7 +248,7 @@ Public Function IsSpecialMonth(flagName As String) As Boolean
     Set headerRow = ws.Rows(1)
     col = 0
     For i = 1 To ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
-        If UCase(Trim(CStr(ws.Cells(1, i).Value))) = UCase(flagName) Then
+        If UCase(Trim(CStr(ws.Cells(1, i).value))) = UCase(flagName) Then
             col = i
             Exit For
         End If
@@ -259,8 +259,8 @@ Public Function IsSpecialMonth(flagName As String) As Boolean
     ' Find row for current payroll month
     lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     For i = 2 To lastRow
-        If Trim(CStr(ws.Cells(i, 1).Value)) = G.Payroll.payrollMonth Then
-            IsSpecialMonth = CBool(ws.Cells(i, col).Value)
+        If Trim(CStr(ws.Cells(i, 1).value)) = G.Payroll.payrollMonth Then
+            IsSpecialMonth = CBool(ws.Cells(i, col).value)
             Exit For
         End If
     Next i

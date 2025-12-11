@@ -128,14 +128,14 @@ Private Sub WriteMPFChecks(ws As Worksheet, row As Long, wein As String)
     Dim colRI As Long
     colRI = GetCheckColIndex("MPF Relevant Income")
     If colRI > 0 Then
-        mpfRI = ToDouble(ws.Cells(row, colRI).Value)
+        mpfRI = ToDouble(ws.Cells(row, colRI).value)
     End If
     
     ' Get MPF VC Relevant Income
     Dim colVCRI As Long
     colVCRI = GetCheckColIndex("MPF VC Relevant Income")
     If colVCRI > 0 Then
-        mpfVCRI = ToDouble(ws.Cells(row, colVCRI).Value)
+        mpfVCRI = ToDouble(ws.Cells(row, colVCRI).value)
     End If
     
     ' Get percentages from params
@@ -147,34 +147,34 @@ Private Sub WriteMPFChecks(ws As Worksheet, row As Long, wein As String)
     ' Write MPF EE VC Percentage Check
     col = GetCheckColIndex("MPF EE VC Percentage")
     If col > 0 Then
-        ws.Cells(row, col).Value = mpfEEVCPct
+        ws.Cells(row, col).value = mpfEEVCPct
     End If
     
     ' Write MPF ER VC Percentage Check
     col = GetCheckColIndex("MPF ER VC Percentage")
     If col > 0 Then
-        ws.Cells(row, col).Value = mpfERVCPct
+        ws.Cells(row, col).value = mpfERVCPct
     End If
     
     ' MPF EE MC Check = MIN(MPF Relevant Income * 5%, 1500)
     col = GetCheckColIndex("MPF EE MC 21251000")
     If col > 0 Then
         mpfEEMC = WorksheetFunction.Min(mpfRI * 0.05, 1500)
-        ws.Cells(row, col).Value = RoundAmount2(mpfEEMC)
+        ws.Cells(row, col).value = RoundAmount2(mpfEEMC)
     End If
     
     ' MPF ER MC Check = MIN(MPF Relevant Income * 5%, 1500)
     col = GetCheckColIndex("MPF ER MC 60801000")
     If col > 0 Then
         mpfERMC = WorksheetFunction.Min(mpfRI * 0.05, 1500)
-        ws.Cells(row, col).Value = RoundAmount2(mpfERMC)
+        ws.Cells(row, col).value = RoundAmount2(mpfERMC)
     End If
     
     ' MPF EE VC Check = MPF VC Relevant Income * MPF EE VC %
     col = GetCheckColIndex("MPF EE VC 21251000")
     If col > 0 Then
         mpfEEVC = mpfVCRI * mpfEEVCPct
-        ws.Cells(row, col).Value = RoundAmount2(mpfEEVC)
+        ws.Cells(row, col).value = RoundAmount2(mpfEEVC)
     End If
     
     ' MPF ER VC Check = MAX(0, ROUND(MPF VC Relevant Income * MPF ER VC %, 2) - MPF ER MC)
@@ -182,7 +182,7 @@ Private Sub WriteMPFChecks(ws As Worksheet, row As Long, wein As String)
     If col > 0 Then
         mpfERVC = RoundAmount2(mpfVCRI * mpfERVCPct) - mpfERMC
         If mpfERVC < 0 Then mpfERVC = 0
-        ws.Cells(row, col).Value = RoundAmount2(mpfERVC)
+        ws.Cells(row, col).value = RoundAmount2(mpfERVC)
     End If
 End Sub
 
@@ -202,7 +202,7 @@ Private Sub WriteORSOChecks(ws As Worksheet, row As Long, wein As String)
     Dim colRI As Long
     colRI = GetCheckColIndex("ORSO Relevant Income")
     If colRI > 0 Then
-        orsoRI = ToDouble(ws.Cells(row, colRI).Value)
+        orsoRI = ToDouble(ws.Cells(row, colRI).value)
     End If
     
     ' Get parameters
@@ -215,33 +215,33 @@ Private Sub WriteORSOChecks(ws As Worksheet, row As Long, wein As String)
     ' Percent Of ORSO EE Check
     col = GetCheckColIndex("Percent Of ORSO EE")
     If col > 0 Then
-        ws.Cells(row, col).Value = orsoEEPct
+        ws.Cells(row, col).value = orsoEEPct
     End If
     
     ' Percent Of ORSO ER Check
     col = GetCheckColIndex("Percent Of ORSO ER")
     If col > 0 Then
-        ws.Cells(row, col).Value = orsoERPct
+        ws.Cells(row, col).value = orsoERPct
     End If
     
     ' ORSO EE Check = ORSO Relevant Income * 5%
     col = GetCheckColIndex("ORSO EE 60801000")
     If col > 0 Then
         orsoEE = orsoRI * 0.05
-        ws.Cells(row, col).Value = RoundAmount2(orsoEE)
+        ws.Cells(row, col).value = RoundAmount2(orsoEE)
     End If
     
     ' ORSO ER Check = ORSO Relevant Income * Percent Of ORSO ER
     col = GetCheckColIndex("ORSO ER 60801000")
     If col > 0 Then
         orsoER = orsoRI * orsoERPct
-        ws.Cells(row, col).Value = RoundAmount2(orsoER)
+        ws.Cells(row, col).value = RoundAmount2(orsoER)
     End If
     
     ' ORSO ER Adj Check (from 额外表)
     col = GetCheckColIndex("ORSO ER Adj")
     If col > 0 Then
-        ws.Cells(row, col).Value = RoundAmount2(orsoERAdj)
+        ws.Cells(row, col).value = RoundAmount2(orsoERAdj)
     End If
 End Sub
 
@@ -254,7 +254,7 @@ Private Function GetCellVal(ws As Worksheet, row As Long, headers As Object, hea
     
     If headers.exists(UCase(headerName)) Then
         col = headers(UCase(headerName))
-        GetCellVal = Trim(CStr(Nz(ws.Cells(row, col).Value, "")))
+        GetCellVal = Trim(CStr(Nz(ws.Cells(row, col).value, "")))
     End If
 End Function
 
@@ -311,7 +311,7 @@ Private Sub WriteOptionalMedicalCheck(ws As Worksheet, weinIndex As Object)
                 row = weinIndex(wein)
                 amount = ToDouble(GetContribCellVal(srcWs, i, headers, "AMOUNT"))
                 If amount > 0 Then
-                    ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, amount)
+                    ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, amount)
                 End If
             End If
         End If
@@ -335,6 +335,6 @@ Private Function GetContribCellVal(ws As Worksheet, row As Long, headers As Obje
     
     If headers.exists(UCase(headerName)) Then
         col = headers(UCase(headerName))
-        GetContribCellVal = Trim(CStr(Nz(ws.Cells(row, col).Value, "")))
+        GetContribCellVal = Trim(CStr(Nz(ws.Cells(row, col).value, "")))
     End If
 End Function

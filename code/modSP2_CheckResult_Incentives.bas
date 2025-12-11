@@ -119,7 +119,7 @@ Private Sub ProcessOneTimePaymentCheck(ws As Worksheet, weinIndex As Object)
                 End If
                 
                 If col > 0 Then
-                    ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, grouped(key))
+                    ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, grouped(key))
                 End If
             End If
         End If
@@ -201,7 +201,7 @@ Private Sub ProcessInspireCheck(ws As Worksheet, weinIndex As Object)
                 End If
                 
                 If col > 0 Then
-                    ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, grouped(key))
+                    ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, grouped(key))
                 End If
             End If
         End If
@@ -273,7 +273,7 @@ Private Sub ProcessSIPCheck(ws As Worksheet, weinIndex As Object)
                 End If
                 
                 If col > 0 Then
-                    ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, grouped(key))
+                    ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, grouped(key))
                 End If
             End If
         End If
@@ -380,8 +380,8 @@ Private Sub ProcessRSUGlobalCheck(ws As Worksheet, weinIndex As Object)
     lastRow = srcWs.Cells(srcWs.Rows.count, empRefCol).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
-        empRef = Trim(CStr(Nz(srcWs.Cells(i, empRefCol).Value, "")))
-        grossAmt = ToDouble(srcWs.Cells(i, amtCol).Value)
+        empRef = Trim(CStr(Nz(srcWs.Cells(i, empRefCol).value, "")))
+        grossAmt = ToDouble(srcWs.Cells(i, amtCol).value)
         
         If empRef <> "" And grossAmt <> 0 Then
             calcValue = grossAmt * fxRate
@@ -400,7 +400,7 @@ Private Sub ProcessRSUGlobalCheck(ws As Worksheet, weinIndex As Object)
     For Each key In empValues.Keys
         If weinIndex.exists(key) Then
             row = weinIndex(key)
-            ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, empValues(key))
+            ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, empValues(key))
         End If
     Next key
     
@@ -473,8 +473,8 @@ Private Sub ProcessRSUEYCheck(ws As Worksheet, weinIndex As Object)
     lastRow = srcWs.Cells(srcWs.Rows.count, empNumCol).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
-        empNum = Trim(CStr(Nz(srcWs.Cells(i, empNumCol).Value, "")))
-        divAmt = ToDouble(srcWs.Cells(i, amtCol).Value)
+        empNum = Trim(CStr(Nz(srcWs.Cells(i, empNumCol).value, "")))
+        divAmt = ToDouble(srcWs.Cells(i, amtCol).value)
         
         If empNum <> "" And divAmt <> 0 Then
             calcValue = divAmt * fxRate
@@ -493,7 +493,7 @@ Private Sub ProcessRSUEYCheck(ws As Worksheet, weinIndex As Object)
     For Each key In empValues.Keys
         If weinIndex.exists(key) Then
             row = weinIndex(key)
-            ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, empValues(key))
+            ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, empValues(key))
         End If
     Next key
     
@@ -552,26 +552,26 @@ Private Sub ProcessSpecialBonusCheck(ws As Worksheet, weinIndex As Object)
             ' Flexible benefits Check
             col = GetCheckColIndex("Flexible benefits")
             If col > 0 Then
-                ws.Cells(row, col).Value = ToDouble(GetCellValFromHeaders(srcWs, i, headers, "FLEXIBLE BENEFITS"))
+                ws.Cells(row, col).value = ToDouble(GetCellValFromHeaders(srcWs, i, headers, "FLEXIBLE BENEFITS"))
             End If
             
             ' Other Allowance Check
             col = GetCheckColIndex("Other Allowance 60409960")
             If col > 0 Then
-                ws.Cells(row, col).Value = ToDouble(GetCellValFromHeaders(srcWs, i, headers, "OTHER ALLOWANCE"))
+                ws.Cells(row, col).value = ToDouble(GetCellValFromHeaders(srcWs, i, headers, "OTHER ALLOWANCE"))
             End If
             
             ' Other Bonus Check
             col = GetCheckColIndex("Other Bonus 99999999")
             If col > 0 Then
-                ws.Cells(row, col).Value = SafeAdd2(ws.Cells(row, col).Value, _
+                ws.Cells(row, col).value = SafeAdd2(ws.Cells(row, col).value, _
                     ToDouble(GetCellValFromHeaders(srcWs, i, headers, "OTHER BONUS")))
             End If
             
             ' Other Rewards Check
             col = GetCheckColIndex("Other Rewards 99999999")
             If col > 0 Then
-                ws.Cells(row, col).Value = ToDouble(GetCellValFromHeaders(srcWs, i, headers, "OTHER REWARDS"))
+                ws.Cells(row, col).value = ToDouble(GetCellValFromHeaders(srcWs, i, headers, "OTHER REWARDS"))
             End If
         End If
     Next i
@@ -591,7 +591,7 @@ Private Function GetCellValFromHeaders(ws As Worksheet, row As Long, headers As 
     
     If headers.exists(UCase(headerName)) Then
         col = headers(UCase(headerName))
-        GetCellValFromHeaders = Trim(CStr(Nz(ws.Cells(row, col).Value, "")))
+        GetCellValFromHeaders = Trim(CStr(Nz(ws.Cells(row, col).value, "")))
     End If
 End Function
 
@@ -661,7 +661,7 @@ Private Sub ProcessIAPaySplitCheck(ws As Worksheet, weinIndex As Object)
             iaPaySplit = netPay + mpfEEMC + mpfEEVC
             
             If iaPaySplit <> 0 Then
-                ws.Cells(row, col).Value = RoundAmount2(iaPaySplit)
+                ws.Cells(row, col).value = RoundAmount2(iaPaySplit)
             End If
             
             processedCount = processedCount + 1
@@ -737,7 +737,7 @@ Private Function FindFlexiFormEmpId(srcWs As Worksheet) As String
     
     If Not cell Is Nothing Then
         ' Employee ID is in the cell to the right of the label
-        FindFlexiFormEmpId = Trim(CStr(Nz(cell.offset(0, 1).Value, "")))
+        FindFlexiFormEmpId = Trim(CStr(Nz(cell.offset(0, 1).value, "")))
     End If
     
     On Error GoTo 0
@@ -773,7 +773,7 @@ Private Function FindMerckValue(srcWs As Worksheet, headerKeyword As String) As 
     If Not cell Is Nothing Then
         ' Value is in the cell directly below the header
         Set valueCell = cell.offset(1, 0)
-        FindMerckValue = ToDouble(valueCell.Value)
+        FindMerckValue = ToDouble(valueCell.value)
     End If
     
     On Error GoTo 0

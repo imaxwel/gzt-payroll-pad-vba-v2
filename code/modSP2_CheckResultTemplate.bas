@@ -624,7 +624,7 @@ Public Sub UpdateTemplateColumnIndices(ws As Worksheet, headerRow As Long)
     
     ' Scan header row and update indices
     For col = 1 To lastCol
-        headerValue = Trim(CStr(Nz(ws.Cells(headerRow, col).Value, "")))
+        headerValue = Trim(CStr(Nz(ws.Cells(headerRow, col).value, "")))
         
         ' Check if this is a Check column
         If Right(UCase(headerValue), 5) = "CHECK" Then

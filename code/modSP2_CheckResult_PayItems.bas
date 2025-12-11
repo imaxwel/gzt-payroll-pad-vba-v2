@@ -91,7 +91,7 @@ Private Sub WriteBasePayCheck(ws As Worksheet, row As Long, wein As String)
     If monthlySalary <> 0 And (InStr(empType, "INTERN") = 0 And InStr(empType, "CO-OP") = 0) Then
         col = GetCheckColIndex("Base Pay 60001000")
         If col > 0 Then
-            ws.Cells(row, col).Value = RoundAmount2(actualWork * monthlySalary)
+            ws.Cells(row, col).value = RoundAmount2(actualWork * monthlySalary)
         End If
     End If
     
@@ -99,7 +99,7 @@ Private Sub WriteBasePayCheck(ws As Worksheet, row As Long, wein As String)
     If monthlySalary <> 0 And (InStr(empType, "INTERN") > 0 Or InStr(empType, "CO-OP") > 0) Then
         col = GetCheckColIndex("Base Pay(Temp) 60101000")
         If col > 0 Then
-            ws.Cells(row, col).Value = RoundAmount2(actualWork * monthlySalary)
+            ws.Cells(row, col).value = RoundAmount2(actualWork * monthlySalary)
         End If
     End If
     
@@ -107,10 +107,10 @@ Private Sub WriteBasePayCheck(ws As Worksheet, row As Long, wein As String)
     leaveDays = GetLeaveDaysForPrevMonth(wein)
     If leaveDays <> 0 And monthlySalary <> 0 Then
         col = GetCheckColIndex("Salary Adj 60001000")
-        If col > 0 Then ws.Cells(row, col).Value = CalcSalaryAdj(monthlySalary, leaveDays)
+        If col > 0 Then ws.Cells(row, col).value = CalcSalaryAdj(monthlySalary, leaveDays)
         
         col = GetCheckColIndex("Transport Allowance Adj 60409960")
-        If col > 0 Then ws.Cells(row, col).Value = CalcSalaryAdj(monthlySalary, leaveDays)
+        If col > 0 Then ws.Cells(row, col).value = CalcSalaryAdj(monthlySalary, leaveDays)
     End If
     
     ' Transport Allowance with unpaid leave deduction (current month)
@@ -118,7 +118,7 @@ Private Sub WriteBasePayCheck(ws As Worksheet, row As Long, wein As String)
     noPayDays = GetNoPayLeaveDaysCurrent(wein)
     col = GetCheckColIndex("Transport Allowance 60409960")
     If col > 0 And transportAmt <> 0 Then
-        ws.Cells(row, col).Value = CalcTransportAllowance(transportAmt, noPayDays)
+        ws.Cells(row, col).value = CalcTransportAllowance(transportAmt, noPayDays)
     End If
 End Sub
 
@@ -134,25 +134,25 @@ Private Sub WriteLeavePaymentChecks(ws As Worksheet, row As Long, wein As String
     ' Maternity Leave Payment Check
     col = GetCheckColIndex("Maternity Leave Payment 60001000")
     If col > 0 Then
-        ws.Cells(row, col).Value = CalcMaternityLeavePayment(wein)
+        ws.Cells(row, col).value = CalcMaternityLeavePayment(wein)
     End If
     
     ' Sick Leave Payment Check
     col = GetCheckColIndex("Sick Leave Payment 60001000")
     If col > 0 Then
-        ws.Cells(row, col).Value = CalcSickLeavePayment(wein)
+        ws.Cells(row, col).value = CalcSickLeavePayment(wein)
     End If
     
     ' PPTO Payment Check
     col = GetCheckColIndex("Paid Parental Time Off (PPTO) payment")
     If col > 0 Then
-        ws.Cells(row, col).Value = CalcPPTOPayment(wein)
+        ws.Cells(row, col).value = CalcPPTOPayment(wein)
     End If
     
     ' No Pay Leave Deduction Check
     col = GetCheckColIndex("No Pay Leave Deduction 60001000")
     If col > 0 Then
-        ws.Cells(row, col).Value = CalcNoPayLeaveDeduction(wein)
+        ws.Cells(row, col).value = CalcNoPayLeaveDeduction(wein)
     End If
 End Sub
 
@@ -168,7 +168,7 @@ Private Sub WriteEAOChecks(ws As Worksheet, row As Long, wein As String)
     ' Total EAO Adj Check
     col = GetCheckColIndex("Total EAO Adj 60409960")
     If col > 0 Then
-        ws.Cells(row, col).Value = CalcTotalEAOAdj(wein)
+        ws.Cells(row, col).value = CalcTotalEAOAdj(wein)
     End If
 End Sub
 
@@ -206,18 +206,18 @@ Private Sub WritePPTOEAORateCheck(ws As Worksheet, weinIndex As Object)
 
     keyCol = GetColumnFromHeaders(headers, "WEIN,WIN")
     If keyCol = 0 Then keyCol = 1
-    lastRow = srcWs.Cells(srcWs.Rows.Count, keyCol).End(xlUp).row
+    lastRow = srcWs.Cells(srcWs.Rows.count, keyCol).End(xlUp).row
 
     For i = headerRow + 1 To lastRow
         ' Get WEIN
         wein = GetPPTOCellVal(srcWs, i, headers, "WEIN")
         If wein = "" Then wein = GetPPTOCellVal(srcWs, i, headers, "WIN")
         
-        If wein <> "" And weinIndex.Exists(wein) Then
+        If wein <> "" And weinIndex.exists(wein) Then
             row = weinIndex(wein)
             pptoRate = ToDouble(GetPPTOCellVal(srcWs, i, headers, "PPTO EAO RATE INPUT"))
             If pptoRate > 0 Then
-                ws.Cells(row, col).Value = pptoRate
+                ws.Cells(row, col).value = pptoRate
             End If
         End If
     Next i
@@ -235,9 +235,9 @@ Private Function GetPPTOCellVal(ws As Worksheet, row As Long, headers As Object,
     Dim col As Long
     GetPPTOCellVal = ""
     
-    If headers.Exists(UCase(headerName)) Then
+    If headers.exists(UCase(headerName)) Then
         col = headers(UCase(headerName))
-        GetPPTOCellVal = Trim(CStr(Nz(ws.Cells(row, col).Value, "")))
+        GetPPTOCellVal = Trim(CStr(Nz(ws.Cells(row, col).value, "")))
     End If
 End Function
 
@@ -272,7 +272,7 @@ Private Sub LoadPayWorkforceData()
     headerRow = FindHeaderRowSafe(ws, "EMPLOYEE ID,EMPLOYEEID", 1, 50)
     Set headers = BuildHeaderIndex(ws, headerRow)
     
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     Dim i As Long
     For i = headerRow + 1 To lastRow
@@ -288,7 +288,7 @@ Private Sub LoadPayWorkforceData()
             empType = Trim(CStr(Nz(GetCellFromHeaders(ws, i, headers, "EMPLOYEE TYPE"), "")))
             rec("EmployeeType") = empType
             
-            If Not mPayWorkforce.Exists(wein) Then
+            If Not mPayWorkforce.exists(wein) Then
                 mPayWorkforce.Add wein, rec
             End If
         End If
@@ -330,7 +330,7 @@ Private Sub LoadTransportAllowanceData()
     headerRow = FindHeaderRowSafe(ws, "EMPLOYEE ID,EMPLOYEEID,EMPLOYEE NUMBER ID", 1, 50)
     Set headers = BuildHeaderIndex(ws, headerRow)
     
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     Dim i As Long
     For i = headerRow + 1 To lastRow
@@ -339,7 +339,7 @@ Private Sub LoadTransportAllowanceData()
             empId = NormalizeEmployeeId(Trim(CStr(Nz(GetCellFromHeaders(ws, i, headers, "EMPLOYEE ID,EMPLOYEEID,EMPLOYEE NUMBER ID"), ""))))
             amt = ToDouble(GetCellFromHeaders(ws, i, headers, "AMOUNT"))
             If empId <> "" Then
-                If mTransportAllowance.Exists(empId) Then
+                If mTransportAllowance.exists(empId) Then
                     mTransportAllowance(empId) = mTransportAllowance(empId) + amt
                 Else
                     mTransportAllowance.Add empId, amt
@@ -450,7 +450,7 @@ Private Function LoadLeaveKeyDict(offset As ePeriodOffset) As Object
         1, 50)
     Set headers = BuildHeaderIndex(ws, headerRow)
     
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
         recStatus = UCase(CStr(Nz(GetCellFromHeaders(ws, i, headers, "STATUS"), "")))
@@ -462,7 +462,7 @@ Private Function LoadLeaveKeyDict(offset As ePeriodOffset) As Object
             approvalDate = GetCellFromHeaders(ws, i, headers, "APPROVAL_DATE")
             If wein <> "" And IsDate(fromDate) And IsDate(toDate) Then
                 key = BuildLeaveKey(wein, CDate(fromDate), CDate(toDate), applyDate, approvalDate)
-                If Not dict.Exists(key) Then dict.Add key, True
+                If Not dict.exists(key) Then dict.Add key, True
             End If
         End If
     Next i
@@ -506,7 +506,7 @@ Private Function LoadNewLeaveRecords(offset As ePeriodOffset, prevKeys As Object
         "WIN,WEIN,WEINEmployee ID,EMPLOYEE CODEWIN,EMPLOYEE CODE,EMPLOYEECODE,EMPLOYEE REFERENCE,EMPLOYEE NUMBER,EMPLOYEE NUMBER ID,EMPLOYEE ID,STATUS", _
         1, 50)
     Set headers = BuildHeaderIndex(ws, headerRow)
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
         recStatus = UCase(CStr(Nz(GetCellFromHeaders(ws, i, headers, "STATUS"), "")))
@@ -519,7 +519,7 @@ Private Function LoadNewLeaveRecords(offset As ePeriodOffset, prevKeys As Object
             totalDays = ToDouble(GetCellFromHeaders(ws, i, headers, "TOTAL_DAYS"))
             If wein <> "" And IsDate(fromDate) And IsDate(toDate) Then
                 uniqueKey = BuildLeaveKey(wein, CDate(fromDate), CDate(toDate), applyDate, approvalDate)
-                If prevKeys Is Nothing Or Not prevKeys.Exists(uniqueKey) Then
+                If prevKeys Is Nothing Or Not prevKeys.exists(uniqueKey) Then
                     Dim rec(0 To 7) As Variant
                     rec(LR_WEIN) = wein
                     rec(LR_LEAVETYPE) = Nz(GetCellFromHeaders(ws, i, headers, "LEAVE TYPE"), "")
@@ -554,7 +554,7 @@ Private Function GetPayEmpRecord(wein As String) As Object
         Set GetPayEmpRecord = Nothing
         Exit Function
     End If
-    If mPayWorkforce.Exists(wein) Then
+    If mPayWorkforce.exists(wein) Then
         Set GetPayEmpRecord = mPayWorkforce(wein)
     Else
         Set GetPayEmpRecord = Nothing
@@ -575,7 +575,7 @@ End Function
 
 Private Function GetTransportAllowance(wein As String) As Double
     If Not mTransportAllowance Is Nothing Then
-        If mTransportAllowance.Exists(wein) Then
+        If mTransportAllowance.exists(wein) Then
             GetTransportAllowance = mTransportAllowance(wein)
             Exit Function
         End If
@@ -594,7 +594,7 @@ End Function
 Private Function GetDictVal(dict As Object, key As String) As Variant
     If dict Is Nothing Then
         GetDictVal = 0
-    ElseIf dict.Exists(key) Then
+    ElseIf dict.exists(key) Then
         GetDictVal = dict(key)
     Else
         GetDictVal = 0
@@ -605,7 +605,7 @@ Private Function GetActualWorkingDay(ws As Worksheet, row As Long) As Double
     Dim colActual As Long
     colActual = FindColumnByHeader(ws.Rows(4), "Actual working day,Actual working days")
     If colActual > 0 Then
-        GetActualWorkingDay = ToDouble(ws.Cells(row, colActual).Value)
+        GetActualWorkingDay = ToDouble(ws.Cells(row, colActual).value)
     Else
         GetActualWorkingDay = 1
     End If
@@ -666,7 +666,7 @@ Private Function SplitLeaveDaysByMonth(fromDate As Date, toDate As Date, totalDa
 End Function
 
 Private Sub AddToDict(dict As Object, key As String, value As Double)
-    If dict.Exists(key) Then
+    If dict.exists(key) Then
         dict(key) = Nz(dict(key), 0) + value
     Else
         dict.Add key, value
@@ -677,7 +677,7 @@ Private Function GetCellFromHeaders(ws As Worksheet, rowNum As Long, headers As 
     Dim col As Long
     col = GetColumnFromHeaders(headers, possibleNames)
     If col > 0 Then
-        GetCellFromHeaders = ws.Cells(rowNum, col).Value
+        GetCellFromHeaders = ws.Cells(rowNum, col).value
     Else
         GetCellFromHeaders = ""
     End If
