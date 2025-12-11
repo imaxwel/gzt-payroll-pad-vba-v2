@@ -331,8 +331,8 @@ Private Sub CalculateTerminatedHC(ws As Worksheet, offset As ePeriodOffset)
             termDate = CDate(termDateStr)
             On Error GoTo ErrHandler
             
-            ' Rule: If Termination Date + 7 > Pay Date -> Included, else OC
-            If termDate + 7 > payDate Then
+            ' Rule: Pay Date between Termination Date and Termination Date + 7 (inclusive) -> Included; otherwise OC
+            If payDate >= termDate And payDate <= termDate + 7 Then
                 includedCount = includedCount + 1
             Else
                 ocCount = ocCount + 1
