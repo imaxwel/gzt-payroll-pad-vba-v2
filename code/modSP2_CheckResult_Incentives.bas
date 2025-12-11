@@ -29,7 +29,7 @@ Public Sub SP2_Check_Incentives(valWb As Workbook, weinIndex As Object)
     ' Load and process RSU Dividend
     ProcessRSUCheck ws, weinIndex
     
-    ' Load and process Special Bonuses from ï¿½ï¿½ï¿½ï¿½ï¿½
+    ' Load and process Special Bonuses from ?????
     ProcessSpecialBonusCheck ws, weinIndex
     
     ' Load and process IA Pay Split from Merck Payroll Summary
@@ -377,7 +377,7 @@ Private Sub ProcessRSUGlobalCheck(ws As Worksheet, weinIndex As Object)
     
     ' Aggregate values by Employee Reference (handle duplicates)
     Set empValues = CreateObject("Scripting.Dictionary")
-    lastRow = srcWs.Cells(srcWs.Rows.count, empRefCol).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, empRefCol).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
         empRef = Trim(CStr(Nz(srcWs.Cells(i, empRefCol).Value, "")))
@@ -470,7 +470,7 @@ Private Sub ProcessRSUEYCheck(ws As Worksheet, weinIndex As Object)
     
     ' Aggregate values by Employee Number (handle duplicates)
     Set empValues = CreateObject("Scripting.Dictionary")
-    lastRow = srcWs.Cells(srcWs.Rows.count, empNumCol).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, empNumCol).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
         empNum = Trim(CStr(Nz(srcWs.Cells(i, empNumCol).Value, "")))
@@ -511,7 +511,7 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Sub: ProcessSpecialBonusCheck
-' Purpose: Process special bonuses from ï¿½ï¿½ï¿½ï¿½ï¿½.[ï¿½ï¿½ï¿½â½±ï¿½ï¿½] for Check columns
+' Purpose: Process special bonuses from ?????.[ÌØÊâ½±½ð] for Check columns
 '------------------------------------------------------------------------------
 Private Sub ProcessSpecialBonusCheck(ws As Worksheet, weinIndex As Object)
     Dim wb As Workbook
@@ -528,7 +528,7 @@ Private Sub ProcessSpecialBonusCheck(ws As Worksheet, weinIndex As Object)
     If wb Is Nothing Then Exit Sub
     
     On Error Resume Next
-    Set srcWs = wb.Worksheets("ï¿½ï¿½ï¿½â½±ï¿½ï¿½")
+    Set srcWs = wb.Worksheets("ÌØÊâ½±½ð")
     On Error GoTo ErrHandler
     
     If srcWs Is Nothing Then Exit Sub
@@ -539,7 +539,7 @@ Private Sub ProcessSpecialBonusCheck(ws As Worksheet, weinIndex As Object)
     
     keyCol = GetColumnFromHeaders(headers, "WEIN,WIN")
     If keyCol = 0 Then keyCol = 1
-    lastRow = srcWs.Cells(srcWs.Rows.count, keyCol).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, keyCol).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
         ' Get WEIN
@@ -691,8 +691,8 @@ Private Function ExtractEmpIdFromSheetName(sheetName As String) As String
     
     ExtractEmpIdFromSheetName = ""
     
-    ' Look for the separator "ï¿½ï¿½ï¿½ï¿½" (Chinese em dash) or "--" (double hyphen)
-    pos = InStr(sheetName, "ï¿½ï¿½ï¿½ï¿½")
+    ' Look for the separator "????" (Chinese em dash) or "--" (double hyphen)
+    pos = InStr(sheetName, "????")
     If pos > 0 Then
         ExtractEmpIdFromSheetName = Trim(Mid(sheetName, pos + 2))
         Exit Function
@@ -704,8 +704,8 @@ Private Function ExtractEmpIdFromSheetName(sheetName As String) As String
         Exit Function
     End If
     
-    ' Also try single em dash "ï¿½ï¿½"
-    pos = InStr(sheetName, "ï¿½ï¿½")
+    ' Also try single em dash "??"
+    pos = InStr(sheetName, "??")
     If pos > 0 Then
         ExtractEmpIdFromSheetName = Trim(Mid(sheetName, pos + 1))
         Exit Function
@@ -778,5 +778,7 @@ Private Function FindMerckValue(srcWs As Worksheet, headerKeyword As String) As 
     
     On Error GoTo 0
 End Function
+
+
 
 

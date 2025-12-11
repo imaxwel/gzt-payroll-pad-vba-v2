@@ -46,7 +46,7 @@ Public Function GroupByEmployeeAndType( _
     
     ' Detect header row within the sheet (fallback to dataRange top row)
     headerRowNum = FindHeaderRow(ws, employeeColName, 50)
-    If headerRowNum = 0 Then headerRowNum = dataRange.Row
+    If headerRowNum = 0 Then headerRowNum = dataRange.row
     
     ' Find column indices by header names
     empCol = FindColumnByHeader(ws.Rows(headerRowNum), employeeColName)
@@ -129,7 +129,7 @@ Public Function SumPerEmployee( _
     
     ' Detect header row within the sheet (fallback to dataRange top row)
     headerRowNum = FindHeaderRow(ws, employeeColName, 50)
-    If headerRowNum = 0 Then headerRowNum = dataRange.Row
+    If headerRowNum = 0 Then headerRowNum = dataRange.row
     
     ' Find column indices by header names
     empCol = FindColumnByHeader(ws.Rows(headerRowNum), employeeColName)
@@ -216,7 +216,7 @@ Public Function GroupByEmployeeAndTypeFiltered( _
     
     ' Detect header row within the sheet (fallback to dataRange top row)
     headerRowNum = FindHeaderRow(ws, employeeColName, 50)
-    If headerRowNum = 0 Then headerRowNum = dataRange.Row
+    If headerRowNum = 0 Then headerRowNum = dataRange.row
     
     ' Find column indices by header names
     empCol = FindColumnByHeader(ws.Rows(headerRowNum), employeeColName)
@@ -339,7 +339,7 @@ Public Function GroupByEmployeeAndTypeWithDateFilter( _
     
     ' Detect header row within the sheet (fallback to dataRange top row)
     headerRowNum = FindHeaderRow(ws, employeeColName, 50)
-    If headerRowNum = 0 Then headerRowNum = dataRange.Row
+    If headerRowNum = 0 Then headerRowNum = dataRange.row
     
     ' Find column indices by header names
     empCol = FindColumnByHeader(ws.Rows(headerRowNum), employeeColName)
@@ -664,7 +664,7 @@ Public Function BuildEmployeeIndex( _
         Exit Function
     End If
     
-    lastRow = ws.Cells(ws.Rows.count, empCol).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, empCol).End(xlUp).row
     
     For i = headerRowNum + 1 To lastRow
         empId = Trim(CStr(Nz(ws.Cells(i, empCol).Value, "")))

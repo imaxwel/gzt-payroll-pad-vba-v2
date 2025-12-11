@@ -261,9 +261,9 @@ Private Sub BuildBenchmarkAndIndex(valWb As Workbook)
     Set srcWs = srcWb.Worksheets(1)
     
     ' Find data range (header may not be on row 1)
-    startRow = srcWs.UsedRange.Row
+    startRow = srcWs.UsedRange.row
     startCol = srcWs.UsedRange.Column
-    lastRow = srcWs.UsedRange.Rows(srcWs.UsedRange.Rows.count).Row
+    lastRow = srcWs.UsedRange.Rows(srcWs.UsedRange.Rows.count).row
     lastCol = srcWs.UsedRange.Columns(srcWs.UsedRange.Columns.count).Column
     
     ' Copy to Check Result (starting at row 4 to leave room for summary)

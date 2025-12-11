@@ -171,7 +171,7 @@ Private Sub WritePPTOEAORateCheck(ws As Worksheet, weinIndex As Object)
 
     keyCol = GetColumnFromHeaders(headers, "WEIN,WIN")
     If keyCol = 0 Then keyCol = 1
-    lastRow = srcWs.Cells(srcWs.Rows.count, keyCol).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, keyCol).End(xlUp).row
 
     For i = headerRow + 1 To lastRow
         ' Get WEIN

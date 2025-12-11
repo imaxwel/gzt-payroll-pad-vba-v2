@@ -110,7 +110,7 @@ Private Function LoadLeaveTransactions() As Collection
     ' Determine last row using the first available identifier column
     keyCol = GetColumnFromHeaders(headers, "WIN,WEIN,EMPLOYEE CODE,EMPLOYEE NUMBER ID,EMPLOYEE ID,EMPLOYEECODE,EMPLOYEE REFERENCE,EMPLOYEE NUMBER")
     If keyCol = 0 Then keyCol = 1
-    lastRow = ws.Cells(ws.Rows.count, keyCol).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, keyCol).End(xlUp).row
     
     ' Initialize leave history
     If mLeaveHistory Is Nothing Then
@@ -1284,7 +1284,7 @@ Private Sub LoadWorkforceHireDates()
         Exit Sub
     End If
     
-    lastRow = ws.Cells(ws.Rows.count, empIdCol).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, empIdCol).End(xlUp).row
     
     ' Load data
     For i = headerRow + 1 To lastRow

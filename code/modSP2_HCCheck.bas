@@ -153,7 +153,7 @@ Private Sub CreateHireStatusPivot(valWb As Workbook, ws As Worksheet)
     hireStatusCol = FindColumnByHeader(srcWs.Rows(headerRow), "Hire Status")
     weinCol = FindColumnByHeader(srcWs.Rows(headerRow), "WEIN")
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, IIf(hireStatusCol > 0, hireStatusCol, 1)).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, IIf(hireStatusCol > 0, hireStatusCol, 1)).End(xlUp).row
     
     If hireStatusCol = 0 Then
         srcWb.Close SaveChanges:=False
@@ -242,7 +242,7 @@ Private Sub CalculatePayrollHC(ws As Worksheet, offset As ePeriodOffset)
     
     headerRow = FindHeaderRowSafe(srcWs, "Hire Status", 1, 50)
     hireStatusCol = FindColumnByHeader(srcWs.Rows(headerRow), "Hire Status")
-    lastRow = srcWs.Cells(srcWs.Rows.count, IIf(hireStatusCol > 0, hireStatusCol, 1)).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, IIf(hireStatusCol > 0, hireStatusCol, 1)).End(xlUp).row
     
     If hireStatusCol = 0 Then
         wb.Close SaveChanges:=False
@@ -316,7 +316,7 @@ Private Sub CalculateTerminatedHC(ws As Worksheet, offset As ePeriodOffset)
     
     keyCol = GetColumnFromHeaders(headers, "TERMINATION DATE,EMPLOYEE CODE,EMPLOYEECODE,EMPLOYEE REFERENCE")
     If keyCol = 0 Then keyCol = 1
-    lastRow = srcWs.Cells(srcWs.Rows.count, keyCol).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, keyCol).End(xlUp).row
     payDate = G.Payroll.payDate
     
     includedCount = 0
@@ -395,7 +395,7 @@ Private Sub CalculateNewHireHC(ws As Worksheet, offset As ePeriodOffset)
     Set headers = BuildHeaderIndex(srcWs, headerRow)
     keyCol = GetColumnFromHeaders(headers, "Employee Code,EmployeeCode,Employee Reference,EmployeeNumber,Employee Number,Employee ID,EmployeeID")
     If keyCol = 0 Then keyCol = 1
-    lastRow = srcWs.Cells(srcWs.Rows.count, keyCol).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, keyCol).End(xlUp).row
     
     newHireCount = lastRow - headerRow ' Exclude header
     If newHireCount < 0 Then newHireCount = 0
@@ -500,7 +500,7 @@ Private Sub CalculateExtraTableHC(ws As Worksheet, offset As ePeriodOffset)
     keyCol = GetColumnFromHeaders(headers, "WEIN,WIN,EMPLOYEE ID,EMPLOYEE CODE,EMPLOYEECODE")
     If keyCol = 0 Then keyCol = 1
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, keyCol).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, keyCol).End(xlUp).row
     extraCount = lastRow - headerRow ' Exclude header
     If extraCount < 0 Then extraCount = 0
     

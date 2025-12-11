@@ -116,7 +116,7 @@ Private Sub LoadWorkforceData()
         Exit Sub
     End If
     
-    lastRow = ws.Cells(ws.Rows.count, empIdCol).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, empIdCol).End(xlUp).row
     
     ' Load data starting from row after header
     For i = headerRow + 1 To lastRow
@@ -196,7 +196,7 @@ Private Function LoadAllowanceData() As Object
     
     keyCol = GetColumnFromHeaders(headers, "EMPLOYEE ID,EMPLOYEEID,EMPLOYEE NUMBER ID")
     If keyCol = 0 Then keyCol = 1
-    lastRow = ws.Cells(ws.Rows.count, keyCol).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, keyCol).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
         compPlan = UCase(GetCellVal(ws, i, headers, "COMPENSATION PLAN"))
@@ -267,7 +267,7 @@ Private Function LoadTerminationData() As Object
     
     keyCol = GetColumnFromHeaders(headers, "EMPLOYEE CODE,EMPLOYEECODE,EMPLOYEE REFERENCE,EMPLOYEENUMBER,EMPLOYEE NUMBER")
     If keyCol = 0 Then keyCol = 1
-    lastRow = ws.Cells(ws.Rows.count, keyCol).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, keyCol).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
         ' Try multiple field name variants for Employee Code

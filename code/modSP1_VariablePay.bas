@@ -356,7 +356,7 @@ Private Sub ProcessRSUGlobal(ws As Worksheet, empIndex As Object)
         Exit Sub
     End If
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, empRefCol).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, empRefCol).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
         empRef = Trim(CStr(Nz(srcWs.Cells(i, empRefCol).Value, "")))
@@ -418,7 +418,7 @@ Private Sub ProcessRSUEY(ws As Worksheet, empIndex As Object)
         Exit Sub
     End If
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, empNumCol).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, empNumCol).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
         empNum = Trim(CStr(Nz(srcWs.Cells(i, empNumCol).Value, "")))
@@ -489,7 +489,7 @@ Private Sub ProcessAIPPayouts(ws As Worksheet, empIndex As Object)
         Exit Sub
     End If
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, weinCol).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, weinCol).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
         wein = Trim(CStr(Nz(srcWs.Cells(i, weinCol).Value, "")))
@@ -568,7 +568,7 @@ Private Sub ProcessFlexClaim(ws As Worksheet, empIndex As Object)
         Exit Sub
     End If
     
-    lastRow = srcWs.Cells(srcWs.Rows.count, empNumCol).End(xlUp).Row
+    lastRow = srcWs.Cells(srcWs.Rows.count, empNumCol).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
         ' Filter by Approved status
@@ -704,8 +704,8 @@ Private Function ExtractEmployeeIdFromSheetName(sheetName As String) As String
     
     ExtractEmployeeIdFromSheetName = ""
     
-    ' Look for the separator "ï¿½ï¿½ï¿½ï¿½" (Chinese em dash) or "--" (double hyphen)
-    pos = InStr(sheetName, "ï¿½ï¿½ï¿½ï¿½")
+    ' Look for the separator "????" (Chinese em dash) or "--" (double hyphen)
+    pos = InStr(sheetName, "????")
     If pos > 0 Then
         ExtractEmployeeIdFromSheetName = Trim(Mid(sheetName, pos + 2))
         Exit Function
@@ -717,8 +717,8 @@ Private Function ExtractEmployeeIdFromSheetName(sheetName As String) As String
         Exit Function
     End If
     
-    ' Also try single em dash "ï¿½ï¿½"
-    pos = InStr(sheetName, "ï¿½ï¿½")
+    ' Also try single em dash "??"
+    pos = InStr(sheetName, "??")
     If pos > 0 Then
         ExtractEmployeeIdFromSheetName = Trim(Mid(sheetName, pos + 1))
         Exit Function
@@ -795,7 +795,7 @@ End Function
 '------------------------------------------------------------------------------
 ' Sub: ProcessExtraTable
 ' Purpose: Process Additional table for PPTO EAO Rate input and Flexible benefits
-' Note: Both PPTO EAO Rate input and Flexible benefits come from [ï¿½ï¿½ï¿½â½±ï¿½ï¿½] sheet
+' Note: Both PPTO EAO Rate input and Flexible benefits come from [ÌØÊâ½±½ð] sheet
 '       Header row is auto-detected (not necessarily row 1)
 '------------------------------------------------------------------------------
 Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
@@ -813,20 +813,20 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     Set wb = OpenExtraTableWorkbook()
     If wb Is Nothing Then Exit Sub
     
-    ' Process [ï¿½ï¿½ï¿½â½±ï¿½ï¿½] sheet for PPTO EAO Rate input and Flexible benefits
+    ' Process [ÌØÊâ½±½ð] sheet for PPTO EAO Rate input and Flexible benefits
     On Error Resume Next
-    Set srcWs = wb.Worksheets("ï¿½ï¿½ï¿½â½±ï¿½ï¿½")
+    Set srcWs = wb.Worksheets("ÌØÊâ½±½ð")
     On Error GoTo ErrHandler
     
     If srcWs Is Nothing Then
-        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "Sheet [ï¿½ï¿½ï¿½â½±ï¿½ï¿½] not found in Extra Table"
+        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "Sheet [ÌØÊâ½±½ð] not found in Extra Table"
         Exit Sub
     End If
     
     ' Auto-detect header row by searching for WEIN keyword
     headerRow = FindHeaderRow(srcWs, "WEIN,WIN,Employee ID,EmployeeID")
     If headerRow = 0 Then
-        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "Header row with WEIN not found in [ï¿½ï¿½ï¿½â½±ï¿½ï¿½] sheet"
+        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "Header row with WEIN not found in [ÌØÊâ½±½ð] sheet"
         Exit Sub
     End If
     
@@ -839,7 +839,7 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
     colFlexBenefit = FindColumnByHeader(ws.Rows(1), "Flexible benefits")
     
     If weinCol = 0 Then
-        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "WEIN column not found in [ï¿½ï¿½ï¿½â½±ï¿½ï¿½] sheet"
+        LogWarning "modSP1_VariablePay", "ProcessExtraTable", "WEIN column not found in [ÌØÊâ½±½ð] sheet"
         Exit Sub
     End If
     
@@ -871,7 +871,7 @@ Private Sub ProcessExtraTable(ws As Worksheet, empIndex As Object)
         End If
     Next i
     
-    LogInfo "modSP1_VariablePay", "ProcessExtraTable", "Processed Extra Table [ï¿½ï¿½ï¿½â½±ï¿½ï¿½] sheet (header at row " & headerRow & ")"
+    LogInfo "modSP1_VariablePay", "ProcessExtraTable", "Processed Extra Table [ÌØÊâ½±½ð] sheet (header at row " & headerRow & ")"
     Exit Sub
     
 ErrHandler:
@@ -915,6 +915,8 @@ Private Function GetOrAddRow(ws As Worksheet, wein As String, empIndex As Object
     
     GetOrAddRow = newRow
 End Function
+
+
 
 
 

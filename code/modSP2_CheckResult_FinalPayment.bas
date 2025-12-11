@@ -78,7 +78,7 @@ Private Sub LoadFinalPayParams()
     
     keyCol = GetColumnFromHeaders(headers, "WEIN,WIN,WEINEmployee ID,EMPLOYEE CODEWIN,EMPLOYEE ID,EMPLOYEEID")
     If keyCol = 0 Then keyCol = 1
-    lastRow = ws.Cells(ws.Rows.count, keyCol).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, keyCol).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
         ' Try multiple field name variants for WEIN
