@@ -9,6 +9,11 @@ Option Explicit
 ' Final payment parameters from 额外表
 Private mFinalPayParams As Object
 
+' Workforce cache for year end bonus
+Private mYearEndWorkforce As Object ' Dictionary: WEIN -> record(monthlySalary, lastHireDate)
+' Termination WEIN set
+Private mTerminationWeins As Object
+
 '------------------------------------------------------------------------------
 ' Sub: SP2_Check_FinalPayment
 ' Purpose: Populate final payment Check columns
@@ -25,6 +30,12 @@ Public Sub SP2_Check_FinalPayment(valWb As Workbook, weinIndex As Object)
     
     ' Load Final Payment parameters
     LoadFinalPayParams
+    
+    ' Load Workforce Detail for Year End Bonus
+    LoadYearEndWorkforceData
+    
+    ' Load termination WEINs for current month
+    LoadTerminationWeins
     
     ' Process each WEIN
     Dim wein As Variant
@@ -231,6 +242,8 @@ End Sub
 Private Sub WriteYearEndBonusCheck(ws As Worksheet, row As Long, wein As String)
     Dim col As Long
     Dim monthlySalary As Double
+    Dim hireDate As Date
+    Dim payment As Double
     
     On Error Resume Next
     
@@ -238,20 +251,60 @@ Private Sub WriteYearEndBonusCheck(ws As Worksheet, row As Long, wein As String)
     col = GetCheckColIndex("Year End Bonus 60208000")
     If col = 0 Then Exit Sub
     
-    ' Get Monthly Salary
-    Dim colSalary As Long
-    colSalary = GetCheckColIndex("Monthly Base Pay")
-    If colSalary > 0 Then
-        monthlySalary = ToDouble(ws.Cells(row, colSalary).Value)
+    ' Get Monthly Salary from workforce cache; fallback to Check Result
+    monthlySalary = GetWorkforceMonthlySalary(wein)
+    If monthlySalary = 0 Then
+        Dim colSalary As Long
+        colSalary = GetCheckColIndex("Monthly Base Pay")
+        If colSalary > 0 Then monthlySalary = ToDouble(ws.Cells(row, colSalary).Value)
+        If monthlySalary = 0 Then
+            colSalary = GetCheckColIndex("Monthly Base Pay(Temp)")
+            If colSalary > 0 Then monthlySalary = ToDouble(ws.Cells(row, colSalary).Value)
+        End If
     End If
     
-    ' For December or termination cases
-    ' If service < 1 year: Monthly Salary / Annual Period * Service Period
-    ' Else: Monthly Salary
+    If monthlySalary = 0 Then Exit Sub
     
-    ' Placeholder implementation
+    ' If termination in current month, pay monthly salary
+    If Not mTerminationWeins Is Nothing Then
+        If mTerminationWeins.Exists(wein) Then
+            ws.Cells(row, col).Value = RoundAmount2(monthlySalary)
+            Exit Sub
+        End If
+    End If
+    
+    ' December rule based on service period within current year
     If Month(G.Payroll.monthEnd) = 12 Then
-        ws.Cells(row, col).Value = RoundAmount2(monthlySalary)
+        hireDate = GetWorkforceHireDate(wein)
+        payment = CalcYearEndBonus(monthlySalary, hireDate)
+        If payment <> 0 Then ws.Cells(row, col).Value = payment
+    End If
+End Sub
+
+'------------------------------------------------------------------------------
+' Function: CalcYearEndBonus
+' Purpose: Calculate Year End Bonus based on service period in current year
+' Formula:
+'   If service period < full year: Monthly Salary / AnnualDays * ServiceDays
+'   Else: Monthly Salary
+'------------------------------------------------------------------------------
+Private Function CalcYearEndBonus(monthlySalary As Double, hireDate As Date) As Double
+    Dim yearStart As Date, yearEnd As Date
+    Dim serviceStart As Date
+    Dim serviceDays As Long
+    Dim annualDays As Long
+    
+    yearEnd = G.Payroll.monthEnd
+    yearStart = DateSerial(Year(yearEnd), 1, 1)
+    serviceStart = yearStart
+    If hireDate > 0 And hireDate > yearStart Then serviceStart = hireDate
+    
+    annualDays = DateDiff("d", yearStart, DateSerial(Year(yearEnd), 12, 31)) + 1
+    serviceDays = DateDiff("d", serviceStart, yearEnd) + 1
+    If serviceDays >= annualDays Then
+        CalcYearEndBonus = RoundAmount2(monthlySalary)
+    Else
+        CalcYearEndBonus = RoundAmount2(SafeDivide2(monthlySalary, annualDays) * serviceDays)
     End If
 End Sub
 
@@ -266,6 +319,139 @@ Private Function GetCellVal(ws As Worksheet, row As Long, headers As Object, hea
         col = headers(UCase(headerName))
         GetCellVal = Trim(CStr(Nz(ws.Cells(row, col).Value, "")))
     End If
+End Function
+
+'------------------------------------------------------------------------------
+' Data loaders for Year End Bonus
+'------------------------------------------------------------------------------
+Private Sub LoadYearEndWorkforceData()
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim filePath As String
+    Dim headers As Object
+    Dim headerRow As Long, lastRow As Long
+    Dim wein As String
+    Dim monthlySalary As Double
+    Dim hireDate As Variant
+    Dim i As Long
+    
+    On Error GoTo ErrHandler
+    
+    Set mYearEndWorkforce = CreateObject("Scripting.Dictionary")
+    
+    filePath = GetInputFilePathAuto("WorkforceDetail", poCurrentMonth)
+    If Not FileExistsSafe(filePath) Then
+        LogError "modSP2_CheckResult_FinalPayment", "LoadYearEndWorkforceData", 0, _
+            "Workforce Detail file does not exist: " & filePath
+        Exit Sub
+    End If
+    
+    Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
+    Set ws = wb.Worksheets(1)
+    
+    headerRow = FindHeaderRowSafe(ws, "EMPLOYEE ID,EMPLOYEEID", 1, 50)
+    Set headers = BuildHeaderIndex(ws, headerRow)
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
+    
+    For i = headerRow + 1 To lastRow
+        wein = NormalizeEmployeeId(Trim(CStr(Nz(GetCellVal(ws, i, headers, "WEIN"), ""))))
+        If wein = "" Then wein = NormalizeEmployeeId(Trim(CStr(Nz(GetCellVal(ws, i, headers, "WIN"), ""))))
+        If wein = "" Then wein = NormalizeEmployeeId(Trim(CStr(Nz(GetCellVal(ws, i, headers, "EMPLOYEE ID"), ""))))
+        If wein <> "" Then
+            monthlySalary = RoundMonthlySalary(GetCellVal(ws, i, headers, "MONTHLY SALARY"))
+            hireDate = GetCellVal(ws, i, headers, "LAST HIRE DATE")
+            Dim rec As Object
+            Set rec = CreateObject("Scripting.Dictionary")
+            rec("MonthlySalary") = monthlySalary
+            If IsDate(hireDate) Then
+                rec("HireDate") = CDate(hireDate)
+            Else
+                rec("HireDate") = 0
+            End If
+            If Not mYearEndWorkforce.Exists(wein) Then
+                mYearEndWorkforce.Add wein, rec
+            End If
+        End If
+    Next i
+    
+    wb.Close SaveChanges:=False
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP2_CheckResult_FinalPayment", "LoadYearEndWorkforceData", Err.Number, Err.Description
+    On Error Resume Next
+    If Not wb Is Nothing Then wb.Close SaveChanges:=False
+End Sub
+
+Private Sub LoadTerminationWeins()
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim filePath As String
+    Dim headers As Object
+    Dim headerRow As Long, lastRow As Long
+    Dim empCode As String
+    Dim wein As String
+    Dim i As Long
+    
+    On Error GoTo ErrHandler
+    
+    Set mTerminationWeins = CreateObject("Scripting.Dictionary")
+    
+    filePath = GetInputFilePathAuto("Termination", poCurrentMonth)
+    If Not FileExistsSafe(filePath) Then
+        Exit Sub
+    End If
+    
+    Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
+    Set ws = wb.Worksheets(1)
+    
+    headerRow = FindHeaderRowSafe(ws, "EMPLOYEE CODE,EMPLOYEECODE,EMPLOYEE REFERENCE,EMPLOYEENUMBER,EMPLOYEE NUMBER", 1, 50)
+    Set headers = BuildHeaderIndex(ws, headerRow)
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
+    
+    For i = headerRow + 1 To lastRow
+        empCode = GetCellVal(ws, i, headers, "EMPLOYEE CODE")
+        If empCode = "" Then empCode = GetCellVal(ws, i, headers, "EMPLOYEECODE")
+        If empCode = "" Then empCode = GetCellVal(ws, i, headers, "EMPLOYEE REFERENCE")
+        If empCode = "" Then empCode = GetCellVal(ws, i, headers, "EMPLOYEENUMBER")
+        If empCode = "" Then empCode = GetCellVal(ws, i, headers, "EMPLOYEE NUMBER")
+        If empCode <> "" Then
+            wein = NormalizeEmployeeId(empCode)
+            If wein <> "" And Not mTerminationWeins.Exists(wein) Then
+                mTerminationWeins.Add wein, True
+            End If
+        End If
+    Next i
+    
+    wb.Close SaveChanges:=False
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP2_CheckResult_FinalPayment", "LoadTerminationWeins", Err.Number, Err.Description
+    On Error Resume Next
+    If Not wb Is Nothing Then wb.Close SaveChanges:=False
+End Sub
+
+Private Function GetWorkforceMonthlySalary(wein As String) As Double
+    If Not mYearEndWorkforce Is Nothing Then
+        If mYearEndWorkforce.Exists(wein) Then
+            GetWorkforceMonthlySalary = Nz(mYearEndWorkforce(wein)("MonthlySalary"), 0)
+            Exit Function
+        End If
+    End If
+    GetWorkforceMonthlySalary = 0
+End Function
+
+Private Function GetWorkforceHireDate(wein As String) As Date
+    If Not mYearEndWorkforce Is Nothing Then
+        If mYearEndWorkforce.Exists(wein) Then
+            If IsDate(Nz(mYearEndWorkforce(wein)("HireDate"), 0)) Then
+                GetWorkforceHireDate = CDate(mYearEndWorkforce(wein)("HireDate"))
+                Exit Function
+            End If
+        End If
+    End If
+    GetWorkforceHireDate = 0
 End Function
 
 
