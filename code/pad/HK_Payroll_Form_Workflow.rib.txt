@@ -1,0 +1,10 @@
+#### Main
+Display.SelectFileDialog.SelectFile Title: $'''Select HK_Payroll_Automation.xlsm''' IsTopMost: False CheckIfFileExists: True FileTypes: $'''Excel Macro-Enabled Workbook (*.xlsm)|*.xlsm''' SelectedFile=> payrollWbPath ButtonPressed=> btnPressed
+IF btnPressed = $'''Open''' THEN
+    Excel.LaunchExcel.LaunchAndOpenUnderExistingProcess Path: payrollWbPath Visible: True ReadOnly: False UseMachineLocale: False Instance=> PayrollExcel
+    Excel.RunMacro Instance: PayrollExcel Macro: $'''startformMain'''
+ELSE
+    Display.ShowMessageDialog.ShowMessage Title: $'''No Workbook Selected''' Message: $'''No HK_Payroll_Automation.xlsm selected. Workflow ends.''' Icon: Display.Icon.Warning Buttons: Display.Buttons.OK DefaultButton: Display.DefaultButton.Button1 IsTopMost: True ButtonPressed=> ignored
+    EXIT Code: 0 ErrorMessage: $'''No workbook selected'''
+END
+

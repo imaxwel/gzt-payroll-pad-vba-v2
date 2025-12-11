@@ -10,6 +10,8 @@
 		"modEAOService": "modEAOService.bas",
 		"modFormattingService": "modFormattingService.bas",
 		"modEntryPoints": "modEntryPoints.bas",
+		"modInputFilesService": "modInputFilesService.bas",
+		"modPayrollFormEntry": "modPayrollFormEntry.bas",
 		"modSP1_Main": "modSP1_Main.bas",
 		"modSP1_Attendance": "modSP1_Attendance.bas",
 		"modSP1_VariablePay": "modSP1_VariablePay.bas",
