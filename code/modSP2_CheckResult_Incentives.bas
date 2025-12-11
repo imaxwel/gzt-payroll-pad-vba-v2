@@ -112,6 +112,10 @@ Private Sub ProcessOneTimePaymentCheck(ws As Worksheet, weinIndex As Object)
                     col = GetCheckColIndex("Annual Incentive 60201000")
                 ElseIf InStr(planType, "YEAR END") > 0 Then
                     col = GetCheckColIndex("Year End Bonus 60208000")
+                ElseIf InStr(planType, "MANAGER OF THE YEAR") > 0 Then
+                    col = GetCheckColIndex("Manager of the Year Award 60208000")
+                ElseIf InStr(planType, "MD AWARD") > 0 Then
+                    col = GetCheckColIndex("MD Award 60208000")
                 ElseIf InStr(planType, "OTHER BONUS") > 0 Then
                     col = GetCheckColIndex("Other Bonus 99999999")
                 Else
@@ -511,7 +515,7 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Sub: ProcessSpecialBonusCheck
-' Purpose: Process special bonuses from ?????.[ÌØÊâ½±½ð] for Check columns
+' Purpose: Process special bonuses from ?????.[ÃŒÃ˜ÃŠÃ¢Â½Â±Â½Ã°] for Check columns
 '------------------------------------------------------------------------------
 Private Sub ProcessSpecialBonusCheck(ws As Worksheet, weinIndex As Object)
     Dim wb As Workbook
@@ -528,7 +532,7 @@ Private Sub ProcessSpecialBonusCheck(ws As Worksheet, weinIndex As Object)
     If wb Is Nothing Then Exit Sub
     
     On Error Resume Next
-    Set srcWs = wb.Worksheets("ÌØÊâ½±½ð")
+    Set srcWs = wb.Worksheets("ÃŒÃ˜ÃŠÃ¢Â½Â±Â½Ã°")
     On Error GoTo ErrHandler
     
     If srcWs Is Nothing Then Exit Sub
@@ -778,7 +782,6 @@ Private Function FindMerckValue(srcWs As Worksheet, headerKeyword As String) As 
     
     On Error GoTo 0
 End Function
-
 
 
 
