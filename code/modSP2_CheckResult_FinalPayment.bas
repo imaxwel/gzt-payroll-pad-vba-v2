@@ -20,6 +20,9 @@ Public Sub SP2_Check_FinalPayment(valWb As Workbook, weinIndex As Object)
     
     Set ws = valWb.Worksheets("Check Result")
     
+    ' EAO data needed for Untaken Annual Leave Payment
+    LoadEAOData
+    
     ' Load Final Payment parameters
     LoadFinalPayParams
     
@@ -274,31 +277,29 @@ End Function
 Private Sub WriteUntakenALPaymentCheck(ws As Worksheet, row As Long, wein As String)
     Dim col As Long
     Dim monthlySalary As Double
-    Dim avgDayWage As Double
-    Dim untakenDays As Double
     Dim payment As Double
+    Dim colSalary As Long
     
     On Error Resume Next
     
     col = GetCheckColIndex("Untaken Annual Leave Payment 60409960")
     If col = 0 Then Exit Sub
     
-    ' Get Monthly Salary from Check Result
-    Dim colSalary As Long
+    ' Get Monthly Salary from Check Result (regular or temp)
     colSalary = GetCheckColIndex("Monthly Base Pay")
     If colSalary > 0 Then
         monthlySalary = ToDouble(ws.Cells(row, colSalary).Value)
     End If
+    If monthlySalary = 0 Then
+        colSalary = GetCheckColIndex("Monthly Base Pay(Temp)")
+        If colSalary > 0 Then monthlySalary = ToDouble(ws.Cells(row, colSalary).Value)
+    End If
     
-    ' Get Average Day Wage from EAO data (would need to be loaded)
-    ' avgDayWage = GetEAOValue(wein, "AverageDayWage_12Month")
+    If monthlySalary = 0 Then Exit Sub
     
-    ' Get Untaken Annual Leave Days (would need to be loaded from EAO or Leave data)
-    ' untakenDays = GetEAOValue(wein, "UntakenALDays")
-    
-    ' Calculate payment
-    ' payment = WorksheetFunction.Max(monthlySalary / 22, avgDayWage) * untakenDays
-    
-    ' Placeholder: actual implementation would calculate based on EAO data
-    ' ws.Cells(row, col).Value = RoundAmount2(payment)
+    ' Calculate payment from EAO summary
+    payment = CalcUntakenAnnualLeavePayment(wein, monthlySalary)
+    If payment <> 0 Then
+        ws.Cells(row, col).Value = payment
+    End If
 End Sub
