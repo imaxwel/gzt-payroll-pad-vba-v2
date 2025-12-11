@@ -10,6 +10,8 @@ Option Explicit
 Private mMPFParams As Object
 ' Goods & Services Differential from 额外表[特殊奖金]
 Private mGoodsServicesDiff As Object
+' Workforce Monthly Salary cache for ORSO Relevant Income
+Private mOrsoWorkforce As Object
 
 '------------------------------------------------------------------------------
 ' Sub: SP2_Check_Contribution
@@ -26,6 +28,8 @@ Public Sub SP2_Check_Contribution(valWb As Workbook, weinIndex As Object)
     LoadMPFParams
     ' Load Goods & Services Differential from 额外表
     LoadGoodsServicesDiff
+    ' Load workforce data for ORSO Relevant Income
+    LoadWorkforceForOrso
     
     ' Process each WEIN
     Dim wein As Variant
@@ -171,6 +175,63 @@ Private Sub LoadGoodsServicesDiff()
 ErrHandler:
     LogError "modSP2_CheckResult_Contribution", "LoadGoodsServicesDiff", Err.Number, Err.Description
 End Sub
+
+'------------------------------------------------------------------------------
+' Sub: LoadWorkforceForOrso
+' Purpose: Load Monthly Salary (rounded) from Workforce Detail for ORSO Relevant Income
+'------------------------------------------------------------------------------
+Private Sub LoadWorkforceForOrso()
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim headers As Object
+    Dim headerRow As Long, lastRow As Long, i As Long
+    Dim wein As String, empId As String
+    Dim salary As Double
+    
+    On Error GoTo ErrHandler
+    
+    Set mOrsoWorkforce = CreateObject("Scripting.Dictionary")
+    
+    Dim filePath As String
+    filePath = GetInputFilePathAuto("WorkforceDetail", poCurrentMonth)
+    If Not FileExistsSafe(filePath) Then
+        LogError "modSP2_CheckResult_Contribution", "LoadWorkforceForOrso", 0, _
+            "Workforce Detail file does not exist: " & filePath
+        Exit Sub
+    End If
+    
+    Set wb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
+    Set ws = wb.Worksheets(1)
+    
+    headerRow = FindHeaderRowSafe(ws, "EMPLOYEE ID,EMPLOYEEID,EMPLOYEE NUMBER ID,WEIN,WIN", 1, 50)
+    Set headers = BuildHeaderIndex(ws, headerRow)
+    
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
+    
+    For i = headerRow + 1 To lastRow
+        wein = GetCellVal(ws, i, headers, "WEIN")
+        If wein = "" Then wein = GetCellVal(ws, i, headers, "WIN")
+        If wein = "" Then wein = GetCellVal(ws, i, headers, "EMPLOYEE ID")
+        If wein = "" Then wein = GetCellVal(ws, i, headers, "EMPLOYEEID")
+        If wein = "" Then wein = GetCellVal(ws, i, headers, "EMPLOYEE NUMBER ID")
+        
+        empId = NormalizeEmployeeId(wein)
+        If empId <> "" Then
+            salary = RoundMonthlySalary(GetCellVal(ws, i, headers, "MONTHLY SALARY"))
+            If Not mOrsoWorkforce.exists(empId) Then
+                mOrsoWorkforce.Add empId, salary
+            End If
+        End If
+    Next i
+    
+    wb.Close SaveChanges:=False
+    Exit Sub
+    
+ErrHandler:
+    LogError "modSP2_CheckResult_Contribution", "LoadWorkforceForOrso", Err.Number, Err.Description
+    On Error Resume Next
+    If Not wb Is Nothing Then wb.Close SaveChanges:=False
+End Sub
 '------------------------------------------------------------------------------
 ' Sub: WriteMPFChecks
 ' Purpose: Write MPF Check columns
@@ -186,7 +247,7 @@ Private Sub WriteMPFChecks(ws As Worksheet, row As Long, wein As String)
     
     ' Compute and write MPF Relevant Income (and VC) Check
     mpfRI = ComputeAndWriteMPFRelevantIncome(ws, row, wein)
-    mpfVCRI = mpfRI
+    mpfVCRI = ComputeAndWriteMPFVCRelevantIncome(ws, row)
     
     ' Get percentages from params
     If mMPFParams.exists(wein) Then
@@ -309,9 +370,37 @@ Private Function ComputeAndWriteMPFRelevantIncome(ws As Worksheet, row As Long, 
     ' Write Check columns
     col = GetCheckColIndex("MPF Relevant Income")
     If col > 0 Then ws.Cells(row, col).value = ComputeAndWriteMPFRelevantIncome
+End Function
+
+'------------------------------------------------------------------------------
+' Helper: Compute and write MPF VC Relevant Income Check
+'------------------------------------------------------------------------------
+Private Function ComputeAndWriteMPFVCRelevantIncome(ws As Worksheet, row As Long) As Double
+    Const HEADER_ROW As Long = 4
+    
+    Dim total As Double
+    Dim col As Long
+    
+    ' Positive components
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Base Pay 60001000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Base Pay(Temp) 60101000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Rental Reimbursement 60001000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Rental Reimbursement Adj 60001000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Total EAO Adj 60409960")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Salary Adj 60001000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Salary Adj (Temp) 60101000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Maternity Leave Payment 60001000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Paternity Leave Payment 60001000")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Paid Parental Time Off (PPTO) payment")
+    total = total + GetBenchmarkVal(ws, row, HEADER_ROW, "Sick Leave Payment 60001000")
+    
+    ' Negative component
+    total = total - GetBenchmarkVal(ws, row, HEADER_ROW, "No Pay Leave Deduction 60001000")
+    
+    ComputeAndWriteMPFVCRelevantIncome = RoundAmount2(total)
     
     col = GetCheckColIndex("MPF VC Relevant Income")
-    If col > 0 Then ws.Cells(row, col).value = ComputeAndWriteMPFRelevantIncome
+    If col > 0 Then ws.Cells(row, col).value = ComputeAndWriteMPFVCRelevantIncome
 End Function
 
 '------------------------------------------------------------------------------
@@ -342,6 +431,34 @@ Private Function GetGoodsServicesVal(wein As String) As Double
 End Function
 
 '------------------------------------------------------------------------------
+' Helper: Compute and write ORSO Relevant Income Check (Monthly Salary)
+'------------------------------------------------------------------------------
+Private Function ComputeAndWriteORSORelevantIncome(ws As Worksheet, row As Long, wein As String) As Double
+    Dim base As Double
+    Dim col As Long
+    
+    base = GetOrsoMonthlySalary(wein)
+    ComputeAndWriteORSORelevantIncome = base
+    
+    col = GetCheckColIndex("ORSO Relevant Income")
+    If col > 0 Then ws.Cells(row, col).value = base
+End Function
+
+'------------------------------------------------------------------------------
+' Helper: Get Monthly Salary for ORSO base by WEIN
+'------------------------------------------------------------------------------
+Private Function GetOrsoMonthlySalary(wein As String) As Double
+    On Error Resume Next
+    If Not mOrsoWorkforce Is Nothing Then
+        If mOrsoWorkforce.exists(wein) Then
+            GetOrsoMonthlySalary = mOrsoWorkforce(wein)
+            Exit Function
+        End If
+    End If
+    GetOrsoMonthlySalary = 0
+End Function
+
+'------------------------------------------------------------------------------
 ' Sub: WriteORSOChecks
 ' Purpose: Write ORSO Check columns
 '------------------------------------------------------------------------------
@@ -353,12 +470,8 @@ Private Sub WriteORSOChecks(ws As Worksheet, row As Long, wein As String)
     
     On Error Resume Next
     
-    ' Get ORSO Relevant Income (Monthly Salary from Workforce Detail)
-    Dim colRI As Long
-    colRI = GetCheckColIndex("ORSO Relevant Income")
-    If colRI > 0 Then
-        orsoRI = ToDouble(ws.Cells(row, colRI).value)
-    End If
+    ' Compute and write ORSO Relevant Income (Monthly Salary from Workforce Detail)
+    orsoRI = ComputeAndWriteORSORelevantIncome(ws, row, wein)
     
     ' Get parameters
     If mMPFParams.exists(wein) Then
