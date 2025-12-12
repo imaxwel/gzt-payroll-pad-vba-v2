@@ -21,12 +21,41 @@ Attribute VB_Exposed = False
   Private Sub UserForm_Initialize()
       On Error GoTo ErrHandler
       mIsRefreshed = False
+      ConfigureInputFilesTable
       InitPeriodControls
       LoadAndDisplayConfig
       Exit Sub
 ErrHandler:
       LogError "frmPayrollMain", "UserForm_Initialize", Err.Number, Err.Description
       MsgBox "Failed to initialize form: " & Err.Description, vbCritical
+  End Sub
+
+  Private Sub ConfigureInputFilesTable()
+      HideInputFilesHeaderLabels
+
+      On Error Resume Next
+      With lstInputFiles
+          .Top = 18
+          .Height = 270
+          .ColumnCount = 6
+          .ColumnWidths = "160;100;300;70;50;0"
+      End With
+      On Error GoTo 0
+  End Sub
+
+  Private Sub HideInputFilesHeaderLabels()
+      Dim ctrlName As Variant
+      For Each ctrlName In Array( _
+          "lblHeaderName", _
+          "lblHeaderKeyword", _
+          "lblHeaderFilePath", _
+          "lblHeaderFunction", _
+          "lblHeaderRun" _
+      )
+          On Error Resume Next
+          Me.Controls(CStr(ctrlName)).Visible = False
+          On Error GoTo 0
+      Next ctrlName
   End Sub
 
   Private Sub btnRefresh_Click()
@@ -122,25 +151,58 @@ ErrHandler:
 
   Private Sub PopulateListBox()
       On Error GoTo ErrHandler
-      Dim item As Object, rowIndex As Long, displayName As String
-      lstInputFiles.Clear
-      If mItems Is Nothing Then Exit Sub
 
-      For Each item In mItems
-          displayName = CStr(item("Name"))
-          Select Case CLng(item("Status"))
-              Case fsMissingMandatory: displayName = "[MISSING] " & displayName
-              Case fsNotUnique: displayName = "[NOT UNIQUE] " & displayName
-          End Select
+      Dim ws As Worksheet
+      Set ws = ThisWorkbook.Worksheets("Runtime")
 
-          lstInputFiles.AddItem displayName
-          rowIndex = lstInputFiles.ListCount - 1
-          lstInputFiles.List(rowIndex, 1) = CStr(item("Keyword"))
-          lstInputFiles.List(rowIndex, 2) = CStr(item("FilePath"))
-          lstInputFiles.List(rowIndex, 3) = CStr(item("Function"))
-          lstInputFiles.List(rowIndex, 4) = CStr(item("Run"))
-          lstInputFiles.List(rowIndex, 5) = CStr(item("Status"))
-      Next item
+      Dim totalRows As Long
+      If mItems Is Nothing Then
+          totalRows = 2
+      Else
+          totalRows = mItems.Count + 1
+          If totalRows < 2 Then totalRows = 2
+      End If
+
+      Dim dataArr() As Variant
+      ReDim dataArr(1 To totalRows, 1 To 6)
+
+      dataArr(1, 1) = "Name"
+      dataArr(1, 2) = "Keyword"
+      dataArr(1, 3) = "FilePath"
+      dataArr(1, 4) = "Function"
+      dataArr(1, 5) = "Run"
+      dataArr(1, 6) = "Status"
+
+      Dim item As Object, displayName As String, writeRow As Long
+      If Not mItems Is Nothing Then
+          writeRow = 2
+          For Each item In mItems
+              displayName = CStr(item("Name"))
+              Select Case CLng(item("Status"))
+                  Case fsMissingMandatory: displayName = "[MISSING] " & displayName
+                  Case fsNotUnique: displayName = "[NOT UNIQUE] " & displayName
+              End Select
+
+              dataArr(writeRow, 1) = displayName
+              dataArr(writeRow, 2) = CStr(item("Keyword"))
+              dataArr(writeRow, 3) = CStr(item("FilePath"))
+              dataArr(writeRow, 4) = CStr(item("Function"))
+              dataArr(writeRow, 5) = CStr(item("Run"))
+              dataArr(writeRow, 6) = CStr(item("Status"))
+              writeRow = writeRow + 1
+          Next item
+      End If
+
+      ws.Range("AA1").Resize(totalRows, 6).Value = dataArr
+      ws.Range("AA1").Resize(1, 6).Font.Bold = True
+
+      With lstInputFiles
+          .RowSource = ""
+          .ColumnCount = 6
+          .ColumnWidths = "160;100;300;70;50;0"
+          .ColumnHeads = True
+          .RowSource = "'" & ws.Name & "'!AA2:AF" & totalRows
+      End With
 
       Exit Sub
 ErrHandler:

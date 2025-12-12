@@ -50,19 +50,13 @@ Public Sub CreatePayrollForm()
     Set ctrl = frm.Controls.Add("Forms.ListBox.1", "lstInputFiles")
     With ctrl
         .Left = 12
-        .Top = 36
+        .Top = 18
         .Width = 624
-        .Height = 252
+        .Height = 270
         .ColumnCount = 6
         .ColumnWidths = "160;100;300;70;50;0"
+        .ColumnHeads = True
     End With
-    
-    ' Add column header labels
-    AddLabel frm, "lblHeaderName", "Name", 12, 18, 90, 15, True
-    AddLabel frm, "lblHeaderKeyword", "Keyword", 108, 18, 72, 15, True
-    AddLabel frm, "lblHeaderFilePath", "FilePath", 186, 18, 312, 15, True
-    AddLabel frm, "lblHeaderFunction", "Function", 504, 18, 54, 15, True
-    AddLabel frm, "lblHeaderRun", "Run", 564, 18, 36, 15, True
     
     ' Add Refresh button
     Set ctrl = frm.Controls.Add("Forms.CommandButton.1", "btnRefresh")
@@ -173,6 +167,7 @@ Private Sub AddFormCode(codeModule As Object)
     code = code & "Private Sub UserForm_Initialize()" & vbCrLf
     code = code & "    On Error GoTo ErrHandler" & vbCrLf
     code = code & "    mIsRefreshed = False" & vbCrLf
+    code = code & "    ConfigureInputFilesTable" & vbCrLf
     code = code & "    InitPeriodControls" & vbCrLf
     code = code & "    LoadAndDisplayConfig" & vbCrLf
     code = code & "    Exit Sub" & vbCrLf
@@ -290,26 +285,82 @@ End Sub
 Private Sub AddFormCodePart4(codeModule As Object)
     Dim code As String
     
+    ' ConfigureInputFilesTable
+    code = "Private Sub ConfigureInputFilesTable()" & vbCrLf
+    code = code & "    HideInputFilesHeaderLabels" & vbCrLf & vbCrLf
+    code = code & "    On Error Resume Next" & vbCrLf
+    code = code & "    With lstInputFiles" & vbCrLf
+    code = code & "        .Top = 18" & vbCrLf
+    code = code & "        .Height = 270" & vbCrLf
+    code = code & "        .ColumnCount = 6" & vbCrLf
+    code = code & "        .ColumnWidths = ""160;100;300;70;50;0""" & vbCrLf
+    code = code & "    End With" & vbCrLf
+    code = code & "    On Error GoTo 0" & vbCrLf
+    code = code & "End Sub" & vbCrLf & vbCrLf
+
+    ' HideInputFilesHeaderLabels
+    code = code & "Private Sub HideInputFilesHeaderLabels()" & vbCrLf
+    code = code & "    Dim ctrlName As Variant" & vbCrLf
+    code = code & "    For Each ctrlName In Array( _" & vbCrLf
+    code = code & "        ""lblHeaderName"", _" & vbCrLf
+    code = code & "        ""lblHeaderKeyword"", _" & vbCrLf
+    code = code & "        ""lblHeaderFilePath"", _" & vbCrLf
+    code = code & "        ""lblHeaderFunction"", _" & vbCrLf
+    code = code & "        ""lblHeaderRun"" _" & vbCrLf
+    code = code & "    )" & vbCrLf
+    code = code & "        On Error Resume Next" & vbCrLf
+    code = code & "        Me.Controls(CStr(ctrlName)).Visible = False" & vbCrLf
+    code = code & "        On Error GoTo 0" & vbCrLf
+    code = code & "    Next ctrlName" & vbCrLf
+    code = code & "End Sub" & vbCrLf & vbCrLf
+
     ' PopulateListBox
-    code = "Private Sub PopulateListBox()" & vbCrLf
+    code = code & "Private Sub PopulateListBox()" & vbCrLf
     code = code & "    On Error GoTo ErrHandler" & vbCrLf
-    code = code & "    Dim item As Object, rowIndex As Long, displayName As String" & vbCrLf
-    code = code & "    lstInputFiles.Clear" & vbCrLf
-    code = code & "    If mItems Is Nothing Then Exit Sub" & vbCrLf
-    code = code & "    For Each item In mItems" & vbCrLf
-    code = code & "        displayName = CStr(item(""Name""))" & vbCrLf
-    code = code & "        Select Case CLng(item(""Status""))" & vbCrLf
-    code = code & "            Case fsMissingMandatory: displayName = ""[MISSING] "" & displayName" & vbCrLf
-    code = code & "            Case fsNotUnique: displayName = ""[NOT UNIQUE] "" & displayName" & vbCrLf
-    code = code & "        End Select" & vbCrLf
-    code = code & "        lstInputFiles.AddItem displayName" & vbCrLf
-    code = code & "        rowIndex = lstInputFiles.ListCount - 1" & vbCrLf
-    code = code & "        lstInputFiles.List(rowIndex, 1) = CStr(item(""Keyword""))" & vbCrLf
-    code = code & "        lstInputFiles.List(rowIndex, 2) = CStr(item(""FilePath""))" & vbCrLf
-    code = code & "        lstInputFiles.List(rowIndex, 3) = CStr(item(""Function""))" & vbCrLf
-    code = code & "        lstInputFiles.List(rowIndex, 4) = CStr(item(""Run""))" & vbCrLf
-    code = code & "        lstInputFiles.List(rowIndex, 5) = CStr(item(""Status""))" & vbCrLf
-    code = code & "    Next item" & vbCrLf
+    code = code & "    Dim ws As Worksheet" & vbCrLf
+    code = code & "    Set ws = ThisWorkbook.Worksheets(""Runtime"")" & vbCrLf & vbCrLf
+    code = code & "    Dim totalRows As Long" & vbCrLf
+    code = code & "    If mItems Is Nothing Then" & vbCrLf
+    code = code & "        totalRows = 2" & vbCrLf
+    code = code & "    Else" & vbCrLf
+    code = code & "        totalRows = mItems.Count + 1" & vbCrLf
+    code = code & "        If totalRows < 2 Then totalRows = 2" & vbCrLf
+    code = code & "    End If" & vbCrLf & vbCrLf
+    code = code & "    Dim dataArr() As Variant" & vbCrLf
+    code = code & "    ReDim dataArr(1 To totalRows, 1 To 6)" & vbCrLf & vbCrLf
+    code = code & "    dataArr(1, 1) = ""Name""" & vbCrLf
+    code = code & "    dataArr(1, 2) = ""Keyword""" & vbCrLf
+    code = code & "    dataArr(1, 3) = ""FilePath""" & vbCrLf
+    code = code & "    dataArr(1, 4) = ""Function""" & vbCrLf
+    code = code & "    dataArr(1, 5) = ""Run""" & vbCrLf
+    code = code & "    dataArr(1, 6) = ""Status""" & vbCrLf & vbCrLf
+    code = code & "    Dim item As Object, displayName As String, writeRow As Long" & vbCrLf
+    code = code & "    If Not mItems Is Nothing Then" & vbCrLf
+    code = code & "        writeRow = 2" & vbCrLf
+    code = code & "        For Each item In mItems" & vbCrLf
+    code = code & "            displayName = CStr(item(""Name""))" & vbCrLf
+    code = code & "            Select Case CLng(item(""Status""))" & vbCrLf
+    code = code & "                Case fsMissingMandatory: displayName = ""[MISSING] "" & displayName" & vbCrLf
+    code = code & "                Case fsNotUnique: displayName = ""[NOT UNIQUE] "" & displayName" & vbCrLf
+    code = code & "            End Select" & vbCrLf & vbCrLf
+    code = code & "            dataArr(writeRow, 1) = displayName" & vbCrLf
+    code = code & "            dataArr(writeRow, 2) = CStr(item(""Keyword""))" & vbCrLf
+    code = code & "            dataArr(writeRow, 3) = CStr(item(""FilePath""))" & vbCrLf
+    code = code & "            dataArr(writeRow, 4) = CStr(item(""Function""))" & vbCrLf
+    code = code & "            dataArr(writeRow, 5) = CStr(item(""Run""))" & vbCrLf
+    code = code & "            dataArr(writeRow, 6) = CStr(item(""Status""))" & vbCrLf
+    code = code & "            writeRow = writeRow + 1" & vbCrLf
+    code = code & "        Next item" & vbCrLf
+    code = code & "    End If" & vbCrLf & vbCrLf
+    code = code & "    ws.Range(""AA1"").Resize(totalRows, 6).Value = dataArr" & vbCrLf
+    code = code & "    ws.Range(""AA1"").Resize(1, 6).Font.Bold = True" & vbCrLf & vbCrLf
+    code = code & "    With lstInputFiles" & vbCrLf
+    code = code & "        .RowSource = """"" & vbCrLf
+    code = code & "        .ColumnCount = 6" & vbCrLf
+    code = code & "        .ColumnWidths = ""160;100;300;70;50;0""" & vbCrLf
+    code = code & "        .ColumnHeads = True" & vbCrLf
+    code = code & "        .RowSource = ""'"" & ws.Name & ""'!AA2:AF"" & totalRows" & vbCrLf
+    code = code & "    End With" & vbCrLf
     code = code & "    Exit Sub" & vbCrLf
     code = code & "ErrHandler:" & vbCrLf
     code = code & "    LogError ""frmPayrollMain"", ""PopulateListBox"", Err.Number, Err.Description" & vbCrLf
