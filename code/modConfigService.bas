@@ -20,7 +20,7 @@ Public Function LoadRunParamsFromWorkbook() As tRunParams
     On Error GoTo ErrHandler
     
     With ThisWorkbook.Worksheets("Runtime")
-        p.InputFolder = Trim(CStr(.Range("InputFolder").value))
+        p.inputFolder = Trim(CStr(.Range("InputFolder").value))
         p.OutputFolder = Trim(CStr(.Range("OutputFolder").value))
         p.ConfigFolder = Trim(CStr(.Range("ConfigFolder").value))
         p.payrollMonth = Trim(CStr(.Range("PayrollMonth").value))
@@ -29,7 +29,7 @@ Public Function LoadRunParamsFromWorkbook() As tRunParams
     End With
     
     ' Ensure folders end with backslash
-    If Right(p.InputFolder, 1) <> "\" Then p.InputFolder = p.InputFolder & "\"
+    If Right(p.inputFolder, 1) <> "\" Then p.inputFolder = p.inputFolder & "\"
     If Right(p.OutputFolder, 1) <> "\" Then p.OutputFolder = p.OutputFolder & "\"
     If Right(p.ConfigFolder, 1) <> "\" Then p.ConfigFolder = p.ConfigFolder & "\"
     If Right(p.LogFolder, 1) <> "\" Then p.LogFolder = p.LogFolder & "\"
@@ -164,7 +164,7 @@ Public Function OpenExtraTableWorkbook() As Workbook
         Exit Function
     End If
     
-    filePath = G.RunParams.InputFolder & ADDITIONAL_TABLE_FILE
+    filePath = G.RunParams.inputFolder & ADDITIONAL_TABLE_FILE
     
     If Dir(filePath) <> "" Then
         Set G.ExtraTableWb = Workbooks.Open(filePath, ReadOnly:=True, UpdateLinks:=False)
@@ -331,7 +331,7 @@ Public Function GetInputFilePath(logicalName As String) As String
             fileName = logicalName
     End Select
     
-    GetInputFilePath = G.RunParams.InputFolder & fileName
+    GetInputFilePath = G.RunParams.inputFolder & fileName
 End Function
 
 

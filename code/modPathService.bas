@@ -73,7 +73,7 @@ Public Sub InitPathServiceFromContext()
     If G.IsInitialised Then
         ' Assume RunParams.InputFolder is the root directory of new structure
         ' If using old structure, adjustment is needed
-        InitPathService G.RunParams.InputFolder, G.RunParams.OutputFolder
+        InitPathService G.RunParams.inputFolder, G.RunParams.OutputFolder
     Else
         Err.Raise vbObjectError + 1001, "InitPathServiceFromContext", _
             "Global context not initialized"

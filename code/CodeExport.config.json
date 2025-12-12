@@ -26,6 +26,16 @@
 		"modSP2_CheckResult_PayItems": "modSP2_CheckResult_PayItems.bas",
 		"modSP2_HCCheck": "modSP2_HCCheck.bas",
 		"modPathService": "modPathService.bas",
-		"modSP2_CheckResultTemplate": "modSP2_CheckResultTemplate.bas"
-	}
+		"modSP2_CheckResultTemplate": "modSP2_CheckResultTemplate.bas",
+		"frmPayrollMain": "frmPayrollMain.frm"
+	},
+	"References": [
+		{
+			"Name": "VBIDE",
+			"Description": "Microsoft Visual Basic for Applications Extensibility 5.3",
+			"GUID": "{0002E157-0000-0000-C000-000000000046}",
+			"Major": 5,
+			"Minor": 3
+		}
+	]
 }

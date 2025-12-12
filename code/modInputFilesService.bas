@@ -32,7 +32,7 @@ Public Function GetDefaultConfigPath() As String
     If Trim(p.ConfigFolder) <> "" Then
         configPath = EnsureTrailingBackslash(p.ConfigFolder) & "config.xlsx"
     Else
-        configPath = ThisWorkbook.Path & "\config\config.xlsx"
+        configPath = ThisWorkbook.path & "\config\config.xlsx"
     End If
     
     GetDefaultConfigPath = configPath
@@ -47,7 +47,7 @@ Public Function GetDefaultInputFolder() As String
     On Error Resume Next
     p = LoadRunParamsFromWorkbook()
     On Error GoTo 0
-    GetDefaultInputFolder = EnsureTrailingBackslash(p.InputFolder)
+    GetDefaultInputFolder = EnsureTrailingBackslash(p.inputFolder)
 End Function
 
 '------------------------------------------------------------------------------
@@ -88,7 +88,7 @@ Public Function LoadInputFilesConfig(configPath As String) As Collection
         Exit Function
     End If
     
-    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    lastCol = ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
     colName = FindHeaderColumn(ws, "Name", lastCol)
     colKeyword = FindHeaderColumn(ws, "Keyword", lastCol)
     colFilePath = FindHeaderColumn(ws, "FilePath", lastCol)
@@ -103,20 +103,20 @@ Public Function LoadInputFilesConfig(configPath As String) As Collection
         Exit Function
     End If
     
-    lastRow = ws.Cells(ws.Rows.Count, colName).End(xlUp).Row
+    lastRow = ws.Cells(ws.Rows.count, colName).End(xlUp).row
     For r = 2 To lastRow
-        If Trim(CStr(ws.Cells(r, colName).Value)) = "" Then
+        If Trim(CStr(ws.Cells(r, colName).value)) = "" Then
             ' Stop at first blank Name row
             Exit For
         End If
         
         Dim d As Object
         Set d = CreateObject("Scripting.Dictionary")
-        d("Name") = Trim(CStr(ws.Cells(r, colName).Value))
-        d("Keyword") = Trim(CStr(ws.Cells(r, colKeyword).Value))
-        d("FilePath") = Trim(CStr(ws.Cells(r, colFilePath).Value))
-        d("Function") = Trim(CStr(ws.Cells(r, colFunction).Value))
-        d("Run") = UCase(Trim(CStr(ws.Cells(r, colRun).Value)))
+        d("Name") = Trim(CStr(ws.Cells(r, colName).value))
+        d("Keyword") = Trim(CStr(ws.Cells(r, colKeyword).value))
+        d("FilePath") = Trim(CStr(ws.Cells(r, colFilePath).value))
+        d("Function") = Trim(CStr(ws.Cells(r, colFunction).value))
+        d("Run") = UCase(Trim(CStr(ws.Cells(r, colRun).value)))
         d("Status") = fsOk
         Set d("Matches") = New Collection
         d("ConfigRow") = r
@@ -159,7 +159,7 @@ Public Sub ResolveInputFilePaths(items As Collection, inputFolder As String, pay
         
         Dim matches As Collection
         Set matches = FindMatches(baseFolder, keyword)
-        If matches.Count = 0 Then
+        If matches.count = 0 Then
             Set matches = FindMatches(monthFolder, keyword)
         End If
         
@@ -169,13 +169,13 @@ Public Sub ResolveInputFilePaths(items As Collection, inputFolder As String, pay
         Dim allowMulti As Boolean
         allowMulti = IsMultiAllowed(item)
         
-        If matches.Count = 0 Then
+        If matches.count = 0 Then
             If UCase(CStr(item("Run"))) = "YES" Then
                 item("Status") = fsMissingMandatory
             Else
                 item("Status") = fsMissingOptional
             End If
-        ElseIf matches.Count > 1 And Not allowMulti Then
+        ElseIf matches.count > 1 And Not allowMulti Then
             item("Status") = fsNotUnique
         Else
             item("Status") = fsOk
@@ -217,13 +217,13 @@ Public Sub WriteBackFilePathsToConfig(items As Collection, configPath As String)
         Exit Sub
     End If
     
-    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    lastCol = ws.Cells(1, ws.Columns.count).End(xlToLeft).Column
     
     For Each item In items
         Dim r As Long, c As Long
         r = CLng(item("ConfigRow"))
         c = CLng(item("FilePathCol"))
-        ws.Cells(r, c).Value = CStr(item("FilePath"))
+        ws.Cells(r, c).value = CStr(item("FilePath"))
         ApplyStatusHighlight ws, r, lastCol, CLng(item("Status"))
     Next item
     
@@ -282,7 +282,7 @@ End Function
 Private Function FindHeaderColumn(ws As Worksheet, headerName As String, lastCol As Long) As Long
     Dim i As Long
     For i = 1 To lastCol
-        If UCase(Trim(CStr(ws.Cells(1, i).Value))) = UCase(headerName) Then
+        If UCase(Trim(CStr(ws.Cells(1, i).value))) = UCase(headerName) Then
             FindHeaderColumn = i
             Exit Function
         End If
@@ -387,7 +387,7 @@ End Function
 Private Function JoinMatches(matches As Collection) As String
     Dim i As Long, s As String
     s = ""
-    For i = 1 To matches.Count
+    For i = 1 To matches.count
         If s <> "" Then s = s & "; "
         s = s & CStr(matches(i))
     Next i

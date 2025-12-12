@@ -140,7 +140,7 @@ Private Sub WriteSeveranceLongServiceCheck(ws As Worksheet, row As Long, wein As
     
     On Error Resume Next
     
-    If Not mFinalPayParams.Exists(wein) Then Exit Sub
+    If Not mFinalPayParams.exists(wein) Then Exit Sub
     
     Dim params As Object
     Set params = mFinalPayParams(wein)
@@ -172,11 +172,11 @@ Private Sub WriteSeveranceLongServiceCheck(ws As Worksheet, row As Long, wein As
     If IsRedundancy(termType) Or yos < 5 Then
         payment = CalcSeverancePayment(policyType, monthlySalary, yos)
         col = GetCheckColIndex("Severance Payment 60404000")
-        If col > 0 Then ws.Cells(row, col).Value = payment
+        If col > 0 Then ws.Cells(row, col).value = payment
     Else
         payment = CalcSeverancePayment(policyType, monthlySalary, yos)
         col = GetCheckColIndex("Long Service Payment 60409960")
-        If col > 0 Then ws.Cells(row, col).Value = payment
+        If col > 0 Then ws.Cells(row, col).value = payment
     End If
 End Sub
 
@@ -198,7 +198,7 @@ Private Sub WritePILCheck(ws As Worksheet, row As Long, wein As String)
     
     On Error Resume Next
     
-    If Not mFinalPayParams.Exists(wein) Then Exit Sub
+    If Not mFinalPayParams.exists(wein) Then Exit Sub
     Set params = mFinalPayParams(wein)
     
     ' Base pay from Check Result
@@ -242,13 +242,13 @@ Private Sub WritePILCheck(ws As Worksheet, row As Long, wein As String)
     ' PIL EE to ER: PIL Days * Min(basePerDay, eaoPerDay)
     col = GetCheckColIndex("PIL EE to ER 60001000")
     If col > 0 And pilEetoErDays > 0 Then
-        ws.Cells(row, col).Value = RoundAmount2(pilEetoErDays * WorksheetFunction.Min(basePerDay, eaoPerDay))
+        ws.Cells(row, col).value = RoundAmount2(pilEetoErDays * WorksheetFunction.Min(basePerDay, eaoPerDay))
     End If
     
     ' PIL ER to EE: PIL Days * Max(basePerDay, eaoPerDay)
     col = GetCheckColIndex("PIL ER to EE 60001000")
     If col > 0 And pilErtoEeDays > 0 Then
-        ws.Cells(row, col).Value = RoundAmount2(pilErtoEeDays * WorksheetFunction.Max(basePerDay, eaoPerDay))
+        ws.Cells(row, col).value = RoundAmount2(pilErtoEeDays * WorksheetFunction.Max(basePerDay, eaoPerDay))
     End If
 End Sub
 
@@ -569,7 +569,7 @@ End Function
 '------------------------------------------------------------------------------
 Private Function GetTerminationDate(wein As String) As Date
     If Not mTerminationWeins Is Nothing Then
-        If mTerminationWeins.Exists(wein & "|DATE") Then
+        If mTerminationWeins.exists(wein & "|DATE") Then
             If IsDate(mTerminationWeins(wein & "|DATE")) Then
                 GetTerminationDate = CDate(mTerminationWeins(wein & "|DATE"))
                 Exit Function
@@ -587,7 +587,7 @@ Private Function GetValueFromCheck(ws As Worksheet, row As Long, headerName As S
     col = FindColumnByHeader(ws.Rows(4), headerName & " Check")
     If col = 0 Then col = FindColumnByHeader(ws.Rows(4), headerName)
     If col > 0 Then
-        GetValueFromCheck = ws.Cells(row, col).Value
+        GetValueFromCheck = ws.Cells(row, col).value
     Else
         GetValueFromCheck = 0
     End If
@@ -619,7 +619,7 @@ Private Function GetTransportAllowanceAmount(wein As String) As Double
     
     headerRow = FindHeaderRowSafe(ws, "EMPLOYEE ID,EMPLOYEEID,EMPLOYEE NUMBER ID,WEIN", 1, 50)
     Set headers = BuildHeaderIndex(ws, headerRow)
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
+    lastRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row
     
     For i = headerRow + 1 To lastRow
         compPlan = UCase(Trim(CStr(Nz(GetCellVal(ws, i, headers, "COMPENSATION PLAN"), ""))))

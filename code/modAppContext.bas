@@ -9,7 +9,7 @@ Option Explicit
 
 ' Run parameters passed from PAD or config
 Public Type tRunParams
-    InputFolder As String
+    inputFolder As String
     OutputFolder As String
     ConfigFolder As String
     payrollMonth As String      ' "YYYYMM" format
