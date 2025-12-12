@@ -196,12 +196,19 @@ End Sub
 Public Sub WriteBackFilePathsToConfig(items As Collection, configPath As String)
     Dim wb As Workbook, ws As Worksheet
     Dim item As Object
+    Dim lastCol As Long
     
     On Error GoTo ErrHandler
     
     If Dir(configPath) = "" Then Exit Sub
     
     Set wb = Workbooks.Open(configPath, ReadOnly:=False, UpdateLinks:=False)
+    If wb.ReadOnly Then
+        LogWarning "modInputFilesService", "WriteBackFilePathsToConfig", _
+            "Config workbook opened read-only, cannot write back: " & configPath
+        wb.Close SaveChanges:=False
+        Exit Sub
+    End If
     On Error Resume Next
     Set ws = wb.Worksheets("Input Files")
     On Error GoTo ErrHandler
@@ -210,11 +217,14 @@ Public Sub WriteBackFilePathsToConfig(items As Collection, configPath As String)
         Exit Sub
     End If
     
+    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    
     For Each item In items
         Dim r As Long, c As Long
         r = CLng(item("ConfigRow"))
         c = CLng(item("FilePathCol"))
         ws.Cells(r, c).Value = CStr(item("FilePath"))
+        ApplyStatusHighlight ws, r, lastCol, CLng(item("Status"))
     Next item
     
     wb.Close SaveChanges:=True
@@ -224,6 +234,24 @@ ErrHandler:
     LogError "modInputFilesService", "WriteBackFilePathsToConfig", Err.Number, Err.Description
     On Error Resume Next
     If Not wb Is Nothing Then wb.Close SaveChanges:=False
+End Sub
+
+'------------------------------------------------------------------------------
+' Sub: ApplyStatusHighlight
+' Purpose: Highlight a config row based on resolved file status.
+'------------------------------------------------------------------------------
+Private Sub ApplyStatusHighlight(ws As Worksheet, rowIndex As Long, lastCol As Long, statusVal As Long)
+    Dim rng As Range
+    Set rng = ws.Range(ws.Cells(rowIndex, 1), ws.Cells(rowIndex, lastCol))
+    
+    Select Case statusVal
+        Case fsMissingMandatory
+            rng.Interior.Color = RGB(255, 200, 200)
+        Case fsNotUnique
+            rng.Interior.Color = RGB(255, 255, 200)
+        Case Else
+            rng.Interior.ColorIndex = xlColorIndexNone
+    End Select
 End Sub
 
 '------------------------------------------------------------------------------
@@ -377,4 +405,3 @@ Private Function IsMultiAllowed(item As Object) As Boolean
     IsMultiAllowed = (InStr(1, nameVal, "MERCK PAYROLL SUMMARY", vbTextCompare) > 0) _
         Or (InStr(1, keyVal, "MERCK_PAYROLL_SUMMARY", vbTextCompare) > 0)
 End Function
-

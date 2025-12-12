@@ -237,8 +237,10 @@ Private Sub AddFormCodePart3(codeModule As Object)
     code = code & "        MsgBox ""Please click Refresh FilePaths before running."", vbExclamation" & vbCrLf
     code = code & "        Exit Sub" & vbCrLf
     code = code & "    End If" & vbCrLf
-    code = code & "    If HasBlockingErrors(scopeName) Then" & vbCrLf
-    code = code & "        MsgBox ""Mandatory files are missing or not unique."", vbCritical" & vbCrLf
+    code = code & "    Dim blockingDetails As String" & vbCrLf
+    code = code & "    blockingDetails = GetBlockingErrorDetails(scopeName)" & vbCrLf
+    code = code & "    If blockingDetails <> """" Then" & vbCrLf
+    code = code & "        MsgBox ""Mandatory files are missing or not unique:"" & blockingDetails, vbCritical" & vbCrLf
     code = code & "        Exit Sub" & vbCrLf
     code = code & "    End If" & vbCrLf
     code = code & "    Dim payrollMonth As String" & vbCrLf
@@ -347,6 +349,33 @@ Private Sub AddFormCodePart4(codeModule As Object)
     code = code & "            End If" & vbCrLf
     code = code & "        End If" & vbCrLf
     code = code & "    Next item" & vbCrLf
+    code = code & "End Function" & vbCrLf & vbCrLf
+    
+    ' GetBlockingErrorDetails
+    code = code & "Private Function GetBlockingErrorDetails(scopeName As String) As String" & vbCrLf
+    code = code & "    Dim item As Object, fn As String, st As Long, details As String, inScope As Boolean" & vbCrLf
+    code = code & "    details = """"" & vbCrLf
+    code = code & "    If mItems Is Nothing Then" & vbCrLf
+    code = code & "        GetBlockingErrorDetails = """"" & vbCrLf
+    code = code & "        Exit Function" & vbCrLf
+    code = code & "    End If" & vbCrLf
+    code = code & "    For Each item In mItems" & vbCrLf
+    code = code & "        If UCase(CStr(item(""Run""))) = ""YES"" Then" & vbCrLf
+    code = code & "            fn = UCase(CStr(item(""Function"")))" & vbCrLf
+    code = code & "            st = CLng(item(""Status""))" & vbCrLf
+    code = code & "            inScope = False" & vbCrLf
+    code = code & "            If scopeName = ""PROCESS"" And (fn = ""PROCESS"" Or fn = ""BOTH"") Then inScope = True" & vbCrLf
+    code = code & "            If scopeName = ""VALIDATION"" And (fn = ""VALIDATION"" Or fn = ""BOTH"") Then inScope = True" & vbCrLf
+    code = code & "            If inScope Then" & vbCrLf
+    code = code & "                If st = fsMissingMandatory Then" & vbCrLf
+    code = code & "                    details = details & vbCrLf & "" - Missing: "" & CStr(item(""Name""))" & vbCrLf
+    code = code & "                ElseIf st = fsNotUnique Then" & vbCrLf
+    code = code & "                    details = details & vbCrLf & "" - Not unique: "" & CStr(item(""Name""))" & vbCrLf
+    code = code & "                End If" & vbCrLf
+    code = code & "            End If" & vbCrLf
+    code = code & "        End If" & vbCrLf
+    code = code & "    Next item" & vbCrLf
+    code = code & "    GetBlockingErrorDetails = details" & vbCrLf
     code = code & "End Function" & vbCrLf & vbCrLf
     
     ' GetSelectedMonthString

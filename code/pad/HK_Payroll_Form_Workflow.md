@@ -6,6 +6,7 @@ This workflow launches the control workbook and displays the VBA payroll form.
 - Excel installed on the machine running PAD.
 - `HK_Payroll_Automation.xlsm` contains all VBA modules from `code/`.
 - Macro security allows running signed/trusted macros.
+- If `frmPayrollMain` is missing (or after VBA updates), run macro `CreatePayrollForm` once to regenerate the form.
 
 ### Steps (PAD Designer)
 1. **Display select file dialog**
@@ -35,4 +36,3 @@ This workflow launches the control workbook and displays the VBA payroll form.
 ### Notes
 - The VBA form handles refreshing file paths, validation, and running subprocesses.
 - PAD does not need to set Runtime parameters before showing the form.
-
