@@ -159,7 +159,7 @@ ErrHandler:
       If mItems Is Nothing Then
           totalRows = 2
       Else
-          totalRows = mItems.Count + 1
+          totalRows = mItems.count + 1
           If totalRows < 2 Then totalRows = 2
       End If
 
@@ -193,7 +193,7 @@ ErrHandler:
           Next item
       End If
 
-      ws.Range("AA1").Resize(totalRows, 6).Value = dataArr
+      ws.Range("AA1").Resize(totalRows, 6).value = dataArr
       ws.Range("AA1").Resize(1, 6).Font.Bold = True
 
       With lstInputFiles
@@ -285,5 +285,6 @@ ErrHandler:
       monthVal = CLng(cmbMonth.ListIndex + 1)
       GetSelectedMonthString = GetSelectedPayrollMonth(yearVal, monthVal)
   End Function
+
 
 
